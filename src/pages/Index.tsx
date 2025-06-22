@@ -1,9 +1,8 @@
-
 import { useAuth } from "@/hooks/useAuth";
 import { CashFlowManager } from "@/components/CashFlowManager";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LogOut, User, Building2 } from "lucide-react";
+import { LogOut, User, Building2, Settings } from "lucide-react";
 
 const Index = () => {
   const { profile, signOut } = useAuth();
@@ -33,6 +32,15 @@ const Index = () => {
             </div>
             
             <div className="flex items-center space-x-4">
+              {profile.role ===  'master' && (
+                <Button variant="outline" size="sm" asChild>
+                  <a href="/admin">
+                    <Settings className="h-4 w-4 mr-2" />
+                    Administração
+                  </a>
+                </Button>
+              )}
+              
               <div className="flex items-center space-x-2 text-sm text-gray-600">
                 <User className="h-4 w-4" />
                 <span>{profile.name}</span>
