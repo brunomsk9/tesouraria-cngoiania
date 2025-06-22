@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { FileText, Calendar, DollarSign, Download, TrendingUp } from 'lucide-react';
+import { FileText, Calendar, DollarSign, Download, TrendingUp, Building2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format, subDays, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -29,18 +29,42 @@ interface CashSession {
   total_exits: number;
 }
 
+interface Church {
+  id: string;
+  name: string;
+}
+
 export const Reports = () => {
   const { profile } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [sessions, setSessions] = useState<CashSession[]>([]);
+  const [churches, setChurches] = useState<Church[]>([]);
+  const [selectedChurch, setSelectedChurch] = useState<string>('');
   const [dateRange, setDateRange] = useState('30days');
   const [reportType, setReportType] = useState('summary');
 
   useEffect(() => {
+    if (profile?.role === 'supervisor') {
+      loadChurches();
+    }
     loadData();
-  }, [dateRange, profile?.church_id]);
+  }, [dateRange, selectedChurch, profile?.church_id]);
+
+  const loadChurches = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('churches')
+        .select('id, name')
+        .order('name');
+
+      if (error) throw error;
+      setChurches(data || []);
+    } catch (error) {
+      console.error('Erro ao carregar igrejas:', error);
+    }
+  };
 
   const getDateRange = () => {
     const now = new Date();
@@ -56,8 +80,16 @@ export const Reports = () => {
     }
   };
 
+  const getChurchFilter = () => {
+    if (profile?.role === 'supervisor' && selectedChurch) {
+      return selectedChurch;
+    }
+    return profile?.church_id;
+  };
+
   const loadData = async () => {
-    if (!profile?.church_id) return;
+    const churchId = getChurchFilter();
+    if (!churchId) return;
     
     setLoading(true);
     try {
@@ -66,7 +98,11 @@ export const Reports = () => {
       // Load transactions
       const { data: transactionsData, error: transError } = await supabase
         .from('transactions')
-        .select('*')
+        .select(`
+          *,
+          cash_sessions!inner(church_id)
+        `)
+        .eq('cash_sessions.church_id', churchId)
         .gte('date_transaction', format(start, 'yyyy-MM-dd'))
         .lte('date_transaction', format(end, 'yyyy-MM-dd'))
         .order('date_transaction', { ascending: false });
@@ -81,7 +117,7 @@ export const Reports = () => {
           *,
           transactions!inner(amount, type)
         `)
-        .eq('church_id', profile.church_id)
+        .eq('church_id', churchId)
         .gte('date_session', format(start, 'yyyy-MM-dd'))
         .lte('date_session', format(end, 'yyyy-MM-dd'))
         .order('date_session', { ascending: false });
@@ -158,8 +194,9 @@ export const Reports = () => {
   };
 
   const summary = calculateSummary();
+  const churchId = getChurchFilter();
 
-  if (!profile?.church_id && profile?.role !== 'supervisor') {
+  if (!churchId && profile?.role !== 'supervisor') {
     return (
       <div className="p-6">
         <Card className="border-orange-200 bg-orange-50">
@@ -176,15 +213,67 @@ export const Reports = () => {
     );
   }
 
+  if (profile?.role === 'supervisor' && !selectedChurch) {
+    return (
+      <div className="p-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Building2 className="h-5 w-5 mr-2" />
+              Selecione uma Igreja
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-gray-600 mb-4">
+              Selecione uma igreja para visualizar os relatórios financeiros.
+            </p>
+            <Select value={selectedChurch} onValueChange={setSelectedChurch}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Selecione uma igreja" />
+              </SelectTrigger>
+              <SelectContent>
+                {churches.map((church) => (
+                  <SelectItem key={church.id} value={church.id}>
+                    {church.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Relatórios</h1>
           <p className="text-gray-600">Análises e histórico financeiro</p>
+          {profile?.role === 'supervisor' && selectedChurch && (
+            <p className="text-sm text-blue-600 mt-1">
+              Igreja: {churches.find(c => c.id === selectedChurch)?.name}
+            </p>
+          )}
         </div>
         
         <div className="flex space-x-2">
+          {profile?.role === 'supervisor' && (
+            <Select value={selectedChurch} onValueChange={setSelectedChurch}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Selecionar Igreja" />
+              </SelectTrigger>
+              <SelectContent>
+                {churches.map((church) => (
+                  <SelectItem key={church.id} value={church.id}>
+                    {church.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          
           <Select value={dateRange} onValueChange={setDateRange}>
             <SelectTrigger className="w-40">
               <SelectValue />

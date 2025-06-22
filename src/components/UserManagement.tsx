@@ -1,9 +1,10 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { Users } from 'lucide-react';
+import { Users, Building2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { UserCreate } from './UserCreate';
 import { UserTable } from './UserTable';
@@ -28,6 +29,7 @@ export const UserManagement = () => {
   const { toast } = useToast();
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [churches, setChurches] = useState<Church[]>([]);
+  const [selectedChurch, setSelectedChurch] = useState<string>('all');
   const [loading, setLoading] = useState(true);
   const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
 
@@ -36,14 +38,21 @@ export const UserManagement = () => {
       loadProfiles();
       loadChurches();
     }
-  }, [profile]);
+  }, [profile, selectedChurch]);
 
   const loadProfiles = async () => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('profiles')
         .select('*')
         .order('created_at', { ascending: false });
+
+      // Se um supervisor está filtrando por igreja específica
+      if (selectedChurch !== 'all') {
+        query = query.eq('church_id', selectedChurch);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       setProfiles(data || []);
@@ -101,14 +110,39 @@ export const UserManagement = () => {
           <p className="text-gray-600">Gerencie usuários, roles e vínculos com igrejas</p>
         </div>
         
-        <UserCreate churches={churches} onUserCreated={loadProfiles} />
+        <div className="flex space-x-2">
+          <Select value={selectedChurch} onValueChange={setSelectedChurch}>
+            <SelectTrigger className="w-48">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as igrejas</SelectItem>
+              <SelectItem value="">Sem igreja</SelectItem>
+              {churches.map((church) => (
+                <SelectItem key={church.id} value={church.id}>
+                  {church.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          <UserCreate churches={churches} onUserCreated={loadProfiles} />
+        </div>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center">
-            <Users className="h-5 w-5 mr-2" />
-            Usuários do Sistema
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center">
+              <Users className="h-5 w-5 mr-2" />
+              Usuários do Sistema
+            </div>
+            {selectedChurch !== 'all' && (
+              <div className="flex items-center text-sm text-blue-600">
+                <Building2 className="h-4 w-4 mr-1" />
+                {selectedChurch === '' ? 'Sem igreja' : churches.find(c => c.id === selectedChurch)?.name}
+              </div>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent>
