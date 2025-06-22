@@ -44,9 +44,7 @@ export const useCashBookPrintExport = ({
           culto_evento,
           date_session,
           created_by,
-          validated_by,
-          profiles!cash_sessions_created_by_fkey(name),
-          profiles!cash_sessions_validated_by_fkey(name)
+          validated_by
         `)
         .eq('church_id', churchId)
         .gte('date_session', startDate)
@@ -54,10 +52,36 @@ export const useCashBookPrintExport = ({
         .order('date_session', { ascending: true });
 
       if (error) throw error;
-      return sessions || [];
+
+      // Buscar nomes dos tesoureiros separadamente
+      const userIds = [...new Set([
+        ...sessions?.map(s => s.created_by).filter(Boolean) || [],
+        ...sessions?.map(s => s.validated_by).filter(Boolean) || []
+      ])];
+
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, name')
+        .in('id', userIds);
+
+      if (profilesError) throw profilesError;
+
+      // Mapear nomes para IDs
+      const profileMap = profiles?.reduce((acc, profile) => {
+        acc[profile.id] = profile.name;
+        return acc;
+      }, {} as Record<string, string>) || {};
+
+      return {
+        sessions: sessions || [],
+        profileMap
+      };
     } catch (error) {
       console.error('Erro ao buscar detalhes das sessões:', error);
-      return [];
+      return {
+        sessions: [],
+        profileMap: {}
+      };
     }
   };
 
@@ -66,12 +90,12 @@ export const useCashBookPrintExport = ({
     const logoUrl = localStorage.getItem(`church-logo-${selectedChurch}`);
     
     // Buscar detalhes das sessões
-    const sessions = await getSessionDetails(selectedChurch, startDate, endDate);
+    const { sessions, profileMap } = await getSessionDetails(selectedChurch, startDate, endDate);
     
     // Agrupar informações dos tesoureiros
     const treasurers = {
-      creators: [...new Set(sessions.map(s => s.profiles?.name).filter(Boolean))],
-      validators: [...new Set(sessions.map(s => s.profiles?.name).filter(Boolean))]
+      creators: [...new Set(sessions.map(s => profileMap[s.created_by]).filter(Boolean))],
+      validators: [...new Set(sessions.map(s => profileMap[s.validated_by]).filter(Boolean))]
     };
     
     // Obter informações do primeiro culto/evento
