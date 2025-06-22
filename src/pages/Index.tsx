@@ -124,8 +124,8 @@ const Index = () => {
     try {
       const { error } = await supabase.from('transactions').insert({
         user_id: user!.id,
-        type: 'entrada',
-        category: entradaForm.category,
+        type: 'entrada' as const,
+        category: entradaForm.category as 'dinheiro' | 'pix' | 'cartao_credito' | 'cartao_debito',
         description: entradaForm.description,
         amount: parseFloat(entradaForm.amount),
         date_transaction: entradaForm.date,
@@ -189,7 +189,7 @@ const Index = () => {
     try {
       const { error } = await supabase.from('transactions').insert({
         user_id: user!.id,
-        type: 'saida',
+        type: 'saida' as const,
         description: saidaForm.description || 'Pagamento de voluntários e segurança',
         amount: total_saida,
         date_transaction: saidaForm.date,
@@ -464,7 +464,7 @@ const Index = () => {
                     </div>
                   </div>
 
-                  <div className="gri grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Culto/Evento</Label>
                       <Input
