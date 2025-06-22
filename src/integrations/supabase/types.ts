@@ -9,8 +9,121 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      cash_sessions: {
+        Row: {
+          church_id: string
+          created_at: string
+          created_by: string
+          culto_evento: string
+          date_session: string
+          id: string
+          status: string
+          updated_at: string
+          validated_at: string | null
+          validated_by_1: string | null
+          validated_by_2: string | null
+        }
+        Insert: {
+          church_id: string
+          created_at?: string
+          created_by: string
+          culto_evento: string
+          date_session?: string
+          id?: string
+          status?: string
+          updated_at?: string
+          validated_at?: string | null
+          validated_by_1?: string | null
+          validated_by_2?: string | null
+        }
+        Update: {
+          church_id?: string
+          created_at?: string
+          created_by?: string
+          culto_evento?: string
+          date_session?: string
+          id?: string
+          status?: string
+          updated_at?: string
+          validated_at?: string | null
+          validated_by_1?: string | null
+          validated_by_2?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cash_sessions_church_id_fkey"
+            columns: ["church_id"]
+            isOneToOne: false
+            referencedRelation: "churches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      churches: {
+        Row: {
+          address: string | null
+          city: string | null
+          created_at: string
+          id: string
+          name: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      pix_entries: {
+        Row: {
+          amount: number
+          cash_session_id: string
+          created_at: string
+          description: string | null
+          id: string
+        }
+        Insert: {
+          amount: number
+          cash_session_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+        }
+        Update: {
+          amount?: number
+          cash_session_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pix_entries_cash_session_id_fkey"
+            columns: ["cash_session_id"]
+            isOneToOne: false
+            referencedRelation: "cash_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
+          church_id: string | null
           created_at: string
           id: string
           name: string
@@ -18,6 +131,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          church_id?: string | null
           created_at?: string
           id: string
           name: string
@@ -25,17 +139,27 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          church_id?: string | null
           created_at?: string
           id?: string
           name?: string
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_church_id_fkey"
+            columns: ["church_id"]
+            isOneToOne: false
+            referencedRelation: "churches"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       transactions: {
         Row: {
           amount: number
+          cash_session_id: string | null
           category: Database["public"]["Enums"]["categoria_entrada"] | null
           created_at: string
           culto_evento: string | null
@@ -54,6 +178,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          cash_session_id?: string | null
           category?: Database["public"]["Enums"]["categoria_entrada"] | null
           created_at?: string
           culto_evento?: string | null
@@ -72,6 +197,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          cash_session_id?: string | null
           category?: Database["public"]["Enums"]["categoria_entrada"] | null
           created_at?: string
           culto_evento?: string | null
@@ -88,7 +214,15 @@ export type Database = {
           valor_seguranca?: number | null
           voluntarios?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "transactions_cash_session_id_fkey"
+            columns: ["cash_session_id"]
+            isOneToOne: false
+            referencedRelation: "cash_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -103,7 +237,7 @@ export type Database = {
     Enums: {
       categoria_entrada: "dinheiro" | "pix" | "cartao_credito" | "cartao_debito"
       tipo_transacao: "entrada" | "saida"
-      user_role: "master" | "tesoureiro"
+      user_role: "master" | "tesoureiro" | "supervisor"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -221,7 +355,7 @@ export const Constants = {
     Enums: {
       categoria_entrada: ["dinheiro", "pix", "cartao_credito", "cartao_debito"],
       tipo_transacao: ["entrada", "saida"],
-      user_role: ["master", "tesoureiro"],
+      user_role: ["master", "tesoureiro", "supervisor"],
     },
   },
 } as const
