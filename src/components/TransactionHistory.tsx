@@ -1,17 +1,23 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, TrendingDown, Calendar } from 'lucide-react';
+import { TrendingUp, TrendingDown, Calendar, MapPin, MessageSquare } from 'lucide-react';
 
 interface Transaction {
   id: string;
   type: 'entrada' | 'saida';
-  category: string;
+  category?: string;
   description: string;
   amount: number;
   date: string;
+  date_transaction: string;
+  culto_evento?: string;
+  observacao?: string;
+  valor_moeda_estrangeira?: number;
+  moeda_estrangeira?: string;
   voluntarios?: number;
-  valorSeguranca?: number;
+  valor_seguranca?: number;
+  outros_gastos?: number;
 }
 
 interface TransactionHistoryProps {
@@ -39,6 +45,16 @@ export const TransactionHistory = ({ transactions }: TransactionHistoryProps) =>
     );
   }
 
+  const getCategoryLabel = (category?: string) => {
+    const labels = {
+      'dinheiro': 'Dinheiro',
+      'pix': 'PIX',
+      'cartao_credito': 'Cartão de Crédito',
+      'cartao_debito': 'Cartão de Débito'
+    };
+    return category ? labels[category as keyof typeof labels] || category : 'Pagamentos';
+  };
+
   return (
     <Card className="bg-white shadow-lg border-0">
       <CardHeader>
@@ -52,9 +68,9 @@ export const TransactionHistory = ({ transactions }: TransactionHistoryProps) =>
           {transactions.map((transaction) => (
             <div
               key={transaction.id}
-              className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+              className="flex items-start justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
             >
-              <div className="flex items-center gap-4">
+              <div className="flex items-start gap-4 flex-1">
                 <div className={`p-2 rounded-full ${
                   transaction.type === 'entrada' 
                     ? 'bg-green-100 text-green-600' 
@@ -67,27 +83,56 @@ export const TransactionHistory = ({ transactions }: TransactionHistoryProps) =>
                   )}
                 </div>
                 
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
+                <div className="space-y-2 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <h4 className="font-semibold text-gray-800">{transaction.description}</h4>
                     <Badge variant="outline" className="text-xs">
-                      {transaction.category}
+                      {getCategoryLabel(transaction.category)}
                     </Badge>
                   </div>
                   
-                  <div className="flex items-center gap-4 text-sm text-gray-500">
-                    <span>{transaction.date}</span>
-                    {transaction.type === 'saida' && transaction.voluntarios && (
-                      <span>• {transaction.voluntarios} voluntário(s)</span>
-                    )}
-                    {transaction.type === 'saida' && transaction.valorSeguranca && (
-                      <span>• Segurança: R$ {transaction.valorSeguranca.toFixed(2)}</span>
+                  <div className="flex items-center gap-4 text-sm text-gray-500 flex-wrap">
+                    <span>Registrado: {transaction.date}</span>
+                    <span>• Data: {new Date(transaction.date_transaction).toLocaleDateString('pt-BR')}</span>
+                    
+                    {transaction.culto_evento && (
+                      <div className="flex items-center gap-1">
+                        <MapPin className="h-3 w-3" />
+                        <span>{transaction.culto_evento}</span>
+                      </div>
                     )}
                   </div>
+
+                  {transaction.type === 'saida' && (
+                    <div className="text-sm text-gray-600 space-y-1">
+                      {transaction.voluntarios && (
+                        <div>• {transaction.voluntarios} voluntário(s) - R$ {(transaction.voluntarios * 30).toFixed(2)}</div>
+                      )}
+                      {transaction.valor_seguranca && (
+                        <div>• Segurança: R$ {transaction.valor_seguranca.toFixed(2)}</div>
+                      )}
+                      {transaction.outros_gastos && (
+                        <div>• Outros gastos: R$ {transaction.outros_gastos.toFixed(2)}</div>
+                      )}
+                    </div>
+                  )}
+
+                  {transaction.valor_moeda_estrangeira && transaction.moeda_estrangeira && (
+                    <div className="text-sm text-blue-600">
+                      Moeda estrangeira: {transaction.moeda_estrangeira} {transaction.valor_moeda_estrangeira.toFixed(2)}
+                    </div>
+                  )}
+
+                  {transaction.observacao && (
+                    <div className="flex items-start gap-1 text-sm text-gray-600 bg-gray-100 p-2 rounded">
+                      <MessageSquare className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                      <span>{transaction.observacao}</span>
+                    </div>
+                  )}
                 </div>
               </div>
               
-              <div className={`text-lg font-bold ${
+              <div className={`text-lg font-bold ml-4 ${
                 transaction.type === 'entrada' ? 'text-green-600' : 'text-red-600'
               }`}>
                 {transaction.type === 'entrada' ? '+' : '-'}R$ {transaction.amount.toFixed(2)}

@@ -9,16 +9,101 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          name: string
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          amount: number
+          category: Database["public"]["Enums"]["categoria_entrada"] | null
+          created_at: string
+          culto_evento: string | null
+          date_transaction: string
+          description: string
+          id: string
+          moeda_estrangeira: string | null
+          observacao: string | null
+          outros_gastos: number | null
+          type: Database["public"]["Enums"]["tipo_transacao"]
+          updated_at: string
+          user_id: string
+          valor_moeda_estrangeira: number | null
+          valor_seguranca: number | null
+          voluntarios: number | null
+        }
+        Insert: {
+          amount: number
+          category?: Database["public"]["Enums"]["categoria_entrada"] | null
+          created_at?: string
+          culto_evento?: string | null
+          date_transaction?: string
+          description: string
+          id?: string
+          moeda_estrangeira?: string | null
+          observacao?: string | null
+          outros_gastos?: number | null
+          type: Database["public"]["Enums"]["tipo_transacao"]
+          updated_at?: string
+          user_id: string
+          valor_moeda_estrangeira?: number | null
+          valor_seguranca?: number | null
+          voluntarios?: number | null
+        }
+        Update: {
+          amount?: number
+          category?: Database["public"]["Enums"]["categoria_entrada"] | null
+          created_at?: string
+          culto_evento?: string | null
+          date_transaction?: string
+          description?: string
+          id?: string
+          moeda_estrangeira?: string | null
+          observacao?: string | null
+          outros_gastos?: number | null
+          type?: Database["public"]["Enums"]["tipo_transacao"]
+          updated_at?: string
+          user_id?: string
+          valor_moeda_estrangeira?: number | null
+          valor_seguranca?: number | null
+          voluntarios?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_master: {
+        Args: { user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      categoria_entrada: "dinheiro" | "pix" | "cartao_credito" | "cartao_debito"
+      tipo_transacao: "entrada" | "saida"
+      user_role: "master" | "tesoureiro"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -133,6 +218,10 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      categoria_entrada: ["dinheiro", "pix", "cartao_credito", "cartao_debito"],
+      tipo_transacao: ["entrada", "saida"],
+      user_role: ["master", "tesoureiro"],
+    },
   },
 } as const
