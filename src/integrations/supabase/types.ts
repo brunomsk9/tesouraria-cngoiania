@@ -20,8 +20,7 @@ export type Database = {
           status: string
           updated_at: string
           validated_at: string | null
-          validated_by_1: string | null
-          validated_by_2: string | null
+          validated_by: string | null
         }
         Insert: {
           church_id: string
@@ -33,8 +32,7 @@ export type Database = {
           status?: string
           updated_at?: string
           validated_at?: string | null
-          validated_by_1?: string | null
-          validated_by_2?: string | null
+          validated_by?: string | null
         }
         Update: {
           church_id?: string
@@ -46,8 +44,7 @@ export type Database = {
           status?: string
           updated_at?: string
           validated_at?: string | null
-          validated_by_1?: string | null
-          validated_by_2?: string | null
+          validated_by?: string | null
         }
         Relationships: [
           {
@@ -229,6 +226,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_validate_session: {
+        Args: { session_id: string; user_id: string }
+        Returns: boolean
+      }
       is_master: {
         Args: { user_id: string }
         Returns: boolean

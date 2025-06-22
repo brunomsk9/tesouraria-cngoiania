@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MoneyInput } from '@/components/MoneyInput';
 import { PixManager } from '@/components/PixManager';
+import { SessionValidation } from '@/components/SessionValidation';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -19,8 +21,7 @@ interface CashSession {
   status: string;
   church_id: string;
   created_by: string;
-  validated_by_1: string | null;
-  validated_by_2: string | null;
+  validated_by: string | null;
   validated_at: string | null;
 }
 
@@ -209,6 +210,14 @@ export const CashFlowManager = () => {
     toast.success('Saídas salvas com sucesso!');
   };
 
+  const handleSessionValidated = () => {
+    loadSessions();
+    if (currentSession) {
+      // Atualizar o status da sessão atual
+      setCurrentSession(prev => prev ? { ...prev, status: 'validado' } : null);
+    }
+  };
+
   const totalPix = pixEntries.reduce((sum, entry) => sum + entry.amount, 0);
   const totalEntradas = entradas.dinheiro + entradas.cartao_debito + entradas.cartao_credito + totalPix;
   const totalSaidas = (saidas.voluntarios * saidas.valor_por_voluntario) + saidas.valor_seguranca + saidas.outros_gastos;
@@ -349,7 +358,7 @@ export const CashFlowManager = () => {
                     </span>
                   </div>
 
-                  <Button onClick={() => {}} className="w-full bg-green-600 hover:bg-green-700 h-12 text-lg">
+                  <Button onClick={saveEntradas} className="w-full bg-green-600 hover:bg-green-700 h-12 text-lg">
                     Salvar Entradas
                   </Button>
                 </CardContent>
@@ -428,7 +437,7 @@ export const CashFlowManager = () => {
                     </CardContent>
                   </Card>
 
-                  <Button onClick={() => {}} className="w-full bg-red-600 hover:bg-red-700 h-12 text-lg">
+                  <Button onClick={saveSaidas} className="w-full bg-red-600 hover:bg-red-700 h-12 text-lg">
                     Salvar Saídas
                   </Button>
                 </CardContent>
@@ -436,26 +445,10 @@ export const CashFlowManager = () => {
             </TabsContent>
 
             <TabsContent value="validacao">
-              <Card className="border-0 shadow-lg">
-                <CardHeader className="bg-yellow-50 border-b">
-                  <CardTitle className="flex items-center gap-2 text-yellow-800">
-                    <Shield className="h-5 w-5" />
-                    Validação dos Tesoureiros
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-8">
-                  <div className="text-center">
-                    <Shield className="h-16 w-16 mx-auto mb-4 text-yellow-500" />
-                    <h3 className="text-xl font-semibold mb-3 text-gray-800">Validação Pendente</h3>
-                    <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                      Esta sessão precisa ser validada por dois tesoureiros para ser finalizada.
-                    </p>
-                    <Button variant="outline" disabled className="bg-gray-100">
-                      Aguardando Implementação
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+              <SessionValidation 
+                session={currentSession}
+                onSessionValidated={handleSessionValidated}
+              />
             </TabsContent>
 
             <TabsContent value="resumo">
