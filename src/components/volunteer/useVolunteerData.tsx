@@ -117,78 +117,90 @@ export const useVolunteerData = () => {
       throw new Error('Selecione pelo menos uma igreja');
     }
 
-    let volunteerId: string;
+    try {
+      let volunteerId: string;
 
-    if (editingVolunteer) {
-      console.log('Atualizando voluntário existente...', editingVolunteer.id);
-      // Atualizar voluntário existente
-      const { error: updateError } = await supabase
-        .from('volunteers')
-        .update({
-          name: formData.name,
-          phone: formData.phone || null,
-          pix_key: formData.pix_key || null,
-          area_atuacao: formData.area_atuacao || null,
-        })
-        .eq('id', editingVolunteer.id);
+      if (editingVolunteer) {
+        console.log('Atualizando voluntário existente...', editingVolunteer.id);
+        // Atualizar voluntário existente
+        const { error: updateError } = await supabase
+          .from('volunteers')
+          .update({
+            name: formData.name.trim(),
+            phone: formData.phone.trim() || null,
+            pix_key: formData.pix_key.trim() || null,
+            area_atuacao: formData.area_atuacao.trim() || null,
+          })
+          .eq('id', editingVolunteer.id);
 
-      if (updateError) {
-        console.error('Erro ao atualizar voluntário:', updateError);
-        throw updateError;
+        if (updateError) {
+          console.error('Erro ao atualizar voluntário:', updateError);
+          toast.error('Erro ao atualizar voluntário: ' + updateError.message);
+          throw updateError;
+        }
+        volunteerId = editingVolunteer.id;
+
+        // Remover associações antigas
+        await supabase
+          .from('volunteer_churches')
+          .delete()
+          .eq('volunteer_id', volunteerId);
+      } else {
+        console.log('Criando novo voluntário...');
+        // Criar novo voluntário com dados limpos
+        const volunteerInsertData = {
+          name: formData.name.trim(),
+          phone: formData.phone.trim() || null,
+          pix_key: formData.pix_key.trim() || null,
+          area_atuacao: formData.area_atuacao.trim() || null,
+        };
+        
+        console.log('Dados para inserção:', volunteerInsertData);
+        
+        const { data: volunteerData, error: volunteerError } = await supabase
+          .from('volunteers')
+          .insert(volunteerInsertData)
+          .select()
+          .single();
+
+        if (volunteerError) {
+          console.error('Erro ao criar voluntário:', volunteerError);
+          toast.error('Erro ao criar voluntário: ' + volunteerError.message);
+          throw volunteerError;
+        }
+        
+        console.log('Voluntário criado:', volunteerData);
+        volunteerId = volunteerData.id;
       }
-      volunteerId = editingVolunteer.id;
 
-      // Remover associações antigas
-      await supabase
+      console.log('Criando associações com igrejas...', formData.church_ids);
+      // Criar associações com igrejas
+      const churchAssociations = formData.church_ids.map(churchId => ({
+        volunteer_id: volunteerId,
+        church_id: churchId
+      }));
+
+      const { error: associationError } = await supabase
         .from('volunteer_churches')
-        .delete()
-        .eq('volunteer_id', volunteerId);
-    } else {
-      console.log('Criando novo voluntário...');
-      // Criar novo voluntário
-      const volunteerInsertData = {
-        name: formData.name,
-        phone: formData.phone || null,
-        pix_key: formData.pix_key || null,
-        area_atuacao: formData.area_atuacao || null,
-      };
-      
-      console.log('Dados para inserção:', volunteerInsertData);
-      
-      const { data: volunteerData, error: volunteerError } = await supabase
-        .from('volunteers')
-        .insert(volunteerInsertData)
-        .select()
-        .single();
+        .insert(churchAssociations);
 
-      if (volunteerError) {
-        console.error('Erro ao criar voluntário:', volunteerError);
-        throw volunteerError;
+      if (associationError) {
+        console.error('Erro ao criar associações:', associationError);
+        toast.error('Erro ao criar associações: ' + associationError.message);
+        throw associationError;
       }
-      
-      console.log('Voluntário criado:', volunteerData);
-      volunteerId = volunteerData.id;
+
+      console.log('Voluntário salvo com sucesso!');
+      toast.success(editingVolunteer ? 'Voluntário atualizado com sucesso!' : 'Voluntário criado com sucesso!');
+      await loadVolunteers();
+    } catch (error) {
+      console.error('Erro geral ao salvar voluntário:', error);
+      // Não fazer toast adicional se já foi feito acima
+      if (!(error as any)?.message?.includes('row violates row-level security')) {
+        toast.error('Erro inesperado ao salvar voluntário');
+      }
+      throw error;
     }
-
-    console.log('Criando associações com igrejas...', formData.church_ids);
-    // Criar associações com igrejas
-    const churchAssociations = formData.church_ids.map(churchId => ({
-      volunteer_id: volunteerId,
-      church_id: churchId
-    }));
-
-    const { error: associationError } = await supabase
-      .from('volunteer_churches')
-      .insert(churchAssociations);
-
-    if (associationError) {
-      console.error('Erro ao criar associações:', associationError);
-      throw associationError;
-    }
-
-    console.log('Voluntário salvo com sucesso!');
-    toast.success(editingVolunteer ? 'Voluntário atualizado com sucesso!' : 'Voluntário criado com sucesso!');
-    await loadVolunteers();
   };
 
   const deleteVolunteer = async (volunteerId: string) => {

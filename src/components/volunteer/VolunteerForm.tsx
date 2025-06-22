@@ -42,21 +42,44 @@ export const VolunteerForm = ({ volunteer, churches, onSubmit, onCancel }: Volun
     church_ids: volunteer?.churches.map(c => c.id) || []
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<string[]>([]);
+
+  const validateForm = () => {
+    const newErrors: string[] = [];
+    
+    if (!formData.name.trim()) {
+      newErrors.push('Nome é obrigatório');
+    }
+    
+    if (formData.church_ids.length === 0) {
+      newErrors.push('Selecione pelo menos uma igreja');
+    }
+    
+    setErrors(newErrors);
+    return newErrors.length === 0;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name.trim()) {
-      return;
-    }
-
-    if (formData.church_ids.length === 0) {
+    if (!validateForm()) {
       return;
     }
 
     setIsSubmitting(true);
+    setErrors([]);
+    
     try {
-      await onSubmit(formData);
+      await onSubmit({
+        name: formData.name.trim(),
+        phone: formData.phone.trim(),
+        pix_key: formData.pix_key.trim(),
+        area_atuacao: formData.area_atuacao.trim(),
+        church_ids: formData.church_ids
+      });
+    } catch (error) {
+      console.error('Erro no formulário:', error);
+      setErrors(['Erro ao salvar voluntário. Tente novamente.']);
     } finally {
       setIsSubmitting(false);
     }
@@ -69,6 +92,11 @@ export const VolunteerForm = ({ volunteer, churches, onSubmit, onCancel }: Volun
         ? prev.church_ids.filter(id => id !== churchId)
         : [...prev.church_ids, churchId]
     }));
+    
+    // Limpar erros quando o usuário fizer alterações
+    if (errors.length > 0) {
+      setErrors([]);
+    }
   };
 
   return (
@@ -84,6 +112,16 @@ export const VolunteerForm = ({ volunteer, churches, onSubmit, onCancel }: Volun
         </div>
       </CardHeader>
       <CardContent>
+        {errors.length > 0 && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+            <ul className="list-disc list-inside text-sm text-red-600">
+              {errors.map((error, index) => (
+                <li key={index}>{error}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+        
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -91,14 +129,14 @@ export const VolunteerForm = ({ volunteer, churches, onSubmit, onCancel }: Volun
               <Input
                 id="name"
                 value={formData.name}
-                onChange={(e) => setFormData({...formData, name: e.target.value})}
+                onChange={(e) => {
+                  setFormData({...formData, name: e.target.value});
+                  if (errors.length > 0) setErrors([]);
+                }}
                 placeholder="Nome completo"
                 required
-                className={!formData.name.trim() ? 'border-red-500' : ''}
+                className={!formData.name.trim() && errors.length > 0 ? 'border-red-500' : ''}
               />
-              {!formData.name.trim() && (
-                <p className="text-sm text-red-500 mt-1">Nome é obrigatório</p>
-              )}
             </div>
             <div>
               <Label htmlFor="phone">Telefone</Label>
@@ -148,9 +186,6 @@ export const VolunteerForm = ({ volunteer, churches, onSubmit, onCancel }: Volun
                 </Button>
               ))}
             </div>
-            {formData.church_ids.length === 0 && (
-              <p className="text-sm text-red-500 mt-1">Selecione pelo menos uma igreja</p>
-            )}
           </div>
 
           <div className="flex justify-end space-x-2">
