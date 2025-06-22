@@ -94,18 +94,10 @@ const Index = () => {
         );
       
       case 'relatorios':
-        return (
-          <div className="p-4 lg:p-6">
-            <Reports />
-          </div>
-        );
+        return <Reports />;
       
       case 'livro-caixa':
-        return (
-          <div className="p-4 lg:p-6">
-            <CashBookReport />
-          </div>
-        );
+        return <CashBookReport />;
       
       default:
         return (
