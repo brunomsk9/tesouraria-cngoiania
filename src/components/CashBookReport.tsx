@@ -10,14 +10,11 @@ export const CashBookReport = () => {
   const { profile } = useAuth();
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [selectedChurch, setSelectedChurch] = useState('');
   
   const {
     entries,
     loading,
     initialBalance,
-    churches,
-    loadChurches,
     generateReport
   } = useCashBookData();
 
@@ -26,46 +23,30 @@ export const CashBookReport = () => {
     initialBalance,
     startDate,
     endDate,
-    selectedChurch,
-    churches
+    selectedChurch: profile?.church_id || '',
+    churches: []
   });
 
-  useEffect(() => {
-    console.log('CashBookReport montado. Profile:', profile);
-    
-    if (profile?.role === 'master' || profile?.role === 'supervisor') {
-      console.log('Carregando igrejas...');
-      loadChurches();
-    } else if (profile?.church_id) {
-      console.log('Definindo igreja do usuário:', profile.church_id);
-      setSelectedChurch(profile.church_id);
-    }
-  }, [profile, loadChurches]);
-
   const handleGenerateReport = () => {
-    console.log('handleGenerateReport chamado com:', { startDate, endDate, selectedChurch });
+    console.log('handleGenerateReport chamado com:', { startDate, endDate, churchId: profile?.church_id });
     
     if (!startDate || !endDate) {
       console.log('Datas não preenchidas');
       return;
     }
     
-    if (!selectedChurch) {
-      console.log('Igreja não selecionada');
+    if (!profile?.church_id) {
+      console.log('Igreja do usuário não encontrada');
       return;
     }
     
-    generateReport(startDate, endDate, selectedChurch);
+    generateReport(startDate, endDate, profile.church_id);
   };
-
-  const showChurchSelector = profile?.role === 'master' || profile?.role === 'supervisor';
 
   console.log('Renderizando CashBookReport:', { 
     startDate, 
     endDate, 
-    selectedChurch, 
-    showChurchSelector,
-    churchesCount: churches.length,
+    churchId: profile?.church_id,
     entriesCount: entries.length 
   });
 
@@ -74,13 +55,9 @@ export const CashBookReport = () => {
       <CashBookFilters
         startDate={startDate}
         endDate={endDate}
-        selectedChurch={selectedChurch}
-        churches={churches}
         loading={loading}
-        showChurchSelector={showChurchSelector}
         onStartDateChange={setStartDate}
         onEndDateChange={setEndDate}
-        onChurchChange={setSelectedChurch}
         onGenerateReport={handleGenerateReport}
       />
 

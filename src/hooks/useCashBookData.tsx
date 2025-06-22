@@ -13,42 +13,21 @@ interface CashBookEntry {
   category?: string;
 }
 
-interface Church {
-  id: string;
-  name: string;
-}
-
 export const useCashBookData = () => {
   const [entries, setEntries] = useState<CashBookEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [initialBalance, setInitialBalance] = useState(0);
-  const [churches, setChurches] = useState<Church[]>([]);
 
-  const loadChurches = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('churches')
-        .select('id, name')
-        .order('name');
-
-      if (error) throw error;
-      setChurches(data || []);
-    } catch (error) {
-      console.error('Erro ao carregar igrejas:', error);
-      toast.error('Erro ao carregar igrejas');
-    }
-  };
-
-  const generateReport = async (startDate: string, endDate: string, selectedChurch: string) => {
-    console.log('generateReport chamado com:', { startDate, endDate, selectedChurch });
+  const generateReport = async (startDate: string, endDate: string, churchId: string) => {
+    console.log('generateReport chamado com:', { startDate, endDate, churchId });
     
     if (!startDate || !endDate) {
       toast.error('Preencha as datas de início e fim');
       return;
     }
 
-    if (!selectedChurch) {
-      toast.error('Selecione uma igreja');
+    if (!churchId) {
+      toast.error('Igreja não identificada');
       return;
     }
 
@@ -69,7 +48,7 @@ export const useCashBookData = () => {
           cash_session_id,
           cash_sessions!inner(culto_evento, church_id)
         `)
-        .eq('cash_sessions.church_id', selectedChurch)
+        .eq('cash_sessions.church_id', churchId)
         .gte('date_transaction', startDate)
         .lte('date_transaction', endDate)
         .order('date_transaction', { ascending: true });
@@ -90,7 +69,7 @@ export const useCashBookData = () => {
           created_at,
           cash_sessions!inner(culto_evento, church_id, date_session)
         `)
-        .eq('cash_sessions.church_id', selectedChurch)
+        .eq('cash_sessions.church_id', churchId)
         .gte('cash_sessions.date_session', startDate)
         .lte('cash_sessions.date_session', endDate)
         .order('created_at', { ascending: true });
@@ -110,7 +89,7 @@ export const useCashBookData = () => {
           type,
           cash_sessions!inner(church_id)
         `)
-        .eq('cash_sessions.church_id', selectedChurch)
+        .eq('cash_sessions.church_id', churchId)
         .lt('date_transaction', startDate);
 
       const { data: prevPixEntries } = await supabase
@@ -119,7 +98,7 @@ export const useCashBookData = () => {
           amount,
           cash_sessions!inner(church_id, date_session)
         `)
-        .eq('cash_sessions.church_id', selectedChurch)
+        .eq('cash_sessions.church_id', churchId)
         .lt('cash_sessions.date_session', startDate);
 
       // Calcular saldo inicial
@@ -205,8 +184,6 @@ export const useCashBookData = () => {
     entries,
     loading,
     initialBalance,
-    churches,
-    loadChurches,
     generateReport
   };
 };
