@@ -5,9 +5,9 @@ import { Sidebar } from "@/components/Sidebar";
 import { Reports } from "@/components/Reports";
 import { CashBookReport } from "@/components/CashBookReport";
 import { ValidationAlert } from "@/components/ValidationAlert";
+import { DashboardCards } from "@/components/DashboardCards";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState } from "react";
-import { BarChart3, TrendingUp, Clock, CheckCircle } from "lucide-react";
 
 const Index = () => {
   const { profile } = useAuth();
@@ -30,55 +30,7 @@ const Index = () => {
         return (
           <div className="p-4 lg:p-6 space-y-6">
             <ValidationAlert />
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-blue-100">Sessões Ativas</p>
-                      <p className="text-2xl font-bold">3</p>
-                    </div>
-                    <Clock className="h-8 w-8 text-blue-200" />
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-green-100">Total Arrecadado</p>
-                      <p className="text-2xl font-bold">R$ 12.450</p>
-                    </div>
-                    <TrendingUp className="h-8 w-8 text-green-200" />
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-purple-100">Sessões Validadas</p>
-                      <p className="text-2xl font-bold">8</p>
-                    </div>
-                    <CheckCircle className="h-8 w-8 text-purple-200" />
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-orange-100">Relatórios</p>
-                      <p className="text-2xl font-bold">15</p>
-                    </div>
-                    <BarChart3 className="h-8 w-8 text-orange-200" />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+            <DashboardCards />
             
             <Card>
               <CardHeader>
@@ -94,10 +46,18 @@ const Index = () => {
         );
       
       case 'relatorios':
-        return <Reports />;
+        return (
+          <div className="p-4 lg:p-6">
+            <Reports />
+          </div>
+        );
       
       case 'livro-caixa':
-        return <CashBookReport />;
+        return (
+          <div className="p-4 lg:p-6">
+            <CashBookReport />
+          </div>
+        );
       
       default:
         return (

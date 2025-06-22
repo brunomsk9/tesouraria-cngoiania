@@ -9,6 +9,8 @@ import { useToast } from '@/hooks/use-toast';
 import { format, subDays, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { DateRangeModal } from './DateRangeModal';
+import { ReportSummaryCards } from './ReportSummaryCards';
+import { RecentTransactionsList } from './RecentTransactionsList';
 
 interface Transaction {
   id: string;
@@ -18,15 +20,6 @@ interface Transaction {
   category: string;
   date_transaction: string;
   created_at: string;
-}
-
-interface CashSession {
-  id: string;
-  culto_evento: string;
-  date_session: string;
-  status: string;
-  total_entries: number;
-  total_exits: number;
 }
 
 interface Church {
@@ -39,17 +32,20 @@ export const Reports = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [sessions, setSessions] = useState<CashSession[]>([]);
   const [churches, setChurches] = useState<Church[]>([]);
   const [selectedChurch, setSelectedChurch] = useState<string>('');
   const [dateRange, setDateRange] = useState('30days');
   const [customDateRange, setCustomDateRange] = useState<{ start?: Date; end?: Date }>({});
-  const [reportType, setReportType] = useState('summary');
 
   useEffect(() => {
     if (profile?.role === 'supervisor') {
       loadChurches();
+    } else if (profile?.church_id) {
+      setSelectedChurch(profile.church_id);
     }
+  }, [profile]);
+
+  useEffect(() => {
     loadData();
   }, [dateRange, selectedChurch, profile?.church_id, customDateRange]);
 
@@ -100,7 +96,6 @@ export const Reports = () => {
     try {
       const { start, end } = getDateRange();
       
-      // Load transactions
       const { data: transactionsData, error: transError } = await supabase
         .from('transactions')
         .select(`
@@ -114,38 +109,6 @@ export const Reports = () => {
 
       if (transError) throw transError;
       setTransactions(transactionsData || []);
-
-      // Load cash sessions with totals
-      const { data: sessionsData, error: sessError } = await supabase
-        .from('cash_sessions')
-        .select(`
-          *,
-          transactions!inner(amount, type)
-        `)
-        .eq('church_id', churchId)
-        .gte('date_session', format(start, 'yyyy-MM-dd'))
-        .lte('date_session', format(end, 'yyyy-MM-dd'))
-        .order('date_session', { ascending: false });
-
-      if (sessError) throw sessError;
-      
-      const processedSessions = (sessionsData || []).map(session => {
-        const sessionTransactions = session.transactions || [];
-        const totalEntries = sessionTransactions
-          .filter((t: any) => t.type === 'entrada')
-          .reduce((sum: number, t: any) => sum + Number(t.amount), 0);
-        const totalExits = sessionTransactions
-          .filter((t: any) => t.type === 'saida')
-          .reduce((sum: number, t: any) => sum + Number(t.amount), 0);
-        
-        return {
-          ...session,
-          total_entries: totalEntries,
-          total_exits: totalExits
-        };
-      });
-
-      setSessions(processedSessions);
     } catch (error: any) {
       console.error('Erro ao carregar dados:', error);
       toast({
@@ -212,56 +175,52 @@ export const Reports = () => {
 
   if (!churchId && profile?.role !== 'supervisor') {
     return (
-      <div className="p-4 lg:p-6">
-        <Card className="border-orange-200 bg-orange-50">
-          <CardHeader>
-            <CardTitle className="text-orange-800">Igreja não configurada</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-orange-700">
-              Você precisa estar vinculado a uma igreja para visualizar relatórios.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      <Card className="border-orange-200 bg-orange-50">
+        <CardHeader>
+          <CardTitle className="text-orange-800">Igreja não configurada</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-orange-700">
+            Você precisa estar vinculado a uma igreja para visualizar relatórios.
+          </p>
+        </CardContent>
+      </Card>
     );
   }
 
   if (profile?.role === 'supervisor' && !selectedChurch) {
     return (
-      <div className="p-4 lg:p-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Building2 className="h-5 w-5 mr-2" />
-              Selecione uma Igreja
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-gray-600 mb-4">
-              Selecione uma igreja para visualizar os relatórios financeiros.
-            </p>
-            <Select value={selectedChurch} onValueChange={setSelectedChurch}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Selecione uma igreja" />
-              </SelectTrigger>
-              <SelectContent>
-                {churches.map((church) => (
-                  <SelectItem key={church.id} value={church.id}>
-                    {church.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </CardContent>
-        </Card>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Building2 className="h-5 w-5 mr-2" />
+            Selecione uma Igreja
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-gray-600 mb-4">
+            Selecione uma igreja para visualizar os relatórios financeiros.
+          </p>
+          <Select value={selectedChurch} onValueChange={setSelectedChurch}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Selecione uma igreja" />
+            </SelectTrigger>
+            <SelectContent>
+              {churches.map((church) => (
+                <SelectItem key={church.id} value={church.id}>
+                  {church.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="p-4 lg:p-6 space-y-6">
-      {/* Header - Melhorado para responsividade */}
+    <div className="space-y-6">
+      {/* Header */}
       <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4">
         <div className="flex-1">
           <h1 className="text-2xl font-bold text-gray-900">Relatórios</h1>
@@ -273,7 +232,7 @@ export const Reports = () => {
           )}
         </div>
         
-        {/* Controls - Melhorado para mobile */}
+        {/* Controls */}
         <div className="flex flex-col sm:flex-row gap-2 lg:flex-wrap">
           {profile?.role === 'supervisor' && (
             <Select value={selectedChurch} onValueChange={setSelectedChurch}>
@@ -324,99 +283,8 @@ export const Reports = () => {
         </div>
       </div>
 
-      {/* Summary Cards - Melhorado para responsividade */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="min-w-0">
-                <p className="text-green-100 text-sm">Total Entradas</p>
-                <p className="text-lg lg:text-2xl font-bold truncate">
-                  R$ {summary.totalEntries.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                </p>
-              </div>
-              <TrendingUp className="h-6 w-6 lg:h-8 lg:w-8 text-green-200 flex-shrink-0" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-gradient-to-r from-red-500 to-red-600 text-white">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="min-w-0">
-                <p className="text-red-100 text-sm">Total Saídas</p>
-                <p className="text-lg lg:text-2xl font-bold truncate">
-                  R$ {summary.totalExits.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                </p>
-              </div>
-              <DollarSign className="h-6 w-6 lg:h-8 lg:w-8 text-red-200 flex-shrink-0" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className={`bg-gradient-to-r ${summary.balance >= 0 ? 'from-blue-500 to-blue-600' : 'from-orange-500 to-orange-600'} text-white`}>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="min-w-0">
-                <p className={summary.balance >= 0 ? 'text-blue-100' : 'text-orange-100'}>Saldo</p>
-                <p className="text-lg lg:text-2xl font-bold truncate">
-                  R$ {summary.balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                </p>
-              </div>
-              <Calendar className={`h-6 w-6 lg:h-8 lg:w-8 ${summary.balance >= 0 ? 'text-blue-200' : 'text-orange-200'} flex-shrink-0`} />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="min-w-0">
-                <p className="text-purple-100 text-sm">Transações</p>
-                <p className="text-lg lg:text-2xl font-bold">{summary.transactionCount}</p>
-              </div>
-              <FileText className="h-6 w-6 lg:h-8 lg:w-8 text-purple-200 flex-shrink-0" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Recent Transactions - Melhorado para mobile */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Transações Recentes</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="text-center py-4">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="text-gray-600 mt-2">Carregando transações...</p>
-            </div>
-          ) : transactions.length > 0 ? (
-            <div className="space-y-2">
-              {transactions.slice(0, 10).map((transaction) => (
-                <div key={transaction.id} className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-3 bg-gray-50 rounded-lg gap-2">
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">{transaction.description}</p>
-                    <p className="text-sm text-gray-600">
-                      {format(new Date(transaction.date_transaction), 'dd/MM/yyyy', { locale: ptBR })}
-                      {transaction.category && ` • ${transaction.category}`}
-                    </p>
-                  </div>
-                  <div className={`text-right sm:text-right ${transaction.type === 'entrada' ? 'text-green-600' : 'text-red-600'} flex-shrink-0`}>
-                    <p className="font-bold">
-                      {transaction.type === 'entrada' ? '+' : '-'} R$ {Number(transaction.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                    </p>
-                    <p className="text-xs capitalize">{transaction.type}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-gray-600 text-center py-8">Nenhuma transação encontrada no período selecionado.</p>
-          )}
-        </CardContent>
-      </Card>
+      <ReportSummaryCards summary={summary} />
+      <RecentTransactionsList transactions={transactions} loading={loading} />
     </div>
   );
 };
