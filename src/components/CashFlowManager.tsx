@@ -119,50 +119,77 @@ export const CashFlowManager = () => {
   const saveEntradas = async () => {
     if (!currentSession) return;
 
-    const transactions = [
-      {
-        cash_session_id: currentSession.id,
-        type: 'entrada' as const,
-        category: 'dinheiro' as const,
-        description: 'Entrada em Dinheiro',
-        amount: entradas.dinheiro,
-        date_transaction: currentSession.date_session,
-        culto_evento: currentSession.culto_evento,
-        user_id: profile?.id
-      },
-      {
-        cash_session_id: currentSession.id,
-        type: 'entrada' as const,
-        category: 'cartao_debito' as const,
-        description: 'Entrada Cartão Débito',
-        amount: entradas.cartao_debito,
-        date_transaction: currentSession.date_session,
-        culto_evento: currentSession.culto_evento,
-        user_id: profile?.id
-      },
-      {
-        cash_session_id: currentSession.id,
-        type: 'entrada' as const,
-        category: 'cartao_credito' as const,
-        description: 'Entrada Cartão Crédito',
-        amount: entradas.cartao_credito,
-        date_transaction: currentSession.date_session,
-        culto_evento: currentSession.culto_evento,
-        user_id: profile?.id
+    try {
+      // Salvar transações tradicionais (dinheiro, cartão débito, cartão crédito)
+      const transactions = [
+        {
+          cash_session_id: currentSession.id,
+          type: 'entrada' as const,
+          category: 'dinheiro' as const,
+          description: 'Entrada em Dinheiro',
+          amount: entradas.dinheiro,
+          date_transaction: currentSession.date_session,
+          culto_evento: currentSession.culto_evento,
+          user_id: profile?.id
+        },
+        {
+          cash_session_id: currentSession.id,
+          type: 'entrada' as const,
+          category: 'cartao_debito' as const,
+          description: 'Entrada Cartão Débito',
+          amount: entradas.cartao_debito,
+          date_transaction: currentSession.date_session,
+          culto_evento: currentSession.culto_evento,
+          user_id: profile?.id
+        },
+        {
+          cash_session_id: currentSession.id,
+          type: 'entrada' as const,
+          category: 'cartao_credito' as const,
+          description: 'Entrada Cartão Crédito',
+          amount: entradas.cartao_credito,
+          date_transaction: currentSession.date_session,
+          culto_evento: currentSession.culto_evento,
+          user_id: profile?.id
+        }
+      ].filter(t => t.amount > 0);
+
+      if (transactions.length > 0) {
+        const { error: transError } = await supabase
+          .from('transactions')
+          .insert(transactions);
+
+        if (transError) {
+          console.error('Erro ao salvar transações:', transError);
+          toast.error('Erro ao salvar transações tradicionais');
+          return;
+        }
       }
-    ].filter(t => t.amount > 0);
 
-    const { error } = await supabase
-      .from('transactions')
-      .insert(transactions);
+      // Salvar entradas PIX na tabela pix_entries
+      if (pixEntries.length > 0) {
+        const pixData = pixEntries.map(pix => ({
+          cash_session_id: currentSession.id,
+          amount: pix.amount,
+          description: pix.description || 'Entrada PIX'
+        }));
 
-    if (error) {
-      console.error('Erro ao salvar entradas:', error);
+        const { error: pixError } = await supabase
+          .from('pix_entries')
+          .insert(pixData);
+
+        if (pixError) {
+          console.error('Erro ao salvar entradas PIX:', pixError);
+          toast.error('Erro ao salvar entradas PIX');
+          return;
+        }
+      }
+
+      toast.success('Entradas salvas com sucesso!');
+    } catch (error) {
+      console.error('Erro geral ao salvar entradas:', error);
       toast.error('Erro ao salvar entradas');
-      return;
     }
-
-    toast.success('Entradas salvas com sucesso!');
   };
 
   const saveSaidas = async () => {
