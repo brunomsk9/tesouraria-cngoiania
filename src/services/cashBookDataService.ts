@@ -59,8 +59,7 @@ export const fetchPixEntries = async (churchId: string, startDate: string, endDa
     `)
     .eq('cash_sessions.church_id', churchId)
     .gte('cash_sessions.date_session', startDate)
-    .lte('cash_sessions.date_session', endDate)
-    .order('cash_sessions.date_session', { ascending: true });
+    .lte('cash_sessions.date_session', endDate);
 
   if (pixError) throw pixError;
   return pixEntries as PixEntryData[] || [];
