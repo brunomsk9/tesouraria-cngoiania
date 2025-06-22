@@ -218,6 +218,20 @@ export const CashFlowManager = () => {
     }
   };
 
+  const selectSession = (session: CashSession) => {
+    setCurrentSession(session);
+    // Reset form data when selecting a different session
+    setEntradas({ dinheiro: 0, cartao_debito: 0, cartao_credito: 0 });
+    setPixEntries([]);
+    setSaidas({
+      voluntarios: 0,
+      valor_por_voluntario: 30,
+      valor_seguranca: 0,
+      outros_gastos: 0,
+      outros_descricao: ''
+    });
+  };
+
   const totalPix = pixEntries.reduce((sum, entry) => sum + entry.amount, 0);
   const totalEntradas = entradas.dinheiro + entradas.cartao_debito + entradas.cartao_credito + totalPix;
   const totalSaidas = (saidas.voluntarios * saidas.valor_por_voluntario) + saidas.valor_seguranca + saidas.outros_gastos;
@@ -286,8 +300,16 @@ export const CashFlowManager = () => {
         <div className="space-y-6">
           <Card className="bg-gradient-to-r from-blue-600 to-blue-700 text-white border-0 shadow-lg">
             <CardHeader>
-              <CardTitle className="text-xl">
-                Sessão Ativa: {currentSession.culto_evento}
+              <CardTitle className="text-xl flex items-center justify-between">
+                <span>Sessão Ativa: {currentSession.culto_evento}</span>
+                <Button 
+                  onClick={() => setCurrentSession(null)} 
+                  variant="outline" 
+                  size="sm"
+                  className="text-blue-600 border-white hover:bg-white"
+                >
+                  Nova Sessão
+                </Button>
               </CardTitle>
               <p className="text-blue-100">
                 Data: {new Date(currentSession.date_session).toLocaleDateString('pt-BR')} | 
@@ -540,7 +562,8 @@ export const CashFlowManager = () => {
           <CardContent>
             <div className="space-y-3">
               {sessions.slice(0, 5).map((session) => (
-                <Card key={session.id} className="bg-gray-50 border-gray-200 hover:shadow-md transition-shadow">
+                <Card key={session.id} className="bg-gray-50 border-gray-200 hover:shadow-md transition-shadow cursor-pointer"
+                      onClick={() => selectSession(session)}>
                   <CardContent className="p-4">
                     <div className="flex justify-between items-center">
                       <div>
