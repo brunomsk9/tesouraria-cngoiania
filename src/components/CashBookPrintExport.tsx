@@ -154,13 +154,22 @@ export const useCashBookPrintExport = ({
             .saida { color: #dc2626; }
             .balance { font-weight: bold; }
             .summary { margin-top: 20px; padding: 15px; background-color: #f9f9f9; }
-            .footer-info { 
-              margin-top: 30px; 
+            .footer-signatures { 
+              margin-top: 50px; 
               padding-top: 20px;
               border-top: 1px solid #ddd;
               display: flex;
               justify-content: space-between;
-              align-items: center;
+              align-items: flex-end;
+            }
+            .signature-box {
+              text-align: center;
+              min-width: 200px;
+            }
+            .signature-line {
+              border-bottom: 1px solid #000;
+              margin-bottom: 10px;
+              height: 40px;
             }
             @media print {
               body { margin: 0; }
@@ -239,15 +248,18 @@ export const useCashBookPrintExport = ({
             <strong>Saldo Final: R$ ${entries.length > 0 ? entries[entries.length - 1].balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : initialBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
           </div>
           
-          <div class="footer-info">
-            <div>
-              Relatório gerado em ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
-            </div>
-            <div style="text-align: right;">
-              <div style="margin-bottom: 40px; border-bottom: 1px solid #000; width: 200px;">
-                &nbsp;
-              </div>
+          <div style="text-align: center; margin: 30px 0; color: #666;">
+            Relatório gerado em ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
+          </div>
+          
+          <div class="footer-signatures">
+            <div class="signature-box">
+              <div class="signature-line"></div>
               <small>Assinatura do Tesoureiro</small>
+            </div>
+            <div class="signature-box">
+              <div class="signature-line"></div>
+              <small>Assinatura do Responsável</small>
             </div>
           </div>
         </body>
