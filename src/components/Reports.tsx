@@ -1,14 +1,14 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { FileText, Calendar, DollarSign, Download, TrendingUp, Building2 } from 'lucide-react';
+import { FileText, Calendar, DollarSign, Download, TrendingUp, Building2, CalendarIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format, subDays, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { DateRangeModal } from './DateRangeModal';
 
 interface Transaction {
   id: string;
@@ -43,6 +43,7 @@ export const Reports = () => {
   const [churches, setChurches] = useState<Church[]>([]);
   const [selectedChurch, setSelectedChurch] = useState<string>('');
   const [dateRange, setDateRange] = useState('30days');
+  const [customDateRange, setCustomDateRange] = useState<{ start?: Date; end?: Date }>({});
   const [reportType, setReportType] = useState('summary');
 
   useEffect(() => {
@@ -50,7 +51,7 @@ export const Reports = () => {
       loadChurches();
     }
     loadData();
-  }, [dateRange, selectedChurch, profile?.church_id]);
+  }, [dateRange, selectedChurch, profile?.church_id, customDateRange]);
 
   const loadChurches = async () => {
     try {
@@ -67,6 +68,10 @@ export const Reports = () => {
   };
 
   const getDateRange = () => {
+    if (customDateRange.start && customDateRange.end) {
+      return { start: customDateRange.start, end: customDateRange.end };
+    }
+    
     const now = new Date();
     switch (dateRange) {
       case '7days':
@@ -193,12 +198,21 @@ export const Reports = () => {
     document.body.removeChild(link);
   };
 
+  const handleCustomDateRange = (startDate: Date, endDate: Date) => {
+    setCustomDateRange({ start: startDate, end: endDate });
+    setDateRange('custom');
+    toast({
+      title: "Período personalizado definido",
+      description: `${format(startDate, 'dd/MM/yyyy')} - ${format(endDate, 'dd/MM/yyyy')}`
+    });
+  };
+
   const summary = calculateSummary();
   const churchId = getChurchFilter();
 
   if (!churchId && profile?.role !== 'supervisor') {
     return (
-      <div className="p-6">
+      <div className="p-4 lg:p-6">
         <Card className="border-orange-200 bg-orange-50">
           <CardHeader>
             <CardTitle className="text-orange-800">Igreja não configurada</CardTitle>
@@ -215,7 +229,7 @@ export const Reports = () => {
 
   if (profile?.role === 'supervisor' && !selectedChurch) {
     return (
-      <div className="p-6">
+      <div className="p-4 lg:p-6">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
@@ -246,9 +260,10 @@ export const Reports = () => {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
+    <div className="p-4 lg:p-6 space-y-6">
+      {/* Header - Melhorado para responsividade */}
+      <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4">
+        <div className="flex-1">
           <h1 className="text-2xl font-bold text-gray-900">Relatórios</h1>
           <p className="text-gray-600">Análises e histórico financeiro</p>
           {profile?.role === 'supervisor' && selectedChurch && (
@@ -258,10 +273,11 @@ export const Reports = () => {
           )}
         </div>
         
-        <div className="flex space-x-2">
+        {/* Controls - Melhorado para mobile */}
+        <div className="flex flex-col sm:flex-row gap-2 lg:flex-wrap">
           {profile?.role === 'supervisor' && (
             <Select value={selectedChurch} onValueChange={setSelectedChurch}>
-              <SelectTrigger className="w-48">
+              <SelectTrigger className="w-full sm:w-48">
                 <SelectValue placeholder="Selecionar Igreja" />
               </SelectTrigger>
               <SelectContent>
@@ -274,36 +290,52 @@ export const Reports = () => {
             </Select>
           )}
           
-          <Select value={dateRange} onValueChange={setDateRange}>
-            <SelectTrigger className="w-40">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="7days">Últimos 7 dias</SelectItem>
-              <SelectItem value="30days">Últimos 30 dias</SelectItem>
-              <SelectItem value="thisMonth">Este mês</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex gap-2">
+            <Select value={dateRange} onValueChange={setDateRange}>
+              <SelectTrigger className="w-40">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="7days">Últimos 7 dias</SelectItem>
+                <SelectItem value="30days">Últimos 30 dias</SelectItem>
+                <SelectItem value="thisMonth">Este mês</SelectItem>
+                {customDateRange.start && customDateRange.end && (
+                  <SelectItem value="custom">
+                    {format(customDateRange.start, 'dd/MM')} - {format(customDateRange.end, 'dd/MM')}
+                  </SelectItem>
+                )}
+              </SelectContent>
+            </Select>
+
+            <DateRangeModal 
+              onDateRangeSelect={handleCustomDateRange}
+              trigger={
+                <Button variant="outline" size="sm">
+                  <CalendarIcon className="h-4 w-4" />
+                </Button>
+              }
+            />
+          </div>
           
-          <Button onClick={exportToCSV} variant="outline">
+          <Button onClick={exportToCSV} variant="outline" size="sm">
             <Download className="h-4 w-4 mr-2" />
-            Exportar CSV
+            <span className="hidden sm:inline">Exportar </span>CSV
           </Button>
         </div>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      {/* Summary Cards - Melhorado para responsividade */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-green-100">Total Entradas</p>
-                <p className="text-2xl font-bold">
+              <div className="min-w-0">
+                <p className="text-green-100 text-sm">Total Entradas</p>
+                <p className="text-lg lg:text-2xl font-bold truncate">
                   R$ {summary.totalEntries.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </p>
               </div>
-              <TrendingUp className="h-8 w-8 text-green-200" />
+              <TrendingUp className="h-6 w-6 lg:h-8 lg:w-8 text-green-200 flex-shrink-0" />
             </div>
           </CardContent>
         </Card>
@@ -311,13 +343,13 @@ export const Reports = () => {
         <Card className="bg-gradient-to-r from-red-500 to-red-600 text-white">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-red-100">Total Saídas</p>
-                <p className="text-2xl font-bold">
+              <div className="min-w-0">
+                <p className="text-red-100 text-sm">Total Saídas</p>
+                <p className="text-lg lg:text-2xl font-bold truncate">
                   R$ {summary.totalExits.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </p>
               </div>
-              <DollarSign className="h-8 w-8 text-red-200" />
+              <DollarSign className="h-6 w-6 lg:h-8 lg:w-8 text-red-200 flex-shrink-0" />
             </div>
           </CardContent>
         </Card>
@@ -325,13 +357,13 @@ export const Reports = () => {
         <Card className={`bg-gradient-to-r ${summary.balance >= 0 ? 'from-blue-500 to-blue-600' : 'from-orange-500 to-orange-600'} text-white`}>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
-              <div>
+              <div className="min-w-0">
                 <p className={summary.balance >= 0 ? 'text-blue-100' : 'text-orange-100'}>Saldo</p>
-                <p className="text-2xl font-bold">
+                <p className="text-lg lg:text-2xl font-bold truncate">
                   R$ {summary.balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </p>
               </div>
-              <Calendar className={`h-8 w-8 ${summary.balance >= 0 ? 'text-blue-200' : 'text-orange-200'}`} />
+              <Calendar className={`h-6 w-6 lg:h-8 lg:w-8 ${summary.balance >= 0 ? 'text-blue-200' : 'text-orange-200'} flex-shrink-0`} />
             </div>
           </CardContent>
         </Card>
@@ -339,17 +371,17 @@ export const Reports = () => {
         <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-purple-100">Transações</p>
-                <p className="text-2xl font-bold">{summary.transactionCount}</p>
+              <div className="min-w-0">
+                <p className="text-purple-100 text-sm">Transações</p>
+                <p className="text-lg lg:text-2xl font-bold">{summary.transactionCount}</p>
               </div>
-              <FileText className="h-8 w-8 text-purple-200" />
+              <FileText className="h-6 w-6 lg:h-8 lg:w-8 text-purple-200 flex-shrink-0" />
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Recent Transactions */}
+      {/* Recent Transactions - Melhorado para mobile */}
       <Card>
         <CardHeader>
           <CardTitle>Transações Recentes</CardTitle>
@@ -363,15 +395,15 @@ export const Reports = () => {
           ) : transactions.length > 0 ? (
             <div className="space-y-2">
               {transactions.slice(0, 10).map((transaction) => (
-                <div key={transaction.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                  <div>
-                    <p className="font-medium">{transaction.description}</p>
+                <div key={transaction.id} className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-3 bg-gray-50 rounded-lg gap-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate">{transaction.description}</p>
                     <p className="text-sm text-gray-600">
                       {format(new Date(transaction.date_transaction), 'dd/MM/yyyy', { locale: ptBR })}
                       {transaction.category && ` • ${transaction.category}`}
                     </p>
                   </div>
-                  <div className={`text-right ${transaction.type === 'entrada' ? 'text-green-600' : 'text-red-600'}`}>
+                  <div className={`text-right sm:text-right ${transaction.type === 'entrada' ? 'text-green-600' : 'text-red-600'} flex-shrink-0`}>
                     <p className="font-bold">
                       {transaction.type === 'entrada' ? '+' : '-'} R$ {Number(transaction.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                     </p>
