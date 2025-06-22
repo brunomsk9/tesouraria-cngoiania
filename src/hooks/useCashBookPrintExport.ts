@@ -13,7 +13,8 @@ export const useCashBookPrintExport = ({
 }: CashBookPrintExportProps) => {
   
   const exportToPrint = async () => {
-    const churchName = churches.find(c => c.id === selectedChurch)?.name || 'Igreja';
+    // Buscar o nome correto da igreja da lista de igrejas cadastradas
+    const churchName = churches.find(c => c.id === selectedChurch)?.name || 'Igreja não encontrada';
     const logoUrl = localStorage.getItem(`church-logo-${selectedChurch}`);
     
     // Buscar detalhes das sessões

@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -23,6 +23,25 @@ export const useCashBookData = () => {
   const [loading, setLoading] = useState(false);
   const [initialBalance, setInitialBalance] = useState(0);
   const [churches, setChurches] = useState<Church[]>([]);
+
+  // Carregar igrejas quando o hook é inicializado
+  useEffect(() => {
+    fetchChurches();
+  }, []);
+
+  const fetchChurches = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('churches')
+        .select('id, name')
+        .order('name');
+
+      if (error) throw error;
+      setChurches(data || []);
+    } catch (error) {
+      console.error('Erro ao buscar igrejas:', error);
+    }
+  };
 
   const generateReport = async (startDate: string, endDate: string, churchId: string) => {
     console.log('generateReport chamado com:', { startDate, endDate, churchId });
