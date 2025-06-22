@@ -1,22 +1,20 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-
-interface CashBookEntry {
-  date: string;
-  description: string;
-  type: 'entrada' | 'saida';
-  amount: number;
-  balance: number;
-  session: string;
-  category?: string;
-}
-
-interface Church {
-  id: string;
-  name: string;
-}
+import { CashBookEntry, Church } from '@/types/cashBook';
+import {
+  fetchTransactions,
+  fetchPixEntries,
+  fetchPreviousTransactions,
+  fetchPreviousPixEntries,
+  fetchChurches
+} from '@/services/cashBookDataService';
+import {
+  calculateInitialBalance,
+  processTransactionEntries,
+  processPixEntries,
+  calculateRunningBalances
+} from '@/utils/cashBookCalculations';
 
 export const useCashBookData = () => {
   const [entries, setEntries] = useState<CashBookEntry[]>([]);
@@ -26,18 +24,13 @@ export const useCashBookData = () => {
 
   // Carregar igrejas quando o hook é inicializado
   useEffect(() => {
-    fetchChurches();
+    loadChurches();
   }, []);
 
-  const fetchChurches = async () => {
+  const loadChurches = async () => {
     try {
-      const { data, error } = await supabase
-        .from('churches')
-        .select('id, name')
-        .order('name');
-
-      if (error) throw error;
-      setChurches(data || []);
+      const churchesData = await fetchChurches();
+      setChurches(churchesData);
     } catch (error) {
       console.error('Erro ao buscar igrejas:', error);
     }
@@ -61,149 +54,33 @@ export const useCashBookData = () => {
     try {
       console.log('Iniciando busca de dados...');
       
-      // Buscar transações do período
-      const { data: transactions, error: transError } = await supabase
-        .from('transactions')
-        .select(`
-          date_transaction,
-          description,
-          type,
-          amount,
-          category,
-          cash_session_id,
-          cash_sessions!inner(culto_evento, church_id)
-        `)
-        .eq('cash_sessions.church_id', churchId)
-        .gte('date_transaction', startDate)
-        .lte('date_transaction', endDate)
-        .order('date_transaction', { ascending: true });
-
-      if (transError) {
-        console.error('Erro ao buscar transações:', transError);
-        throw transError;
-      }
+      // Buscar dados do período
+      const [transactions, pixEntries] = await Promise.all([
+        fetchTransactions(churchId, startDate, endDate),
+        fetchPixEntries(churchId, startDate, endDate)
+      ]);
 
       console.log('Transações encontradas:', transactions?.length || 0);
-
-      // Buscar entradas PIX do período - corrigindo a consulta
-      const { data: pixEntries, error: pixError } = await supabase
-        .from('pix_entries')
-        .select(`
-          amount,
-          description,
-          created_at,
-          cash_session_id,
-          cash_sessions!inner(culto_evento, church_id, date_session)
-        `)
-        .eq('cash_sessions.church_id', churchId)
-        .gte('cash_sessions.date_session', startDate)
-        .lte('cash_sessions.date_session', endDate)
-        .order('cash_sessions.date_session', { ascending: true });
-
-      if (pixError) {
-        console.error('Erro ao buscar PIX:', pixError);
-        throw pixError;
-      }
-
       console.log('Entradas PIX encontradas:', pixEntries?.length || 0);
 
-      // Calcular saldo inicial
-      const { data: prevTransactions } = await supabase
-        .from('transactions')
-        .select(`
-          amount,
-          type,
-          cash_sessions!inner(church_id)
-        `)
-        .eq('cash_sessions.church_id', churchId)
-        .lt('date_transaction', startDate);
-
-      const { data: prevPixEntries } = await supabase
-        .from('pix_entries')
-        .select(`
-          amount,
-          cash_sessions!inner(church_id, date_session)
-        `)
-        .eq('cash_sessions.church_id', churchId)
-        .lt('cash_sessions.date_session', startDate);
+      // Buscar dados anteriores para calcular saldo inicial
+      const [prevTransactions, prevPixEntries] = await Promise.all([
+        fetchPreviousTransactions(churchId, startDate),
+        fetchPreviousPixEntries(churchId, startDate)
+      ]);
 
       // Calcular saldo inicial
-      let prevBalance = 0;
-      
-      if (prevTransactions) {
-        prevBalance += prevTransactions.reduce((acc, trans) => {
-          const amount = Number(trans.amount) || 0;
-          return acc + (trans.type === 'entrada' ? amount : -amount);
-        }, 0);
-      }
-      
-      if (prevPixEntries) {
-        prevBalance += prevPixEntries.reduce((acc, pix) => {
-          return acc + (Number(pix.amount) || 0);
-        }, 0);
-      }
-
+      const prevBalance = calculateInitialBalance(prevTransactions, prevPixEntries);
       console.log('Saldo inicial calculado:', prevBalance);
       setInitialBalance(prevBalance);
 
       // Processar todas as entradas - combinando transações e PIX
-      const allEntries: Array<CashBookEntry & { sortDate: Date }> = [];
-
-      // Adicionar transações
-      if (transactions) {
-        transactions.forEach(trans => {
-          const amount = Number(trans.amount) || 0;
-          
-          allEntries.push({
-            date: trans.date_transaction,
-            description: trans.description || 'Sem descrição',
-            type: trans.type,
-            amount: amount,
-            balance: 0, // será calculado depois
-            session: trans.cash_sessions?.culto_evento || 'N/A',
-            category: trans.category || undefined,
-            sortDate: new Date(trans.date_transaction)
-          });
-        });
-      }
-
-      // Adicionar entradas PIX
-      if (pixEntries) {
-        pixEntries.forEach(pix => {
-          const amount = Number(pix.amount) || 0;
-          
-          allEntries.push({
-            date: pix.cash_sessions?.date_session || pix.created_at.split('T')[0],
-            description: `PIX: ${pix.description || 'Entrada'}`,
-            type: 'entrada',
-            amount: amount,
-            balance: 0, // será calculado depois
-            session: pix.cash_sessions?.culto_evento || 'N/A',
-            category: 'pix',
-            sortDate: new Date(pix.cash_sessions?.date_session || pix.created_at)
-          });
-        });
-      }
-
-      // Ordenar todas as entradas por data e hora
-      allEntries.sort((a, b) => a.sortDate.getTime() - b.sortDate.getTime());
+      const transactionEntries = processTransactionEntries(transactions);
+      const pixEntriesProcessed = processPixEntries(pixEntries);
+      const allEntries = [...transactionEntries, ...pixEntriesProcessed];
 
       // Calcular saldos progressivos
-      let runningBalance = prevBalance;
-      const processedEntries: CashBookEntry[] = allEntries.map(entry => {
-        const balanceChange = entry.type === 'entrada' ? entry.amount : -entry.amount;
-        runningBalance += balanceChange;
-        
-        return {
-          date: entry.date,
-          description: entry.description,
-          type: entry.type,
-          amount: entry.amount,
-          balance: runningBalance,
-          session: entry.session,
-          category: entry.category
-        };
-      });
+      const processedEntries = calculateRunningBalances(allEntries, prevBalance);
 
       console.log('Entradas processadas:', processedEntries.length);
       console.log('Detalhamento:', {
