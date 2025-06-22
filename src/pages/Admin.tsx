@@ -1,10 +1,12 @@
 
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserManagement } from "@/components/UserManagement";
 import { ChurchManagement } from "@/components/ChurchManagement";
-import { Users, Building2, Shield } from "lucide-react";
+import { Users, Building2, Shield, ArrowLeft, Home } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const Admin = () => {
   const { profile } = useAuth();
@@ -29,9 +31,17 @@ const Admin = () => {
             <CardTitle className="text-red-600">Acesso Negado</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-gray-600 text-center">
+            <p className="text-gray-600 text-center mb-4">
               Apenas usuários com perfil Master podem acessar a área de administração.
             </p>
+            <div className="flex justify-center">
+              <Button asChild variant="outline">
+                <Link to="/">
+                  <Home className="h-4 w-4 mr-2" />
+                  Voltar ao Sistema
+                </Link>
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -44,6 +54,12 @@ const Admin = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
+              <Button asChild variant="ghost" size="sm">
+                <Link to="/">
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Voltar
+                </Link>
+              </Button>
               <Shield className="h-8 w-8 text-purple-600" />
               <div>
                 <h1 className="text-xl font-bold text-gray-900">Painel de Administração</h1>

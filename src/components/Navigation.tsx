@@ -10,6 +10,7 @@ import {
   Building2 
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { Link } from 'react-router-dom';
 
 interface NavigationProps {
   activeTab: string;
@@ -72,10 +73,10 @@ export const Navigation = ({ activeTab, onTabChange }: NavigationProps) => {
           <div className="flex items-center space-x-4">
             {profile?.role === 'master' && (
               <Button variant="outline" size="sm" asChild>
-                <a href="/admin">
+                <Link to="/admin">
                   <Settings className="h-4 w-4 mr-2" />
                   Admin
-                </a>
+                </Link>
               </Button>
             )}
             
