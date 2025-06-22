@@ -6,7 +6,8 @@ import { supabase } from '@/integrations/supabase/client';
 interface Profile {
   id: string;
   name: string;
-  role: 'master' | 'tesoureiro';
+  role: 'master' | 'tesoureiro' | 'supervisor';
+  church_id: string | null;
   created_at: string;
   updated_at: string;
 }

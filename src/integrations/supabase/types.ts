@@ -233,6 +233,10 @@ export type Database = {
         Args: { user_id: string }
         Returns: boolean
       }
+      is_supervisor: {
+        Args: { user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       categoria_entrada: "dinheiro" | "pix" | "cartao_credito" | "cartao_debito"
