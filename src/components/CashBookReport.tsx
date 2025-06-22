@@ -31,18 +31,43 @@ export const CashBookReport = () => {
   });
 
   useEffect(() => {
+    console.log('CashBookReport montado. Profile:', profile);
+    
     if (profile?.role === 'master' || profile?.role === 'supervisor') {
+      console.log('Carregando igrejas...');
       loadChurches();
     } else if (profile?.church_id) {
+      console.log('Definindo igreja do usuário:', profile.church_id);
       setSelectedChurch(profile.church_id);
     }
-  }, [profile]);
+  }, [profile, loadChurches]);
 
   const handleGenerateReport = () => {
+    console.log('handleGenerateReport chamado com:', { startDate, endDate, selectedChurch });
+    
+    if (!startDate || !endDate) {
+      console.log('Datas não preenchidas');
+      return;
+    }
+    
+    if (!selectedChurch) {
+      console.log('Igreja não selecionada');
+      return;
+    }
+    
     generateReport(startDate, endDate, selectedChurch);
   };
 
   const showChurchSelector = profile?.role === 'master' || profile?.role === 'supervisor';
+
+  console.log('Renderizando CashBookReport:', { 
+    startDate, 
+    endDate, 
+    selectedChurch, 
+    showChurchSelector,
+    churchesCount: churches.length,
+    entriesCount: entries.length 
+  });
 
   return (
     <div className="space-y-6">
@@ -59,11 +84,13 @@ export const CashBookReport = () => {
         onGenerateReport={handleGenerateReport}
       />
 
-      <CashBookTable
-        entries={entries}
-        initialBalance={initialBalance}
-        onExportToPrint={exportToPrint}
-      />
+      {entries.length > 0 && (
+        <CashBookTable
+          entries={entries}
+          initialBalance={initialBalance}
+          onExportToPrint={exportToPrint}
+        />
+      )}
     </div>
   );
 };

@@ -40,17 +40,24 @@ export const useCashBookData = () => {
   };
 
   const generateReport = async (startDate: string, endDate: string, selectedChurch: string) => {
-    if (!startDate || !endDate || !selectedChurch) {
-      toast.error('Preencha todos os campos obrigatórios');
+    console.log('generateReport chamado com:', { startDate, endDate, selectedChurch });
+    
+    if (!startDate || !endDate) {
+      toast.error('Preencha as datas de início e fim');
       return;
     }
 
-    console.log('Gerando relatório com parâmetros:', { startDate, endDate, selectedChurch });
+    if (!selectedChurch) {
+      toast.error('Selecione uma igreja');
+      return;
+    }
+
     setLoading(true);
     
     try {
+      console.log('Iniciando busca de dados...');
+      
       // Buscar transações do período
-      console.log('Buscando transações...');
       const { data: transactions, error: transError } = await supabase
         .from('transactions')
         .select(`
@@ -75,7 +82,6 @@ export const useCashBookData = () => {
       console.log('Transações encontradas:', transactions?.length || 0);
 
       // Buscar entradas PIX do período
-      console.log('Buscando entradas PIX...');
       const { data: pixEntries, error: pixError } = await supabase
         .from('pix_entries')
         .select(`
@@ -96,9 +102,8 @@ export const useCashBookData = () => {
 
       console.log('Entradas PIX encontradas:', pixEntries?.length || 0);
 
-      // Calcular saldo inicial (transações antes do período)
-      console.log('Calculando saldo inicial...');
-      const { data: prevTransactions, error: prevError } = await supabase
+      // Calcular saldo inicial
+      const { data: prevTransactions } = await supabase
         .from('transactions')
         .select(`
           amount,
@@ -108,12 +113,7 @@ export const useCashBookData = () => {
         .eq('cash_sessions.church_id', selectedChurch)
         .lt('date_transaction', startDate);
 
-      if (prevError) {
-        console.error('Erro ao buscar transações anteriores:', prevError);
-        throw prevError;
-      }
-
-      const { data: prevPixEntries, error: prevPixError } = await supabase
+      const { data: prevPixEntries } = await supabase
         .from('pix_entries')
         .select(`
           amount,
@@ -122,15 +122,21 @@ export const useCashBookData = () => {
         .eq('cash_sessions.church_id', selectedChurch)
         .lt('cash_sessions.date_session', startDate);
 
-      if (prevPixError) {
-        console.error('Erro ao buscar PIX anteriores:', prevPixError);
-        throw prevPixError;
-      }
-
       // Calcular saldo inicial
-      const prevBalance = (prevTransactions || []).reduce((acc, trans) => {
-        return acc + (trans.type === 'entrada' ? Number(trans.amount) : -Number(trans.amount));
-      }, 0) + (prevPixEntries || []).reduce((acc, pix) => acc + Number(pix.amount), 0);
+      let prevBalance = 0;
+      
+      if (prevTransactions) {
+        prevBalance += prevTransactions.reduce((acc, trans) => {
+          const amount = Number(trans.amount) || 0;
+          return acc + (trans.type === 'entrada' ? amount : -amount);
+        }, 0);
+      }
+      
+      if (prevPixEntries) {
+        prevBalance += prevPixEntries.reduce((acc, pix) => {
+          return acc + (Number(pix.amount) || 0);
+        }, 0);
+      }
 
       console.log('Saldo inicial calculado:', prevBalance);
       setInitialBalance(prevBalance);
@@ -140,41 +146,53 @@ export const useCashBookData = () => {
       let runningBalance = prevBalance;
 
       // Adicionar transações
-      (transactions || []).forEach(trans => {
-        const amount = trans.type === 'entrada' ? Number(trans.amount) : -Number(trans.amount);
-        runningBalance += amount;
-        
-        cashBookEntries.push({
-          date: trans.date_transaction,
-          description: trans.description,
-          type: trans.type,
-          amount: Math.abs(Number(trans.amount)),
-          balance: runningBalance,
-          session: trans.cash_sessions?.culto_evento || 'N/A',
-          category: trans.category || undefined
+      if (transactions) {
+        transactions.forEach(trans => {
+          const amount = Number(trans.amount) || 0;
+          const balanceChange = trans.type === 'entrada' ? amount : -amount;
+          runningBalance += balanceChange;
+          
+          cashBookEntries.push({
+            date: trans.date_transaction,
+            description: trans.description || 'Sem descrição',
+            type: trans.type,
+            amount: amount,
+            balance: runningBalance,
+            session: trans.cash_sessions?.culto_evento || 'N/A',
+            category: trans.category || undefined
+          });
         });
-      });
+      }
 
       // Adicionar entradas PIX
-      (pixEntries || []).forEach(pix => {
-        runningBalance += Number(pix.amount);
-        
-        cashBookEntries.push({
-          date: pix.cash_sessions?.date_session || pix.created_at.split('T')[0],
-          description: `PIX: ${pix.description || 'Entrada'}`,
-          type: 'entrada',
-          amount: Number(pix.amount),
-          balance: runningBalance,
-          session: pix.cash_sessions?.culto_evento || 'N/A'
+      if (pixEntries) {
+        pixEntries.forEach(pix => {
+          const amount = Number(pix.amount) || 0;
+          runningBalance += amount;
+          
+          cashBookEntries.push({
+            date: pix.cash_sessions?.date_session || pix.created_at.split('T')[0],
+            description: `PIX: ${pix.description || 'Entrada'}`,
+            type: 'entrada',
+            amount: amount,
+            balance: runningBalance,
+            session: pix.cash_sessions?.culto_evento || 'N/A'
+          });
         });
-      });
+      }
 
       // Ordenar por data
       cashBookEntries.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
       console.log('Entradas processadas:', cashBookEntries.length);
       setEntries(cashBookEntries);
-      toast.success('Relatório gerado com sucesso!');
+      
+      if (cashBookEntries.length === 0) {
+        toast.info('Nenhuma transação encontrada para o período selecionado');
+      } else {
+        toast.success(`Relatório gerado com sucesso! ${cashBookEntries.length} registros encontrados.`);
+      }
+      
     } catch (error) {
       console.error('Erro ao gerar relatório:', error);
       toast.error('Erro ao gerar relatório. Verifique o console para mais detalhes.');
