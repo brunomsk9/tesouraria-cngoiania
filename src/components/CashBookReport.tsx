@@ -1,8 +1,7 @@
-
 import { useState } from 'react';
 import { CashBookFilters } from './CashBookFilters';
 import { CashBookTable } from './CashBookTable';
-import { useCashBookPrintExport } from './CashBookPrintExport';
+import { useCashBookPrintExport } from '@/hooks/useCashBookPrintExport';
 import { useCashBookData } from '@/hooks/useCashBookData';
 
 export const CashBookReport = () => {
