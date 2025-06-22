@@ -221,6 +221,72 @@ export type Database = {
           },
         ]
       }
+      volunteer_churches: {
+        Row: {
+          church_id: string
+          created_at: string
+          id: string
+          volunteer_id: string
+        }
+        Insert: {
+          church_id: string
+          created_at?: string
+          id?: string
+          volunteer_id: string
+        }
+        Update: {
+          church_id?: string
+          created_at?: string
+          id?: string
+          volunteer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "volunteer_churches_church_id_fkey"
+            columns: ["church_id"]
+            isOneToOne: false
+            referencedRelation: "churches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "volunteer_churches_volunteer_id_fkey"
+            columns: ["volunteer_id"]
+            isOneToOne: false
+            referencedRelation: "volunteers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      volunteers: {
+        Row: {
+          area_atuacao: string | null
+          created_at: string
+          id: string
+          name: string
+          phone: string | null
+          pix_key: string | null
+          updated_at: string
+        }
+        Insert: {
+          area_atuacao?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          phone?: string | null
+          pix_key?: string | null
+          updated_at?: string
+        }
+        Update: {
+          area_atuacao?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          phone?: string | null
+          pix_key?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -229,6 +295,10 @@ export type Database = {
       can_validate_session: {
         Args: { session_id: string; user_id: string }
         Returns: boolean
+      }
+      get_pending_validations_count: {
+        Args: { user_church_id: string }
+        Returns: number
       }
       is_master: {
         Args: { user_id: string }
