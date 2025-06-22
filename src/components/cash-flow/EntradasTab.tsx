@@ -9,6 +9,7 @@ interface PixEntry {
   id: string;
   amount: number;
   description: string;
+  data_pix: string;
 }
 
 interface EntradasTabProps {

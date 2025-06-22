@@ -18,6 +18,7 @@ export interface PixEntryData {
   amount: number;
   description: string;
   created_at: string;
+  data_pix: string;
   cash_session_id: string;
   cash_sessions?: {
     culto_evento: string;
@@ -54,12 +55,13 @@ export const fetchPixEntries = async (churchId: string, startDate: string, endDa
       amount,
       description,
       created_at,
+      data_pix,
       cash_session_id,
       cash_sessions!inner(culto_evento, church_id, date_session)
     `)
     .eq('cash_sessions.church_id', churchId)
-    .gte('cash_sessions.date_session', startDate)
-    .lte('cash_sessions.date_session', endDate);
+    .gte('data_pix', startDate)
+    .lte('data_pix', endDate);
 
   if (pixError) throw pixError;
   return pixEntries as PixEntryData[] || [];
@@ -87,7 +89,7 @@ export const fetchPreviousPixEntries = async (churchId: string, startDate: strin
       cash_sessions!inner(church_id, date_session)
     `)
     .eq('cash_sessions.church_id', churchId)
-    .lt('cash_sessions.date_session', startDate);
+    .lt('data_pix', startDate);
 
   return prevPixEntries || [];
 };

@@ -91,6 +91,7 @@ export type Database = {
           amount: number
           cash_session_id: string
           created_at: string
+          data_pix: string
           description: string | null
           id: string
         }
@@ -98,6 +99,7 @@ export type Database = {
           amount: number
           cash_session_id: string
           created_at?: string
+          data_pix?: string
           description?: string | null
           id?: string
         }
@@ -105,6 +107,7 @@ export type Database = {
           amount?: number
           cash_session_id?: string
           created_at?: string
+          data_pix?: string
           description?: string | null
           id?: string
         }

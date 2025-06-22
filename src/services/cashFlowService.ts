@@ -17,6 +17,7 @@ interface PixEntry {
   id: string;
   amount: number;
   description: string;
+  data_pix: string;
 }
 
 interface SelectedVolunteer {
@@ -129,7 +130,8 @@ export const saveEntradas = async (
       const pixData = pixEntries.map(pix => ({
         cash_session_id: currentSession.id,
         amount: pix.amount,
-        description: pix.description || 'Entrada PIX'
+        description: pix.description || 'Entrada PIX',
+        data_pix: pix.data_pix
       }));
 
       const { error: pixError } = await supabase

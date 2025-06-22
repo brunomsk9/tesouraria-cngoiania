@@ -11,6 +11,7 @@ interface PixEntry {
   id: string;
   amount: number;
   description: string;
+  data_pix: string;
 }
 
 interface PixManagerProps {
@@ -20,7 +21,11 @@ interface PixManagerProps {
 }
 
 export const PixManager = ({ entries, onEntriesChange, onSave }: PixManagerProps) => {
-  const [newEntry, setNewEntry] = useState({ amount: '', description: '' });
+  const [newEntry, setNewEntry] = useState({ 
+    amount: '', 
+    description: '', 
+    data_pix: new Date().toISOString().split('T')[0] 
+  });
 
   const addEntry = () => {
     const amount = parseFloat(newEntry.amount.replace(',', '.'));
@@ -30,14 +35,24 @@ export const PixManager = ({ entries, onEntriesChange, onSave }: PixManagerProps
       return;
     }
 
+    if (!newEntry.data_pix) {
+      toast.error('Digite uma data válida para o PIX');
+      return;
+    }
+
     const entry: PixEntry = {
       id: Date.now().toString(),
       amount,
-      description: newEntry.description || `PIX #${entries.length + 1}`
+      description: newEntry.description || `PIX #${entries.length + 1}`,
+      data_pix: newEntry.data_pix
     };
 
     onEntriesChange([...entries, entry]);
-    setNewEntry({ amount: '', description: '' });
+    setNewEntry({ 
+      amount: '', 
+      description: '', 
+      data_pix: new Date().toISOString().split('T')[0] 
+    });
     toast.success('Entrada PIX adicionada!');
   };
 
@@ -46,14 +61,14 @@ export const PixManager = ({ entries, onEntriesChange, onSave }: PixManagerProps
     toast.success('Entrada PIX removida!');
   };
 
-  const updateEntry = (id: string, field: 'amount' | 'description', value: string) => {
+  const updateEntry = (id: string, field: 'amount' | 'description' | 'data_pix', value: string) => {
     const updatedEntries = entries.map(entry => {
       if (entry.id === id) {
         if (field === 'amount') {
           const numericValue = parseFloat(value.replace(',', '.')) || 0;
           return { ...entry, amount: numericValue };
         } else {
-          return { ...entry, description: value };
+          return { ...entry, [field]: value };
         }
       }
       return entry;
@@ -80,7 +95,7 @@ export const PixManager = ({ entries, onEntriesChange, onSave }: PixManagerProps
       {/* Formulário para nova entrada */}
       <Card className="bg-blue-50 border-blue-200">
         <CardContent className="p-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
             <div>
               <Label className="text-sm font-medium">Valor PIX</Label>
               <div className="relative">
@@ -93,6 +108,14 @@ export const PixManager = ({ entries, onEntriesChange, onSave }: PixManagerProps
                   className="pl-10 text-right font-mono"
                 />
               </div>
+            </div>
+            <div>
+              <Label className="text-sm font-medium">Data PIX</Label>
+              <Input
+                type="date"
+                value={newEntry.data_pix}
+                onChange={(e) => setNewEntry({ ...newEntry, data_pix: e.target.value })}
+              />
             </div>
             <div>
               <Label className="text-sm font-medium">Descrição</Label>
@@ -118,7 +141,7 @@ export const PixManager = ({ entries, onEntriesChange, onSave }: PixManagerProps
           {entries.map((entry, index) => (
             <Card key={entry.id} className="border-gray-200 hover:shadow-md transition-shadow">
               <CardContent className="p-4">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-center">
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-3 items-center">
                   <div className="font-medium text-gray-600">
                     PIX #{index + 1}
                   </div>
@@ -134,6 +157,16 @@ export const PixManager = ({ entries, onEntriesChange, onSave }: PixManagerProps
                         className="pl-10 text-right font-mono text-sm"
                       />
                     </div>
+                  </div>
+
+                  <div>
+                    <Label className="text-xs text-gray-500">Data PIX</Label>
+                    <Input
+                      type="date"
+                      value={entry.data_pix}
+                      onChange={(e) => updateEntry(entry.id, 'data_pix', e.target.value)}
+                      className="text-sm"
+                    />
                   </div>
                   
                   <div>
