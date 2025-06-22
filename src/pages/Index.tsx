@@ -2,6 +2,7 @@
 import { useAuth } from "@/hooks/useAuth";
 import { CashFlowManager } from "@/components/CashFlowManager";
 import { Navigation } from "@/components/Navigation";
+import { Reports } from "@/components/Reports";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState } from "react";
 import { BarChart3, TrendingUp, Clock, CheckCircle } from "lucide-react";
@@ -90,20 +91,7 @@ const Index = () => {
         );
       
       case 'relatorios':
-        return (
-          <div className="p-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Relatórios</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600">
-                  Funcionalidade de relatórios em desenvolvimento.
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        );
+        return <Reports />;
       
       default:
         return (
