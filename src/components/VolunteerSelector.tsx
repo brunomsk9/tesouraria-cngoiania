@@ -9,6 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Plus, Users, X, UserPlus } from 'lucide-react';
+import { useCurrencyFormat, formatToCurrency, parseCurrencyToNumber } from '@/hooks/useCurrencyFormat';
 
 interface Volunteer {
   id: string;
@@ -127,9 +128,10 @@ export const VolunteerSelector = ({ selectedVolunteers, onVolunteersChange }: Vo
     onVolunteersChange(newSelected);
   };
 
-  const updateVolunteerAmount = (volunteerId: string, amount: number) => {
+  const updateVolunteerAmount = (volunteerId: string, displayValue: string) => {
+    const numericAmount = parseCurrencyToNumber(displayValue);
     const newSelected = selectedVolunteers.map(v => 
-      v.id === volunteerId ? { ...v, amount } : v
+      v.id === volunteerId ? { ...v, amount: numericAmount } : v
     );
     onVolunteersChange(newSelected);
   };
@@ -168,6 +170,7 @@ export const VolunteerSelector = ({ selectedVolunteers, onVolunteersChange }: Vo
                       onChange={(e) => setNewVolunteer({...newVolunteer, name: e.target.value})}
                       placeholder="Nome do voluntário"
                       className="h-9"
+                      required
                     />
                   </div>
                   <div>
@@ -236,43 +239,68 @@ export const VolunteerSelector = ({ selectedVolunteers, onVolunteersChange }: Vo
               <Label className="text-sm font-medium mb-2 block">Voluntários Selecionados</Label>
               <div className="space-y-2">
                 {selectedVolunteers.map((volunteer) => (
-                  <div key={volunteer.id} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <Badge variant="outline">{volunteer.name}</Badge>
-                      <div className="flex items-center space-x-2">
-                        <Label className="text-xs">R$</Label>
-                        <Input
-                          type="number"
-                          value={volunteer.amount}
-                          onChange={(e) => updateVolunteerAmount(volunteer.id, parseFloat(e.target.value) || 0)}
-                          className="w-20 h-8 text-sm"
-                          step="0.01"
-                          min="0"
-                        />
-                      </div>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => removeVolunteer(volunteer.id)}
-                      className="p-1 h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  <VolunteerAmountInput
+                    key={volunteer.id}
+                    volunteer={volunteer}
+                    onAmountChange={(displayValue) => updateVolunteerAmount(volunteer.id, displayValue)}
+                    onRemove={() => removeVolunteer(volunteer.id)}
+                  />
                 ))}
               </div>
 
               <div className="flex justify-between items-center pt-3 border-t bg-blue-50 p-3 rounded-lg mt-3">
                 <span className="font-medium text-blue-800">Total Voluntários ({selectedVolunteers.length}):</span>
                 <span className="text-xl font-bold text-blue-800">
-                  R$ {totalVolunteers.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  {formatToCurrency(totalVolunteers)}
                 </span>
               </div>
             </div>
           )}
         </CardContent>
       </Card>
+    </div>
+  );
+};
+
+// Componente separado para entrada de valor do voluntário
+const VolunteerAmountInput = ({ 
+  volunteer, 
+  onAmountChange, 
+  onRemove 
+}: {
+  volunteer: SelectedVolunteer;
+  onAmountChange: (value: string) => void;
+  onRemove: () => void;
+}) => {
+  const { displayValue, handleChange } = useCurrencyFormat(volunteer.amount);
+
+  const handleInputChange = (value: string) => {
+    handleChange(value);
+    onAmountChange(value);
+  };
+
+  return (
+    <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
+      <div className="flex items-center space-x-3">
+        <Badge variant="outline">{volunteer.name}</Badge>
+        <div className="flex items-center space-x-2">
+          <Input
+            type="text"
+            value={displayValue}
+            onChange={(e) => handleInputChange(e.target.value)}
+            className="w-24 h-8 text-sm"
+            placeholder="R$ 0,00"
+          />
+        </div>
+      </div>
+      <Button
+        size="sm"
+        variant="ghost"
+        onClick={onRemove}
+        className="p-1 h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+      >
+        <X className="h-4 w-4" />
+      </Button>
     </div>
   );
 };

@@ -23,7 +23,12 @@ const Admin = () => {
     );
   }
 
-  if (profile.role !== 'master') {
+  // Determinar quais abas mostrar baseado no perfil
+  const canManageUsers = profile.role === 'master';
+  const canManageChurches = profile.role === 'master';
+  const canManageVolunteers = profile.role === 'master' || profile.role === 'tesoureiro';
+
+  if (!canManageUsers && !canManageChurches && !canManageVolunteers) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center">
         <Card className="w-full max-w-md">
@@ -33,7 +38,7 @@ const Admin = () => {
           </CardHeader>
           <CardContent>
             <p className="text-gray-600 text-center mb-4">
-              Apenas usuários com perfil Master podem acessar a área de administração.
+              Você não tem permissão para acessar a área de administração.
             </p>
             <div className="flex justify-center">
               <Button asChild variant="outline">
@@ -48,6 +53,14 @@ const Admin = () => {
       </div>
     );
   }
+
+  // Determinar aba padrão baseado nas permissões
+  const getDefaultTab = () => {
+    if (canManageUsers) return 'users';
+    if (canManageChurches) return 'churches';
+    if (canManageVolunteers) return 'volunteers';
+    return 'users';
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50">
@@ -64,15 +77,21 @@ const Admin = () => {
               <Shield className="h-8 w-8 text-purple-600" />
               <div>
                 <h1 className="text-xl font-bold text-gray-900">Painel de Administração</h1>
-                <p className="text-sm text-gray-500">Gestão Master do Sistema</p>
+                <p className="text-sm text-gray-500">
+                  {profile.role === 'master' ? 'Gestão Master do Sistema' : 'Gestão de Voluntários'}
+                </p>
               </div>
             </div>
             
             <div className="flex items-center space-x-2 text-sm text-gray-600">
               <Users className="h-4 w-4" />
               <span>{profile.name}</span>
-              <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs font-medium">
-                Master
+              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                profile.role === 'master' 
+                  ? 'bg-purple-100 text-purple-800'
+                  : 'bg-blue-100 text-blue-800'
+              }`}>
+                {profile.role === 'master' ? 'Master' : 'Tesoureiro'}
               </span>
             </div>
           </div>
@@ -80,33 +99,51 @@ const Admin = () => {
       </header>
 
       <main className="max-w-7xl mx-auto py-6">
-        <Tabs defaultValue="users" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 max-w-lg mx-auto mb-6">
-            <TabsTrigger value="users" className="flex items-center space-x-2">
-              <Users className="h-4 w-4" />
-              <span>Usuários</span>
-            </TabsTrigger>
-            <TabsTrigger value="churches" className="flex items-center space-x-2">
-              <Building2 className="h-4 w-4" />
-              <span>Igrejas</span>
-            </TabsTrigger>
-            <TabsTrigger value="volunteers" className="flex items-center space-x-2">
-              <UserCheck className="h-4 w-4" />
-              <span>Voluntários</span>
-            </TabsTrigger>
+        <Tabs defaultValue={getDefaultTab()} className="w-full">
+          <TabsList className={`grid w-full ${
+            canManageUsers && canManageChurches && canManageVolunteers 
+              ? 'grid-cols-3' 
+              : canManageVolunteers && !canManageUsers 
+                ? 'grid-cols-1' 
+                : 'grid-cols-2'
+          } max-w-lg mx-auto mb-6`}>
+            {canManageUsers && (
+              <TabsTrigger value="users" className="flex items-center space-x-2">
+                <Users className="h-4 w-4" />
+                <span>Usuários</span>
+              </TabsTrigger>
+            )}
+            {canManageChurches && (
+              <TabsTrigger value="churches" className="flex items-center space-x-2">
+                <Building2 className="h-4 w-4" />
+                <span>Igrejas</span>
+              </TabsTrigger>
+            )}
+            {canManageVolunteers && (
+              <TabsTrigger value="volunteers" className="flex items-center space-x-2">
+                <UserCheck className="h-4 w-4" />
+                <span>Voluntários</span>
+              </TabsTrigger>
+            )}
           </TabsList>
           
-          <TabsContent value="users">
-            <UserManagement />
-          </TabsContent>
+          {canManageUsers && (
+            <TabsContent value="users">
+              <UserManagement />
+            </TabsContent>
+          )}
           
-          <TabsContent value="churches">
-            <ChurchManagement />
-          </TabsContent>
+          {canManageChurches && (
+            <TabsContent value="churches">
+              <ChurchManagement />
+            </TabsContent>
+          )}
           
-          <TabsContent value="volunteers">
-            <VolunteerManagement />
-          </TabsContent>
+          {canManageVolunteers && (
+            <TabsContent value="volunteers">
+              <VolunteerManagement />
+            </TabsContent>
+          )}
         </Tabs>
       </main>
     </div>

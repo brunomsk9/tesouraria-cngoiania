@@ -1,10 +1,8 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -39,12 +37,15 @@ export const VolunteerManagement = () => {
     church_ids: [] as string[]
   });
 
+  // Verificar se o usuário pode gerenciar voluntários
+  const canManageVolunteers = profile?.role === 'master' || profile?.role === 'tesoureiro';
+
   useEffect(() => {
-    if (profile?.role === 'master') {
+    if (canManageVolunteers) {
       loadVolunteers();
       loadChurches();
     }
-  }, [profile]);
+  }, [profile, canManageVolunteers]);
 
   const loadVolunteers = async () => {
     try {
@@ -91,10 +92,14 @@ export const VolunteerManagement = () => {
 
   const loadChurches = async () => {
     try {
-      const { data, error } = await supabase
-        .from('churches')
-        .select('id, name')
-        .order('name');
+      let query = supabase.from('churches').select('id, name');
+      
+      // Se for tesoureiro, filtrar apenas sua igreja
+      if (profile?.role === 'tesoureiro' && profile?.church_id) {
+        query = query.eq('id', profile.church_id);
+      }
+      
+      const { data, error } = await query.order('name');
 
       if (error) throw error;
       setChurches(data || []);
@@ -106,6 +111,7 @@ export const VolunteerManagement = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Validação obrigatória do nome
     if (!formData.name.trim()) {
       toast.error('Nome é obrigatório');
       return;
@@ -219,7 +225,8 @@ export const VolunteerManagement = () => {
     }));
   };
 
-  if (profile?.role !== 'master') {
+  // Verificar permissão de acesso
+  if (!canManageVolunteers) {
     return (
       <Card className="border-red-200 bg-red-50">
         <CardHeader>
@@ -227,7 +234,7 @@ export const VolunteerManagement = () => {
         </CardHeader>
         <CardContent>
           <p className="text-red-700">
-            Apenas usuários Master podem gerenciar voluntários.
+            Apenas usuários Master e Tesoureiros podem gerenciar voluntários.
           </p>
         </CardContent>
       </Card>
@@ -266,7 +273,11 @@ export const VolunteerManagement = () => {
                     onChange={(e) => setFormData({...formData, name: e.target.value})}
                     placeholder="Nome completo"
                     required
+                    className={!formData.name.trim() && isCreating ? 'border-red-500' : ''}
                   />
+                  {!formData.name.trim() && (
+                    <p className="text-sm text-red-500 mt-1">Nome é obrigatório</p>
+                  )}
                 </div>
                 <div>
                   <Label htmlFor="phone">Telefone</Label>
