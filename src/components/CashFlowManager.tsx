@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,7 +15,7 @@ interface CashSession {
   id: string;
   date_session: string;
   culto_evento: string;
-  status: 'aberto' | 'validado' | 'fechado';
+  status: string;
   church_id: string;
   created_by: string;
   validated_by_1: string | null;
