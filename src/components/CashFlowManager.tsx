@@ -3,13 +3,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { MoneyInput } from '@/components/MoneyInput';
+import { PixManager } from '@/components/PixManager';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Calendar, Plus, Trash2, CheckCircle, Users, Shield, DollarSign } from 'lucide-react';
+import { Calendar, Plus, CheckCircle, Users, Shield, DollarSign, TrendingUp, ArrowUpCircle, ArrowDownCircle } from 'lucide-react';
 
 interface CashSession {
   id: string;
@@ -46,7 +47,6 @@ export const CashFlowManager = () => {
   
   // Estados para PIX (múltiplas linhas)
   const [pixEntries, setPixEntries] = useState<PixEntry[]>([]);
-  const [newPix, setNewPix] = useState({ amount: 0, description: '' });
   
   // Estados para saídas
   const [saidas, setSaidas] = useState({
@@ -107,52 +107,7 @@ export const CashFlowManager = () => {
 
     setCurrentSession(data);
     loadSessions();
-    toast.success('Sessão de caixa criada com sucesso!');
-  };
-
-  const addPixEntry = async () => {
-    if (!currentSession || newPix.amount <= 0) return;
-
-    const { error } = await supabase
-      .from('pix_entries')
-      .insert({
-        cash_session_id: currentSession.id,
-        amount: newPix.amount,
-        description: newPix.description
-      });
-
-    if (error) {
-      console.error('Erro ao adicionar PIX:', error);
-      toast.error('Erro ao adicionar entrada PIX');
-      return;
-    }
-
-    setPixEntries([...pixEntries, { 
-      id: Date.now().toString(), 
-      amount: newPix.amount, 
-      description: newPix.description 
-    }]);
-    setNewPix({ amount: 0, description: '' });
-    toast.success('Entrada PIX adicionada!');
-  };
-
-  const removePixEntry = async (index: number, pixId: string) => {
-    if (pixId !== Date.now().toString()) {
-      const { error } = await supabase
-        .from('pix_entries')
-        .delete()
-        .eq('id', pixId);
-
-      if (error) {
-        console.error('Erro ao remover PIX:', error);
-        toast.error('Erro ao remover entrada PIX');
-        return;
-      }
-    }
-
-    const newEntries = pixEntries.filter((_, i) => i !== index);
-    setPixEntries(newEntries);
-    toast.success('Entrada PIX removida!');
+    toast.success('Sessão criada com sucesso!');
   };
 
   const saveEntradas = async () => {
@@ -262,12 +217,12 @@ export const CashFlowManager = () => {
   if (profile?.role === 'supervisor') {
     return (
       <div className="p-6">
-        <Card>
+        <Card className="border-blue-200 bg-blue-50">
           <CardHeader>
-            <CardTitle>Acesso Supervisor - Apenas Visualização</CardTitle>
+            <CardTitle className="text-blue-800">Acesso Supervisor</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-gray-600">
+            <p className="text-blue-700">
               Como supervisor, você pode visualizar os relatórios de todas as igrejas, 
               mas não pode criar ou modificar sessões de caixa.
             </p>
@@ -278,56 +233,54 @@ export const CashFlowManager = () => {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold text-gray-800">Sistema de Fluxo de Caixa</h1>
-        <div className="text-sm text-gray-500">
-          Igreja: {profile?.church_id ? 'Configurada' : 'Não configurada'}
-        </div>
-      </div>
-
+    <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
       {!currentSession ? (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
-              Iniciar Nova Sessão de Caixa
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="date">Data da Sessão</Label>
-                <Input
-                  id="date"
-                  type="date"
-                  value={newSessionData.date_session}
-                  onChange={(e) => setNewSessionData({...newSessionData, date_session: e.target.value})}
-                />
+        <div className="max-w-2xl mx-auto">
+          <Card className="border-0 shadow-lg bg-white">
+            <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-t-lg">
+              <CardTitle className="flex items-center gap-3">
+                <Calendar className="h-6 w-6" />
+                Iniciar Nova Sessão de Caixa
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <Label htmlFor="date" className="text-sm font-medium text-gray-700">Data da Sessão</Label>
+                  <Input
+                    id="date"
+                    type="date"
+                    value={newSessionData.date_session}
+                    onChange={(e) => setNewSessionData({...newSessionData, date_session: e.target.value})}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="evento" className="text-sm font-medium text-gray-700">Culto/Evento</Label>
+                  <Input
+                    id="evento"
+                    placeholder="Ex: Culto Domingo Manhã"
+                    value={newSessionData.culto_evento}
+                    onChange={(e) => setNewSessionData({...newSessionData, culto_evento: e.target.value})}
+                    className="mt-1"
+                  />
+                </div>
               </div>
-              <div>
-                <Label htmlFor="evento">Culto/Evento</Label>
-                <Input
-                  id="evento"
-                  placeholder="Ex: Culto Domingo Manhã"
-                  value={newSessionData.culto_evento}
-                  onChange={(e) => setNewSessionData({...newSessionData, culto_evento: e.target.value})}
-                />
-              </div>
-            </div>
-            <Button onClick={createNewSession} className="w-full">
-              Iniciar Sessão de Caixa
-            </Button>
-          </CardContent>
-        </Card>
+              <Button onClick={createNewSession} className="w-full bg-blue-600 hover:bg-blue-700 h-12 text-lg">
+                <Plus className="h-5 w-5 mr-2" />
+                Iniciar Sessão de Caixa
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       ) : (
         <div className="space-y-6">
-          <Card className="bg-blue-50 border-blue-200">
+          <Card className="bg-gradient-to-r from-blue-600 to-blue-700 text-white border-0 shadow-lg">
             <CardHeader>
-              <CardTitle className="text-blue-800">
+              <CardTitle className="text-xl">
                 Sessão Ativa: {currentSession.culto_evento}
               </CardTitle>
-              <p className="text-blue-600">
+              <p className="text-blue-100">
                 Data: {new Date(currentSession.date_session).toLocaleDateString('pt-BR')} | 
                 Status: {currentSession.status.toUpperCase()}
               </p>
@@ -335,170 +288,147 @@ export const CashFlowManager = () => {
           </Card>
 
           <Tabs defaultValue="entradas" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="entradas">Entradas</TabsTrigger>
-              <TabsTrigger value="saidas">Saídas</TabsTrigger>
-              <TabsTrigger value="validacao">Validação</TabsTrigger>
-              <TabsTrigger value="resumo">Resumo</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-4 bg-white shadow-sm">
+              <TabsTrigger value="entradas" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+                <ArrowUpCircle className="h-4 w-4 mr-2" />
+                Entradas
+              </TabsTrigger>
+              <TabsTrigger value="saidas" className="data-[state=active]:bg-red-600 data-[state=active]:text-white">
+                <ArrowDownCircle className="h-4 w-4 mr-2" />
+                Saídas
+              </TabsTrigger>
+              <TabsTrigger value="validacao" className="data-[state=active]:bg-green-600 data-[state=active]:text-white">
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Validação
+              </TabsTrigger>
+              <TabsTrigger value="resumo" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white">
+                <TrendingUp className="h-4 w-4 mr-2" />
+                Resumo
+              </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="entradas" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+            <TabsContent value="entradas" className="space-y-6">
+              <Card className="border-0 shadow-lg">
+                <CardHeader className="bg-green-50 border-b">
+                  <CardTitle className="flex items-center gap-2 text-green-800">
                     <DollarSign className="h-5 w-5" />
                     Registro de Entradas
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="grid grid-cols-3 gap-4">
-                    <div>
-                      <Label>Dinheiro (R$)</Label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={entradas.dinheiro}
-                        onChange={(e) => setEntradas({...entradas, dinheiro: parseFloat(e.target.value) || 0})}
-                      />
-                    </div>
-                    <div>
-                      <Label>Cartão Débito (R$)</Label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={entradas.cartao_debito}
-                        onChange={(e) => setEntradas({...entradas, cartao_debito: parseFloat(e.target.value) || 0})}
-                      />
-                    </div>
-                    <div>
-                      <Label>Cartão Crédito (R$)</Label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={entradas.cartao_credito}
-                        onChange={(e) => setEntradas({...entradas, cartao_credito: parseFloat(e.target.value) || 0})}
-                      />
-                    </div>
+                <CardContent className="p-6 space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <MoneyInput
+                      label="Dinheiro"
+                      value={entradas.dinheiro}
+                      onChange={(value) => setEntradas({...entradas, dinheiro: value})}
+                    />
+                    <MoneyInput
+                      label="Cartão Débito"
+                      value={entradas.cartao_debito}
+                      onChange={(value) => setEntradas({...entradas, cartao_debito: value})}
+                    />
+                    <MoneyInput
+                      label="Cartão Crédito"
+                      value={entradas.cartao_credito}
+                      onChange={(value) => setEntradas({...entradas, cartao_credito: value})}
+                    />
                   </div>
 
-                  <div className="border-t pt-4">
-                    <h4 className="font-semibold mb-3">Entradas PIX</h4>
-                    
-                    <div className="flex gap-2 mb-4">
-                      <Input
-                        type="number"
-                        step="0.01"
-                        placeholder="Valor PIX"
-                        value={newPix.amount}
-                        onChange={(e) => setNewPix({...newPix, amount: parseFloat(e.target.value) || 0})}
-                      />
-                      <Input
-                        placeholder="Descrição (opcional)"
-                        value={newPix.description}
-                        onChange={(e) => setNewPix({...newPix, description: e.target.value})}
-                      />
-                      <Button onClick={addPixEntry} size="sm">
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </div>
-
-                    {pixEntries.length > 0 && (
-                      <div className="space-y-2">
-                        {pixEntries.map((entry, index) => (
-                          <div key={index} className="flex items-center justify-between bg-gray-50 p-3 rounded">
-                            <div>
-                              <span className="font-medium">R$ {entry.amount.toFixed(2)}</span>
-                              {entry.description && <span className="text-gray-500 ml-2">- {entry.description}</span>}
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removePixEntry(index, entry.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ))}
-                        <div className="font-semibold text-green-600">
-                          Total PIX: R$ {totalPix.toFixed(2)}
-                        </div>
-                      </div>
-                    )}
+                  <div className="border-t pt-6">
+                    <PixManager
+                      entries={pixEntries}
+                      onEntriesChange={setPixEntries}
+                      onSave={() => {}}
+                    />
                   </div>
 
-                  <Button onClick={saveEntradas} className="w-full">
+                  <div className="flex justify-between items-center pt-4 border-t bg-green-50 p-4 rounded-lg">
+                    <span className="text-lg font-semibold text-green-800">Total de Entradas:</span>
+                    <span className="text-2xl font-bold text-green-800">
+                      R$ {totalEntradas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
+
+                  <Button onClick={() => {}} className="w-full bg-green-600 hover:bg-green-700 h-12 text-lg">
                     Salvar Entradas
                   </Button>
                 </CardContent>
               </Card>
             </TabsContent>
 
-            <TabsContent value="saidas" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+            <TabsContent value="saidas" className="space-y-6">
+              <Card className="border-0 shadow-lg">
+                <CardHeader className="bg-red-50 border-b">
+                  <CardTitle className="flex items-center gap-2 text-red-800">
                     <Users className="h-5 w-5" />
                     Registro de Saídas
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                <CardContent className="p-6 space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <Label>Quantidade de Voluntários</Label>
+                      <Label className="text-sm font-medium text-gray-700">Quantidade de Voluntários</Label>
                       <Input
                         type="number"
                         value={saidas.voluntarios}
                         onChange={(e) => setSaidas({...saidas, voluntarios: parseInt(e.target.value) || 0})}
+                        className="mt-1"
                       />
                     </div>
-                    <div>
-                      <Label>Valor por Voluntário (R$)</Label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={saidas.valor_por_voluntario}
-                        onChange={(e) => setSaidas({...saidas, valor_por_voluntario: parseFloat(e.target.value) || 0})}
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label>Valor Segurança (R$)</Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={saidas.valor_seguranca}
-                      onChange={(e) => setSaidas({...saidas, valor_seguranca: parseFloat(e.target.value) || 0})}
+                    <MoneyInput
+                      label="Valor por Voluntário"
+                      value={saidas.valor_por_voluntario}
+                      onChange={(value) => setSaidas({...saidas, valor_por_voluntario: value})}
                     />
                   </div>
 
-                  <div className="space-y-2">
-                    <Label>Outros Gastos (R$)</Label>
-                    <Input
-                      type="number"
-                      step="0.01"
+                  <MoneyInput
+                    label="Valor Segurança"
+                    value={saidas.valor_seguranca}
+                    onChange={(value) => setSaidas({...saidas, valor_seguranca: value})}
+                  />
+
+                  <div className="space-y-3">
+                    <MoneyInput
+                      label="Outros Gastos"
                       value={saidas.outros_gastos}
-                      onChange={(e) => setSaidas({...saidas, outros_gastos: parseFloat(e.target.value) || 0})}
+                      onChange={(value) => setSaidas({...saidas, outros_gastos: value})}
                     />
-                    <Textarea
-                      placeholder="Descrição dos outros gastos"
-                      value={saidas.outros_descricao}
-                      onChange={(e) => setSaidas({...saidas, outros_descricao: e.target.value})}
-                    />
-                  </div>
-
-                  <div className="bg-gray-50 p-4 rounded">
-                    <div className="space-y-1 text-sm">
-                      <div>Voluntários: {saidas.voluntarios} × R$ {saidas.valor_por_voluntario.toFixed(2)} = R$ {(saidas.voluntarios * saidas.valor_por_voluntario).toFixed(2)}</div>
-                      <div>Segurança: R$ {saidas.valor_seguranca.toFixed(2)}</div>
-                      <div>Outros: R$ {saidas.outros_gastos.toFixed(2)}</div>
-                      <div className="font-semibold border-t pt-1">
-                        Total Saídas: R$ {totalSaidas.toFixed(2)}
-                      </div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700">Descrição dos outros gastos</Label>
+                      <Textarea
+                        placeholder="Descreva os outros gastos..."
+                        value={saidas.outros_descricao}
+                        onChange={(e) => setSaidas({...saidas, outros_descricao: e.target.value})}
+                        className="mt-1"
+                      />
                     </div>
                   </div>
 
-                  <Button onClick={saveSaidas} className="w-full">
+                  <Card className="bg-gray-50 border-gray-200">
+                    <CardContent className="p-4">
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span>Voluntários: {saidas.voluntarios} × R$ {saidas.valor_por_voluntario.toFixed(2)}</span>
+                          <span className="font-medium">R$ {(saidas.voluntarios * saidas.valor_por_voluntario).toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Segurança:</span>
+                          <span className="font-medium">R$ {saidas.valor_seguranca.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Outros:</span>
+                          <span className="font-medium">R$ {saidas.outros_gastos.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between border-t pt-2 text-lg font-bold text-red-600">
+                          <span>Total Saídas:</span>
+                          <span>R$ {totalSaidas.toFixed(2)}</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Button onClick={() => {}} className="w-full bg-red-600 hover:bg-red-700 h-12 text-lg">
                     Salvar Saídas
                   </Button>
                 </CardContent>
@@ -506,22 +436,22 @@ export const CashFlowManager = () => {
             </TabsContent>
 
             <TabsContent value="validacao">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <CheckCircle className="h-5 w-5" />
+              <Card className="border-0 shadow-lg">
+                <CardHeader className="bg-yellow-50 border-b">
+                  <CardTitle className="flex items-center gap-2 text-yellow-800">
+                    <Shield className="h-5 w-5" />
                     Validação dos Tesoureiros
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="text-center py-8">
-                    <Shield className="h-16 w-16 mx-auto mb-4 text-gray-400" />
-                    <h3 className="text-lg font-semibold mb-2">Validação Pendente</h3>
-                    <p className="text-gray-600 mb-4">
+                <CardContent className="p-8">
+                  <div className="text-center">
+                    <Shield className="h-16 w-16 mx-auto mb-4 text-yellow-500" />
+                    <h3 className="text-xl font-semibold mb-3 text-gray-800">Validação Pendente</h3>
+                    <p className="text-gray-600 mb-6 max-w-md mx-auto">
                       Esta sessão precisa ser validada por dois tesoureiros para ser finalizada.
                     </p>
-                    <Button variant="outline" disabled>
-                      Aguardando Implementação da Validação
+                    <Button variant="outline" disabled className="bg-gray-100">
+                      Aguardando Implementação
                     </Button>
                   </div>
                 </CardContent>
@@ -529,45 +459,79 @@ export const CashFlowManager = () => {
             </TabsContent>
 
             <TabsContent value="resumo">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Resumo da Sessão</CardTitle>
+              <Card className="border-0 shadow-lg">
+                <CardHeader className="bg-blue-50 border-b">
+                  <CardTitle className="flex items-center gap-2 text-blue-800">
+                    <TrendingUp className="h-5 w-5" />
+                    Resumo da Sessão
+                  </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 gap-6">
-                    <div className="space-y-3">
-                      <h4 className="font-semibold text-green-600">ENTRADAS</h4>
-                      <div className="space-y-1 text-sm">
-                        <div>Dinheiro: R$ {entradas.dinheiro.toFixed(2)}</div>
-                        <div>Cartão Débito: R$ {entradas.cartao_debito.toFixed(2)}</div>
-                        <div>Cartão Crédito: R$ {entradas.cartao_credito.toFixed(2)}</div>
-                        <div>PIX: R$ {totalPix.toFixed(2)} ({pixEntries.length} entradas)</div>
-                        <div className="font-semibold border-t pt-1">
-                          Total Entradas: R$ {totalEntradas.toFixed(2)}
+                <CardContent className="p-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <Card className="bg-green-50 border-green-200">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-green-800 text-lg">ENTRADAS</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span>Dinheiro:</span>
+                            <span className="font-medium">R$ {entradas.dinheiro.toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Cartão Débito:</span>
+                            <span className="font-medium">R$ {entradas.cartao_debito.toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Cartão Crédito:</span>
+                            <span className="font-medium">R$ {entradas.cartao_credito.toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>PIX ({pixEntries.length} entradas):</span>
+                            <span className="font-medium">R$ {totalPix.toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between border-t pt-2 text-lg font-bold text-green-700">
+                            <span>Total Entradas:</span>
+                            <span>R$ {totalEntradas.toFixed(2)}</span>
+                          </div>
                         </div>
-                      </div>
-                    </div>
+                      </CardContent>
+                    </Card>
 
-                    <div className="space-y-3">
-                      <h4 className="font-semibold text-red-600">SAÍDAS</h4>
-                      <div className="space-y-1 text-sm">
-                        <div>Voluntários: R$ {(saidas.voluntarios * saidas.valor_por_voluntario).toFixed(2)}</div>
-                        <div>Segurança: R$ {saidas.valor_seguranca.toFixed(2)}</div>
-                        <div>Outros: R$ {saidas.outros_gastos.toFixed(2)}</div>
-                        <div className="font-semibold border-t pt-1">
-                          Total Saídas: R$ {totalSaidas.toFixed(2)}
+                    <Card className="bg-red-50 border-red-200">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-red-800 text-lg">SAÍDAS</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span>Voluntários:</span>
+                            <span className="font-medium">R$ {(saidas.voluntarios * saidas.valor_por_voluntario).toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Segurança:</span>
+                            <span className="font-medium">R$ {saidas.valor_seguranca.toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Outros:</span>
+                            <span className="font-medium">R$ {saidas.outros_gastos.toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between border-t pt-2 text-lg font-bold text-red-700">
+                            <span>Total Saídas:</span>
+                            <span>R$ {totalSaidas.toFixed(2)}</span>
+                          </div>
                         </div>
-                      </div>
-                    </div>
+                      </CardContent>
+                    </Card>
                   </div>
 
-                  <div className={`mt-6 p-4 rounded text-center ${
-                    saldo >= 0 ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
-                  }`}>
-                    <div className="text-lg font-bold">
-                      Saldo Final: R$ {saldo.toFixed(2)}
-                    </div>
-                  </div>
+                  <Card className={`mt-6 ${saldo >= 0 ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+                    <CardContent className="p-6 text-center">
+                      <div className={`text-2xl font-bold ${saldo >= 0 ? 'text-green-800' : 'text-red-800'}`}>
+                        Saldo Final: R$ {saldo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </div>
+                    </CardContent>
+                  </Card>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -576,24 +540,33 @@ export const CashFlowManager = () => {
       )}
 
       {sessions.length > 0 && (
-        <Card>
+        <Card className="border-0 shadow-lg">
           <CardHeader>
             <CardTitle>Sessões Anteriores</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
+            <div className="space-y-3">
               {sessions.slice(0, 5).map((session) => (
-                <div key={session.id} className="flex justify-between items-center p-3 bg-gray-50 rounded">
-                  <div>
-                    <div className="font-medium">{session.culto_evento}</div>
-                    <div className="text-sm text-gray-500">
-                      {new Date(session.date_session).toLocaleDateString('pt-BR')}
+                <Card key={session.id} className="bg-gray-50 border-gray-200 hover:shadow-md transition-shadow">
+                  <CardContent className="p-4">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <div className="font-medium text-gray-800">{session.culto_evento}</div>
+                        <div className="text-sm text-gray-500">
+                          {new Date(session.date_session).toLocaleDateString('pt-BR')}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                          session.status === 'aberto' ? 'bg-blue-100 text-blue-800' : 
+                          session.status === 'validado' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {session.status.toUpperCase()}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                  <div className="text-sm">
-                    Status: <span className="font-medium">{session.status}</span>
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
               ))}
             </div>
           </CardContent>

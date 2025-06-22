@@ -1,15 +1,18 @@
+
 import { useAuth } from "@/hooks/useAuth";
 import { CashFlowManager } from "@/components/CashFlowManager";
-import { Button } from "@/components/ui/button";
+import { Navigation } from "@/components/Navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LogOut, User, Building2, Settings } from "lucide-react";
+import { useState } from "react";
+import { BarChart3, TrendingUp, Clock, CheckCircle } from "lucide-react";
 
 const Index = () => {
-  const { profile, signOut } = useAuth();
+  const { profile } = useAuth();
+  const [activeTab, setActiveTab] = useState('caixa');
 
   if (!profile) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Carregando perfil...</p>
@@ -18,73 +21,127 @@ const Index = () => {
     );
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50">
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
-              <Building2 className="h-8 w-8 text-blue-600" />
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">Sistema Tesouraria</h1>
-                <p className="text-sm text-gray-500">Gestão Financeira Eclesiástica</p>
-              </div>
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'dashboard':
+        return (
+          <div className="p-6 space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-blue-100">Sessões Ativas</p>
+                      <p className="text-2xl font-bold">3</p>
+                    </div>
+                    <Clock className="h-8 w-8 text-blue-200" />
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-green-100">Total Arrecadado</p>
+                      <p className="text-2xl font-bold">R$ 12.450</p>
+                    </div>
+                    <TrendingUp className="h-8 w-8 text-green-200" />
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-purple-100">Sessões Validadas</p>
+                      <p className="text-2xl font-bold">8</p>
+                    </div>
+                    <CheckCircle className="h-8 w-8 text-purple-200" />
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-orange-100">Relatórios</p>
+                      <p className="text-2xl font-bold">15</p>
+                    </div>
+                    <BarChart3 className="h-8 w-8 text-orange-200" />
+                  </div>
+                </CardContent>
+              </Card>
             </div>
             
-            <div className="flex items-center space-x-4">
-              {profile.role ===  'master' && (
-                <Button variant="outline" size="sm" asChild>
-                  <a href="/admin">
-                    <Settings className="h-4 w-4 mr-2" />
-                    Administração
-                  </a>
-                </Button>
-              )}
-              
-              <div className="flex items-center space-x-2 text-sm text-gray-600">
-                <User className="h-4 w-4" />
-                <span>{profile.name}</span>
-                <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
-                  {profile.role === 'master' ? 'Master' : 
-                   profile.role === 'tesoureiro' ? 'Tesoureiro' : 'Supervisor'}
-                </span>
-              </div>
-              <Button variant="outline" size="sm" onClick={signOut}>
-                <LogOut className="h-4 w-4 mr-2" />
-                Sair
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto">
-        {!profile.church_id && profile.role !== 'supervisor' ? (
-          <div className="p-6">
-            <Card className="border-orange-200 bg-orange-50">
+            <Card>
               <CardHeader>
-                <CardTitle className="text-orange-800">Configuração Necessária</CardTitle>
+                <CardTitle>Bem-vindo ao Sistema de Tesouraria</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-orange-700 mb-4">
-                  Seu perfil ainda não está vinculado a uma igreja. 
-                  Entre em contato com o administrador do sistema para configurar sua igreja.
+                <p className="text-gray-600">
+                  Use o menu acima para navegar entre as diferentes funcionalidades do sistema.
                 </p>
-                <div className="text-sm text-orange-600">
-                  <strong>Próximos passos:</strong>
-                  <ul className="list-disc list-inside mt-2 space-y-1">
-                    <li>Solicite ao Master que crie o registro da sua igreja</li>
-                    <li>Solicite a vinculação do seu perfil à igreja</li>
-                    <li>Após a configuração, você poderá usar o sistema completo</li>
-                  </ul>
-                </div>
               </CardContent>
             </Card>
           </div>
-        ) : (
-          <CashFlowManager />
-        )}
-      </main>
+        );
+      
+      case 'relatorios':
+        return (
+          <div className="p-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Relatórios</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600">
+                  Funcionalidade de relatórios em desenvolvimento.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        );
+      
+      default:
+        return (
+          <div className="bg-gray-50 min-h-screen">
+            {!profile.church_id && profile.role !== 'supervisor' ? (
+              <div className="p-6">
+                <Card className="border-orange-200 bg-orange-50">
+                  <CardHeader>
+                    <CardTitle className="text-orange-800">Configuração Necessária</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-orange-700 mb-4">
+                      Seu perfil ainda não está vinculado a uma igreja. 
+                      Entre em contato com o administrador do sistema para configurar sua igreja.
+                    </p>
+                    <div className="text-sm text-orange-600">
+                      <strong>Próximos passos:</strong>
+                      <ul className="list-disc list-inside mt-2 space-y-1">
+                        <li>Solicite ao Master que crie o registro da sua igreja</li>
+                        <li>Solicite a vinculação do seu perfil à igreja</li>
+                        <li>Após a configuração, você poderá usar o sistema completo</li>
+                      </ul>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            ) : (
+              <CashFlowManager />
+            )}
+          </div>
+        );
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Navigation activeTab={activeTab} onTabChange={setActiveTab} />
+      {renderContent()}
     </div>
   );
 };
