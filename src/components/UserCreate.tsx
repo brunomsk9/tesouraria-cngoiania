@@ -28,7 +28,7 @@ export const UserCreate = ({ churches, onUserCreated }: UserCreateProps) => {
     email: '',
     password: '',
     role: 'tesoureiro' as 'master' | 'tesoureiro' | 'supervisor',
-    church_id: ''
+    church_id: 'none'
   });
 
   const handleCreateUser = async () => {
@@ -58,7 +58,7 @@ export const UserCreate = ({ churches, onUserCreated }: UserCreateProps) => {
         .update({
           name: formData.name,
           role: formData.role,
-          church_id: formData.church_id || null
+          church_id: formData.church_id === 'none' ? null : formData.church_id
         })
         .eq('id', authData.user.id);
 
@@ -74,7 +74,7 @@ export const UserCreate = ({ churches, onUserCreated }: UserCreateProps) => {
         email: '',
         password: '',
         role: 'tesoureiro',
-        church_id: ''
+        church_id: 'none'
       });
       setIsDialogOpen(false);
       onUserCreated();
@@ -158,7 +158,7 @@ export const UserCreate = ({ churches, onUserCreated }: UserCreateProps) => {
                   <SelectValue placeholder="Selecione uma igreja" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Sem igreja</SelectItem>
+                  <SelectItem value="none">Sem igreja</SelectItem>
                   {churches.map((church) => (
                     <SelectItem key={church.id} value={church.id}>
                       {church.name}

@@ -48,8 +48,10 @@ export const UserManagement = () => {
         .order('created_at', { ascending: false });
 
       // Se um supervisor está filtrando por igreja específica
-      if (selectedChurch !== 'all') {
+      if (selectedChurch !== 'all' && selectedChurch !== 'none') {
         query = query.eq('church_id', selectedChurch);
+      } else if (selectedChurch === 'none') {
+        query = query.is('church_id', null);
       }
 
       const { data, error } = await query;
@@ -117,7 +119,7 @@ export const UserManagement = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todas as igrejas</SelectItem>
-              <SelectItem value="">Sem igreja</SelectItem>
+              <SelectItem value="none">Sem igreja</SelectItem>
               {churches.map((church) => (
                 <SelectItem key={church.id} value={church.id}>
                   {church.name}
@@ -140,7 +142,7 @@ export const UserManagement = () => {
             {selectedChurch !== 'all' && (
               <div className="flex items-center text-sm text-blue-600">
                 <Building2 className="h-4 w-4 mr-1" />
-                {selectedChurch === '' ? 'Sem igreja' : churches.find(c => c.id === selectedChurch)?.name}
+                {selectedChurch === 'none' ? 'Sem igreja' : churches.find(c => c.id === selectedChurch)?.name}
               </div>
             )}
           </CardTitle>

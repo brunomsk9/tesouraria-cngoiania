@@ -36,7 +36,7 @@ export const UserEdit = ({ profile, churches, isOpen, onClose, onUserUpdated }: 
   const [formData, setFormData] = useState({
     name: '',
     role: 'tesoureiro' as 'master' | 'tesoureiro' | 'supervisor',
-    church_id: ''
+    church_id: 'none'
   });
 
   useEffect(() => {
@@ -44,7 +44,7 @@ export const UserEdit = ({ profile, churches, isOpen, onClose, onUserUpdated }: 
       setFormData({
         name: profile.name,
         role: profile.role,
-        church_id: profile.church_id || ''
+        church_id: profile.church_id || 'none'
       });
     }
   }, [profile]);
@@ -60,7 +60,7 @@ export const UserEdit = ({ profile, churches, isOpen, onClose, onUserUpdated }: 
         .update({
           name: formData.name,
           role: formData.role,
-          church_id: formData.church_id || null
+          church_id: formData.church_id === 'none' ? null : formData.church_id
         })
         .eq('id', profile.id);
 
@@ -125,7 +125,7 @@ export const UserEdit = ({ profile, churches, isOpen, onClose, onUserUpdated }: 
                   <SelectValue placeholder="Selecione uma igreja" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Sem igreja</SelectItem>
+                  <SelectItem value="none">Sem igreja</SelectItem>
                   {churches.map((church) => (
                     <SelectItem key={church.id} value={church.id}>
                       {church.name}
