@@ -28,7 +28,7 @@ export const useVolunteerData = () => {
 
   const loadVolunteers = async () => {
     try {
-      console.log('Iniciando carregamento de voluntários...');
+      console.log('Carregando voluntários...');
       const { data: volunteersData, error: volunteersError } = await supabase
         .from('volunteers')
         .select(`
@@ -59,7 +59,10 @@ export const useVolunteerData = () => {
             `)
             .eq('volunteer_id', volunteer.id);
 
-          if (churchError) throw churchError;
+          if (churchError) {
+            console.error('Erro ao carregar igrejas do voluntário:', churchError);
+            return { ...volunteer, churches: [] };
+          }
 
           return {
             ...volunteer,
@@ -94,6 +97,7 @@ export const useVolunteerData = () => {
       setChurches(data || []);
     } catch (error) {
       console.error('Erro ao carregar igrejas:', error);
+      toast.error('Erro ao carregar igrejas');
     }
   };
 
@@ -104,9 +108,9 @@ export const useVolunteerData = () => {
     area_atuacao: string;
     church_ids: string[];
   }, editingVolunteer?: Volunteer | null) => {
-    console.log('Iniciando submissão do formulário...', { formData, profile });
+    console.log('Salvando voluntário...', { formData, editingVolunteer });
     
-    // Validação obrigatória do nome
+    // Validações
     if (!formData.name.trim()) {
       toast.error('Nome é obrigatório');
       throw new Error('Nome é obrigatório');
@@ -121,7 +125,7 @@ export const useVolunteerData = () => {
       let volunteerId: string;
 
       if (editingVolunteer) {
-        console.log('Atualizando voluntário existente...', editingVolunteer.id);
+        console.log('Atualizando voluntário existente...');
         // Atualizar voluntário existente
         const { error: updateError } = await supabase
           .from('volunteers')
@@ -135,7 +139,7 @@ export const useVolunteerData = () => {
 
         if (updateError) {
           console.error('Erro ao atualizar voluntário:', updateError);
-          toast.error('Erro ao atualizar voluntário: ' + updateError.message);
+          toast.error('Erro ao atualizar voluntário');
           throw updateError;
         }
         volunteerId = editingVolunteer.id;
@@ -147,29 +151,25 @@ export const useVolunteerData = () => {
           .eq('volunteer_id', volunteerId);
       } else {
         console.log('Criando novo voluntário...');
-        // Criar novo voluntário com dados limpos
-        const volunteerInsertData = {
-          name: formData.name.trim(),
-          phone: formData.phone.trim() || null,
-          pix_key: formData.pix_key.trim() || null,
-          area_atuacao: formData.area_atuacao.trim() || null,
-        };
-        
-        console.log('Dados para inserção:', volunteerInsertData);
-        
+        // Criar novo voluntário
         const { data: volunteerData, error: volunteerError } = await supabase
           .from('volunteers')
-          .insert(volunteerInsertData)
+          .insert({
+            name: formData.name.trim(),
+            phone: formData.phone.trim() || null,
+            pix_key: formData.pix_key.trim() || null,
+            area_atuacao: formData.area_atuacao.trim() || null,
+          })
           .select()
           .single();
 
         if (volunteerError) {
           console.error('Erro ao criar voluntário:', volunteerError);
-          toast.error('Erro ao criar voluntário: ' + volunteerError.message);
+          toast.error('Erro ao criar voluntário');
           throw volunteerError;
         }
         
-        console.log('Voluntário criado:', volunteerData);
+        console.log('Voluntário criado com sucesso:', volunteerData);
         volunteerId = volunteerData.id;
       }
 
@@ -186,7 +186,7 @@ export const useVolunteerData = () => {
 
       if (associationError) {
         console.error('Erro ao criar associações:', associationError);
-        toast.error('Erro ao criar associações: ' + associationError.message);
+        toast.error('Erro ao criar associações com igrejas');
         throw associationError;
       }
 
@@ -194,11 +194,7 @@ export const useVolunteerData = () => {
       toast.success(editingVolunteer ? 'Voluntário atualizado com sucesso!' : 'Voluntário criado com sucesso!');
       await loadVolunteers();
     } catch (error) {
-      console.error('Erro geral ao salvar voluntário:', error);
-      // Não fazer toast adicional se já foi feito acima
-      if (!(error as any)?.message?.includes('row violates row-level security')) {
-        toast.error('Erro inesperado ao salvar voluntário');
-      }
+      console.error('Erro ao salvar voluntário:', error);
       throw error;
     }
   };
@@ -213,6 +209,7 @@ export const useVolunteerData = () => {
 
       if (error) {
         console.error('Erro ao deletar voluntário:', error);
+        toast.error('Erro ao excluir voluntário');
         throw error;
       }
 
