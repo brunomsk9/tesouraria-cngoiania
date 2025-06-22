@@ -59,7 +59,7 @@ const Index = () => {
           </div>
         );
       
-      default:
+      case 'caixa':
         return (
           <div className="bg-gray-50 min-h-screen">
             {!profile.church_id && profile.role !== 'supervisor' ? (
@@ -87,6 +87,25 @@ const Index = () => {
             ) : (
               <CashFlowManager />
             )}
+          </div>
+        );
+      
+      default:
+        return (
+          <div className="p-4 lg:p-6 space-y-6">
+            <ValidationAlert />
+            <DashboardCards />
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>Bem-vindo ao Sistema de Tesouraria</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600">
+                  Use o menu lateral para navegar entre as diferentes funcionalidades do sistema.
+                </p>
+              </CardContent>
+            </Card>
           </div>
         );
     }
