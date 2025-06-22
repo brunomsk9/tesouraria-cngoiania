@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserManagement } from "@/components/UserManagement";
 import { ChurchManagement } from "@/components/ChurchManagement";
-import { Users, Building2, Shield, ArrowLeft, Home } from "lucide-react";
+import { VolunteerManagement } from "@/components/VolunteerManagement";
+import { Users, Building2, Shield, ArrowLeft, Home, UserCheck } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Admin = () => {
@@ -80,7 +81,7 @@ const Admin = () => {
 
       <main className="max-w-7xl mx-auto py-6">
         <Tabs defaultValue="users" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto mb-6">
+          <TabsList className="grid w-full grid-cols-3 max-w-lg mx-auto mb-6">
             <TabsTrigger value="users" className="flex items-center space-x-2">
               <Users className="h-4 w-4" />
               <span>Usuários</span>
@@ -88,6 +89,10 @@ const Admin = () => {
             <TabsTrigger value="churches" className="flex items-center space-x-2">
               <Building2 className="h-4 w-4" />
               <span>Igrejas</span>
+            </TabsTrigger>
+            <TabsTrigger value="volunteers" className="flex items-center space-x-2">
+              <UserCheck className="h-4 w-4" />
+              <span>Voluntários</span>
             </TabsTrigger>
           </TabsList>
           
@@ -97,6 +102,10 @@ const Admin = () => {
           
           <TabsContent value="churches">
             <ChurchManagement />
+          </TabsContent>
+          
+          <TabsContent value="volunteers">
+            <VolunteerManagement />
           </TabsContent>
         </Tabs>
       </main>

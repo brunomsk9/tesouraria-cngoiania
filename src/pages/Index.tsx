@@ -1,15 +1,17 @@
 
 import { useAuth } from "@/hooks/useAuth";
 import { CashFlowManager } from "@/components/CashFlowManager";
-import { Navigation } from "@/components/Navigation";
+import { Sidebar } from "@/components/Sidebar";
 import { Reports } from "@/components/Reports";
+import { CashBookReport } from "@/components/CashBookReport";
+import { ValidationAlert } from "@/components/ValidationAlert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState } from "react";
 import { BarChart3, TrendingUp, Clock, CheckCircle } from "lucide-react";
 
 const Index = () => {
   const { profile } = useAuth();
-  const [activeTab, setActiveTab] = useState('caixa');
+  const [activeTab, setActiveTab] = useState('dashboard');
 
   if (!profile) {
     return (
@@ -26,8 +28,9 @@ const Index = () => {
     switch (activeTab) {
       case 'dashboard':
         return (
-          <div className="p-6 space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="p-4 lg:p-6 space-y-6">
+            <ValidationAlert />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
@@ -83,7 +86,7 @@ const Index = () => {
               </CardHeader>
               <CardContent>
                 <p className="text-gray-600">
-                  Use o menu acima para navegar entre as diferentes funcionalidades do sistema.
+                  Use o menu lateral para navegar entre as diferentes funcionalidades do sistema.
                 </p>
               </CardContent>
             </Card>
@@ -91,13 +94,24 @@ const Index = () => {
         );
       
       case 'relatorios':
-        return <Reports />;
+        return (
+          <div className="p-4 lg:p-6">
+            <Reports />
+          </div>
+        );
+      
+      case 'livro-caixa':
+        return (
+          <div className="p-4 lg:p-6">
+            <CashBookReport />
+          </div>
+        );
       
       default:
         return (
           <div className="bg-gray-50 min-h-screen">
             {!profile.church_id && profile.role !== 'supervisor' ? (
-              <div className="p-6">
+              <div className="p-4 lg:p-6">
                 <Card className="border-orange-200 bg-orange-50">
                   <CardHeader>
                     <CardTitle className="text-orange-800">Configuração Necessária</CardTitle>
@@ -127,9 +141,15 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navigation activeTab={activeTab} onTabChange={setActiveTab} />
-      {renderContent()}
+    <div className="min-h-screen bg-gray-50 flex">
+      <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
+      
+      {/* Main content */}
+      <div className="flex-1 lg:ml-0">
+        <div className="lg:pl-64">
+          {renderContent()}
+        </div>
+      </div>
     </div>
   );
 };
