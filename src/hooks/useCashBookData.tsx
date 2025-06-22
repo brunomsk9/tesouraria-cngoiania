@@ -13,21 +13,27 @@ interface CashBookEntry {
   category?: string;
 }
 
+interface Church {
+  id: string;
+  name: string;
+}
+
 export const useCashBookData = () => {
   const [entries, setEntries] = useState<CashBookEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [initialBalance, setInitialBalance] = useState(0);
+  const [churches, setChurches] = useState<Church[]>([]);
 
   const generateReport = async (startDate: string, endDate: string, churchId: string) => {
     console.log('generateReport chamado com:', { startDate, endDate, churchId });
     
     if (!startDate || !endDate) {
-      toast.error('Preencha as datas de início e fim');
+      toast.error('Preencha a data do evento');
       return;
     }
 
     if (!churchId) {
-      toast.error('Igreja não identificada');
+      toast.error('Selecione uma igreja');
       return;
     }
 
@@ -167,7 +173,7 @@ export const useCashBookData = () => {
       setEntries(cashBookEntries);
       
       if (cashBookEntries.length === 0) {
-        toast.info('Nenhuma transação encontrada para o período selecionado');
+        toast.info('Nenhuma transação encontrada para a data selecionada');
       } else {
         toast.success(`Relatório gerado com sucesso! ${cashBookEntries.length} registros encontrados.`);
       }
@@ -184,6 +190,7 @@ export const useCashBookData = () => {
     entries,
     loading,
     initialBalance,
+    churches,
     generateReport
   };
 };

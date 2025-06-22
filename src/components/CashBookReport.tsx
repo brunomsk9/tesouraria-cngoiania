@@ -1,63 +1,61 @@
 
-import { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/useAuth';
+import { useState } from 'react';
 import { CashBookFilters } from './CashBookFilters';
 import { CashBookTable } from './CashBookTable';
 import { useCashBookPrintExport } from './CashBookPrintExport';
 import { useCashBookData } from '@/hooks/useCashBookData';
 
 export const CashBookReport = () => {
-  const { profile } = useAuth();
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  const [selectedChurch, setSelectedChurch] = useState('');
+  const [selectedDate, setSelectedDate] = useState('');
   
   const {
     entries,
     loading,
     initialBalance,
+    churches,
     generateReport
   } = useCashBookData();
 
   const { exportToPrint } = useCashBookPrintExport({
     entries,
     initialBalance,
-    startDate,
-    endDate,
-    selectedChurch: profile?.church_id || '',
-    churches: []
+    startDate: selectedDate,
+    endDate: selectedDate,
+    selectedChurch,
+    churches
   });
 
   const handleGenerateReport = () => {
-    console.log('handleGenerateReport chamado com:', { startDate, endDate, churchId: profile?.church_id });
+    console.log('handleGenerateReport chamado com:', { selectedDate, churchId: selectedChurch });
     
-    if (!startDate || !endDate) {
-      console.log('Datas não preenchidas');
+    if (!selectedDate) {
+      console.log('Data não preenchida');
       return;
     }
     
-    if (!profile?.church_id) {
-      console.log('Igreja do usuário não encontrada');
+    if (!selectedChurch) {
+      console.log('Igreja não selecionada');
       return;
     }
     
-    generateReport(startDate, endDate, profile.church_id);
+    generateReport(selectedDate, selectedDate, selectedChurch);
   };
 
   console.log('Renderizando CashBookReport:', { 
-    startDate, 
-    endDate, 
-    churchId: profile?.church_id,
+    selectedDate, 
+    churchId: selectedChurch,
     entriesCount: entries.length 
   });
 
   return (
     <div className="space-y-6">
       <CashBookFilters
-        startDate={startDate}
-        endDate={endDate}
+        selectedChurch={selectedChurch}
+        selectedDate={selectedDate}
         loading={loading}
-        onStartDateChange={setStartDate}
-        onEndDateChange={setEndDate}
+        onChurchChange={setSelectedChurch}
+        onDateChange={setSelectedDate}
         onGenerateReport={handleGenerateReport}
       />
 
