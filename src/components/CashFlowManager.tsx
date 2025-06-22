@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MoneyInput } from '@/components/MoneyInput';
 import { PixManager } from '@/components/PixManager';
 import { SessionValidation } from '@/components/SessionValidation';
+import { VolunteerSelector } from '@/components/VolunteerSelector';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -31,6 +32,12 @@ interface PixEntry {
   description: string;
 }
 
+interface SelectedVolunteer {
+  id: string;
+  name: string;
+  amount: number;
+}
+
 export const CashFlowManager = () => {
   const { profile } = useAuth();
   const [currentSession, setCurrentSession] = useState<CashSession | null>(null);
@@ -50,9 +57,8 @@ export const CashFlowManager = () => {
   const [pixEntries, setPixEntries] = useState<PixEntry[]>([]);
   
   // Estados para saídas
+  const [selectedVolunteers, setSelectedVolunteers] = useState<SelectedVolunteer[]>([]);
   const [saidas, setSaidas] = useState({
-    voluntarios: 0,
-    valor_por_voluntario: 30,
     valor_seguranca: 0,
     outros_gastos: 0,
     outros_descricao: ''
@@ -163,19 +169,26 @@ export const CashFlowManager = () => {
   const saveSaidas = async () => {
     if (!currentSession) return;
 
-    const totalVoluntarios = saidas.voluntarios * saidas.valor_por_voluntario;
-    const transactions = [
-      {
-        cash_session_id: currentSession.id,
-        type: 'saida' as const,
-        description: `Pagamento ${saidas.voluntarios} Voluntário(s)`,
-        amount: totalVoluntarios,
-        date_transaction: currentSession.date_session,
-        culto_evento: currentSession.culto_evento,
-        voluntarios: saidas.voluntarios,
-        user_id: profile?.id
-      },
-      {
+    const transactions = [];
+
+    // Adicionar transações dos voluntários
+    selectedVolunteers.forEach(volunteer => {
+      if (volunteer.amount > 0) {
+        transactions.push({
+          cash_session_id: currentSession.id,
+          type: 'saida' as const,
+          description: `Pagamento Voluntário: ${volunteer.name}`,
+          amount: volunteer.amount,
+          date_transaction: currentSession.date_session,
+          culto_evento: currentSession.culto_evento,
+          user_id: profile?.id
+        });
+      }
+    });
+
+    // Adicionar outras saídas
+    if (saidas.valor_seguranca > 0) {
+      transactions.push({
         cash_session_id: currentSession.id,
         type: 'saida' as const,
         description: 'Pagamento Segurança',
@@ -184,8 +197,11 @@ export const CashFlowManager = () => {
         culto_evento: currentSession.culto_evento,
         valor_seguranca: saidas.valor_seguranca,
         user_id: profile?.id
-      },
-      {
+      });
+    }
+
+    if (saidas.outros_gastos > 0) {
+      transactions.push({
         cash_session_id: currentSession.id,
         type: 'saida' as const,
         description: saidas.outros_descricao || 'Outros Gastos',
@@ -194,8 +210,13 @@ export const CashFlowManager = () => {
         culto_evento: currentSession.culto_evento,
         outros_gastos: saidas.outros_gastos,
         user_id: profile?.id
-      }
-    ].filter(t => t.amount > 0);
+      });
+    }
+
+    if (transactions.length === 0) {
+      toast.error('Adicione pelo menos uma saída');
+      return;
+    }
 
     const { error } = await supabase
       .from('transactions')
@@ -234,7 +255,8 @@ export const CashFlowManager = () => {
 
   const totalPix = pixEntries.reduce((sum, entry) => sum + entry.amount, 0);
   const totalEntradas = entradas.dinheiro + entradas.cartao_debito + entradas.cartao_credito + totalPix;
-  const totalSaidas = (saidas.voluntarios * saidas.valor_por_voluntario) + saidas.valor_seguranca + saidas.outros_gastos;
+  const totalVolunteers = selectedVolunteers.reduce((sum, v) => sum + v.amount, 0);
+  const totalSaidas = totalVolunteers + saidas.valor_seguranca + saidas.outros_gastos;
   const saldo = totalEntradas - totalSaidas;
 
   if (profile?.role === 'supervisor') {
@@ -396,22 +418,10 @@ export const CashFlowManager = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-6 space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <Label className="text-sm font-medium text-gray-700">Quantidade de Voluntários</Label>
-                      <Input
-                        type="number"
-                        value={saidas.voluntarios}
-                        onChange={(e) => setSaidas({...saidas, voluntarios: parseInt(e.target.value) || 0})}
-                        className="mt-1"
-                      />
-                    </div>
-                    <MoneyInput
-                      label="Valor por Voluntário"
-                      value={saidas.valor_por_voluntario}
-                      onChange={(value) => setSaidas({...saidas, valor_por_voluntario: value})}
-                    />
-                  </div>
+                  <VolunteerSelector
+                    selectedVolunteers={selectedVolunteers}
+                    onVolunteersChange={setSelectedVolunteers}
+                  />
 
                   <MoneyInput
                     label="Valor Segurança"
@@ -440,8 +450,8 @@ export const CashFlowManager = () => {
                     <CardContent className="p-4">
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
-                          <span>Voluntários: {saidas.voluntarios} × R$ {saidas.valor_por_voluntario.toFixed(2)}</span>
-                          <span className="font-medium">R$ {(saidas.voluntarios * saidas.valor_por_voluntario).toFixed(2)}</span>
+                          <span>Voluntários ({selectedVolunteers.length}):</span>
+                          <span className="font-medium">R$ {totalVolunteers.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between">
                           <span>Segurança:</span>
@@ -520,9 +530,15 @@ export const CashFlowManager = () => {
                       <CardContent className="space-y-3">
                         <div className="space-y-2 text-sm">
                           <div className="flex justify-between">
-                            <span>Voluntários:</span>
-                            <span className="font-medium">R$ {(saidas.voluntarios * saidas.valor_por_voluntario).toFixed(2)}</span>
+                            <span>Voluntários ({selectedVolunteers.length}):</span>
+                            <span className="font-medium">R$ {totalVolunteers.toFixed(2)}</span>
                           </div>
+                          {selectedVolunteers.map(volunteer => (
+                            <div key={volunteer.id} className="flex justify-between text-xs pl-4 text-gray-600">
+                              <span>• {volunteer.name}:</span>
+                              <span>R$ {volunteer.amount.toFixed(2)}</span>
+                            </div>
+                          ))}
                           <div className="flex justify-between">
                             <span>Segurança:</span>
                             <span className="font-medium">R$ {saidas.valor_seguranca.toFixed(2)}</span>
