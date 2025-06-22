@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -244,9 +243,8 @@ export const CashFlowManager = () => {
     // Reset form data when selecting a different session
     setEntradas({ dinheiro: 0, cartao_debito: 0, cartao_credito: 0 });
     setPixEntries([]);
+    setSelectedVolunteers([]);
     setSaidas({
-      voluntarios: 0,
-      valor_por_voluntario: 30,
       valor_seguranca: 0,
       outros_gastos: 0,
       outros_descricao: ''
