@@ -101,7 +101,7 @@ export const UserManagement = () => {
           <p className="text-gray-600">Gerencie usuários, roles e vínculos com igrejas</p>
         </div>
         
-        <UserCreate churches={churches} onUserCreated={loadPro files} />
+        <UserCreate churches={churches} onUserCreated={loadProfiles} />
       </div>
 
       <Card>
