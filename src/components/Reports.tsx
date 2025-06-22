@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -33,14 +34,14 @@ export const Reports = () => {
   const [loading, setLoading] = useState(false);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [churches, setChurches] = useState<Church[]>([]);
-  const [selectedChurch, setSelectedChurch] = useState<string>('');
+  const [selectedChurch, setSelectedChurch] = useState<string>('all');
   const [dateRange, setDateRange] = useState('30days');
   const [customDateRange, setCustomDateRange] = useState<{ start?: Date; end?: Date }>({});
 
   useEffect(() => {
-    if (profile?.role === 'supervisor') {
-      loadChurches();
-    } else if (profile?.church_id) {
+    loadChurches();
+    // Para usuários não supervisores, definir automaticamente sua igreja
+    if (profile?.role !== 'supervisor' && profile?.church_id) {
       setSelectedChurch(profile.church_id);
     }
   }, [profile]);
@@ -81,31 +82,36 @@ export const Reports = () => {
     }
   };
 
-  const getChurchFilter = () => {
-    if (profile?.role === 'supervisor' && selectedChurch) {
-      return selectedChurch;
-    }
-    return profile?.church_id;
-  };
-
   const loadData = async () => {
-    const churchId = getChurchFilter();
-    if (!churchId) return;
-    
     setLoading(true);
     try {
       const { start, end } = getDateRange();
       
-      const { data: transactionsData, error: transError } = await supabase
+      let query = supabase
         .from('transactions')
         .select(`
           *,
           cash_sessions!inner(church_id)
         `)
-        .eq('cash_sessions.church_id', churchId)
         .gte('date_transaction', format(start, 'yyyy-MM-dd'))
         .lte('date_transaction', format(end, 'yyyy-MM-dd'))
         .order('date_transaction', { ascending: false });
+
+      // Aplicar filtro de igreja se não for "all"
+      if (selectedChurch !== 'all') {
+        // Para usuários não supervisores, sempre filtrar pela sua igreja
+        const churchFilter = profile?.role === 'supervisor' ? selectedChurch : profile?.church_id;
+        if (churchFilter) {
+          query = query.eq('cash_sessions.church_id', churchFilter);
+        }
+      } else if (profile?.role !== 'supervisor') {
+        // Se não for supervisor, sempre filtrar pela igreja do usuário
+        if (profile?.church_id) {
+          query = query.eq('cash_sessions.church_id', profile.church_id);
+        }
+      }
+
+      const { data: transactionsData, error: transError } = await query;
 
       if (transError) throw transError;
       setTransactions(transactionsData || []);
@@ -171,6 +177,9 @@ export const Reports = () => {
   };
 
   const getSelectedChurchName = () => {
+    if (selectedChurch === 'all') {
+      return 'Todas as Igrejas';
+    }
     if (profile?.role === 'supervisor' && selectedChurch) {
       return churches.find(c => c.id === selectedChurch)?.name || 'Igreja não encontrada';
     }
@@ -181,10 +190,10 @@ export const Reports = () => {
   };
 
   const summary = calculateSummary();
-  const churchId = getChurchFilter();
   const selectedChurchName = getSelectedChurchName();
 
-  if (!churchId && profile?.role !== 'supervisor') {
+  // Para usuários não supervisores, sempre mostrar dados da sua igreja
+  if (profile?.role !== 'supervisor' && !profile?.church_id) {
     return (
       <Card className="border-orange-200 bg-orange-50">
         <CardHeader>
@@ -194,36 +203,6 @@ export const Reports = () => {
           <p className="text-orange-700">
             Você precisa estar vinculado a uma igreja para visualizar relatórios.
           </p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (profile?.role === 'supervisor' && !selectedChurch) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Building2 className="h-5 w-5 mr-2" />
-            Selecione uma Igreja
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-gray-600 mb-4">
-            Selecione uma igreja para visualizar os relatórios financeiros.
-          </p>
-          <Select value={selectedChurch} onValueChange={setSelectedChurch}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Selecione uma igreja" />
-            </SelectTrigger>
-            <SelectContent>
-              {churches.map((church) => (
-                <SelectItem key={church.id} value={church.id}>
-                  {church.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </CardContent>
       </Card>
     );
@@ -253,6 +232,7 @@ export const Reports = () => {
                 <SelectValue placeholder="Selecionar Igreja" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="all">Todas as Igrejas</SelectItem>
                 {churches.map((church) => (
                   <SelectItem key={church.id} value={church.id}>
                     {church.name}
