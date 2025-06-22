@@ -170,8 +170,19 @@ export const Reports = () => {
     });
   };
 
+  const getSelectedChurchName = () => {
+    if (profile?.role === 'supervisor' && selectedChurch) {
+      return churches.find(c => c.id === selectedChurch)?.name || 'Igreja não encontrada';
+    }
+    if (profile?.church_id) {
+      return churches.find(c => c.id === profile.church_id)?.name || 'Igreja não encontrada';
+    }
+    return '';
+  };
+
   const summary = calculateSummary();
   const churchId = getChurchFilter();
+  const selectedChurchName = getSelectedChurchName();
 
   if (!churchId && profile?.role !== 'supervisor') {
     return (
@@ -225,10 +236,12 @@ export const Reports = () => {
         <div className="flex-1">
           <h1 className="text-2xl font-bold text-gray-900">Relatórios</h1>
           <p className="text-gray-600">Análises e histórico financeiro</p>
-          {profile?.role === 'supervisor' && selectedChurch && (
-            <p className="text-sm text-blue-600 mt-1">
-              Igreja: {churches.find(c => c.id === selectedChurch)?.name}
-            </p>
+          {selectedChurchName && (
+            <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm font-medium text-blue-800">
+                Igreja: {selectedChurchName}
+              </p>
+            </div>
           )}
         </div>
         
