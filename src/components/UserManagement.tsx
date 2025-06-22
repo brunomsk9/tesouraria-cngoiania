@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -90,16 +89,22 @@ export const UserManagement = () => {
     try {
       setLoading(true);
 
-      // Criar usuário no Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      // Criar usuário usando signUp
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
-        user_metadata: {
-          name: formData.name
+        options: {
+          data: {
+            name: formData.name
+          }
         }
       });
 
       if (authError) throw authError;
+
+      if (!authData.user) {
+        throw new Error('Usuário não foi criado corretamente');
+      }
 
       // Atualizar perfil com role e igreja
       const { error: profileError } = await supabase
@@ -115,7 +120,7 @@ export const UserManagement = () => {
 
       toast({
         title: "Sucesso",
-        description: "Usuário criado com sucesso!"
+        description: "Usuário criado com sucesso! O usuário deve verificar seu email para ativar a conta."
       });
 
       setFormData({
