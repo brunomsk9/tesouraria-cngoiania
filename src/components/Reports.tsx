@@ -21,6 +21,9 @@ interface Transaction {
   category: string;
   date_transaction: string;
   created_at: string;
+  cash_sessions?: {
+    church_id: string;
+  };
 }
 
 interface Church {
@@ -146,14 +149,18 @@ export const Reports = () => {
 
   const exportToCSV = () => {
     const csvContent = [
-      ['Data', 'Descrição', 'Tipo', 'Categoria', 'Valor'].join(','),
-      ...transactions.map(t => [
-        format(new Date(t.date_transaction), 'dd/MM/yyyy'),
-        `"${t.description}"`,
-        t.type,
-        t.category || '',
-        t.amount.toString()
-      ].join(','))
+      ['Data', 'Descrição', 'Tipo', 'Categoria', 'Valor', 'Igreja'].join(','),
+      ...transactions.map(t => {
+        const churchName = churches.find(c => c.id === t.cash_sessions?.church_id)?.name || 'N/A';
+        return [
+          format(new Date(t.date_transaction), 'dd/MM/yyyy'),
+          `"${t.description}"`,
+          t.type,
+          t.category || '',
+          t.amount.toString(),
+          `"${churchName}"`
+        ].join(',');
+      })
     ].join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
