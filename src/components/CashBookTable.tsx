@@ -36,15 +36,6 @@ export const CashBookTable = ({ entries, initialBalance, onExportToPrint }: Cash
         </Button>
       </CardHeader>
       <CardContent>
-        <div className="mb-4 p-4 bg-gray-50 rounded-lg">
-          <div className="flex justify-between items-center">
-            <span className="font-medium">Saldo Inicial:</span>
-            <span className="font-bold text-lg">
-              R$ {initialBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-            </span>
-          </div>
-        </div>
-
         <div className="overflow-x-auto">
           <table className="w-full border-collapse border border-gray-300">
             <thead>
@@ -98,7 +89,7 @@ export const CashBookTable = ({ entries, initialBalance, onExportToPrint }: Cash
           <div className="flex justify-between items-center">
             <span className="font-medium">Saldo Final:</span>
             <span className="font-bold text-lg">
-              R$ {entries.length > 0 ? entries[entries.length - 1].balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : initialBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              R$ {entries.length > 0 ? entries[entries.length - 1].balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '0,00'}
             </span>
           </div>
         </div>

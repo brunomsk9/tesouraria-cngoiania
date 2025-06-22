@@ -137,10 +137,6 @@ export const generateCashBookHtml = ({
           Período: ${format(new Date(startDate), 'dd/MM/yyyy', { locale: ptBR })} a ${format(new Date(endDate), 'dd/MM/yyyy', { locale: ptBR })}
         </div>
         
-        <div class="summary">
-          <strong>Saldo Inicial: R$ ${initialBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
-        </div>
-        
         <table>
           <thead>
             <tr>
@@ -173,7 +169,7 @@ export const generateCashBookHtml = ({
         </table>
         
         <div class="summary">
-          <strong>Saldo Final: R$ ${entries.length > 0 ? entries[entries.length - 1].balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : initialBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
+          <strong>Saldo Final: R$ ${entries.length > 0 ? entries[entries.length - 1].balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '0,00'}</strong>
         </div>
         
         <div style="text-align: center; margin: 30px 0; color: #666;">

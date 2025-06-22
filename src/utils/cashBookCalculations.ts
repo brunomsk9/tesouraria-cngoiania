@@ -10,22 +10,8 @@ export const calculateInitialBalance = (
   prevTransactions: Array<{ amount: number; type: string }>,
   prevPixEntries: Array<{ amount: number }>
 ): number => {
-  let prevBalance = 0;
-  
-  if (prevTransactions) {
-    prevBalance += prevTransactions.reduce((acc, trans) => {
-      const amount = Number(trans.amount) || 0;
-      return acc + (trans.type === 'entrada' ? amount : -amount);
-    }, 0);
-  }
-  
-  if (prevPixEntries) {
-    prevBalance += prevPixEntries.reduce((acc, pix) => {
-      return acc + (Number(pix.amount) || 0);
-    }, 0);
-  }
-
-  return prevBalance;
+  // Não considera saldo inicial no livro caixa
+  return 0;
 };
 
 export const processTransactionEntries = (transactions: TransactionData[]): CashBookEntryWithSort[] => {
@@ -69,8 +55,8 @@ export const calculateRunningBalances = (
   // Ordenar todas as entradas por data e hora
   entries.sort((a, b) => a.sortDate.getTime() - b.sortDate.getTime());
 
-  // Calcular saldos progressivos
-  let runningBalance = initialBalance;
+  // Calcular saldos progressivos começando do zero (sem saldo inicial)
+  let runningBalance = 0;
   
   return entries.map(entry => {
     const balanceChange = entry.type === 'entrada' ? entry.amount : -entry.amount;
