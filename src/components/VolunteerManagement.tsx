@@ -42,6 +42,7 @@ export const VolunteerManagement = () => {
 
   useEffect(() => {
     if (canManageVolunteers) {
+      console.log('Carregando dados de voluntários...', { profile });
       loadVolunteers();
       loadChurches();
     }
@@ -49,6 +50,7 @@ export const VolunteerManagement = () => {
 
   const loadVolunteers = async () => {
     try {
+      console.log('Iniciando carregamento de voluntários...');
       const { data: volunteersData, error: volunteersError } = await supabase
         .from('volunteers')
         .select(`
@@ -59,7 +61,12 @@ export const VolunteerManagement = () => {
           area_atuacao
         `);
 
-      if (volunteersError) throw volunteersError;
+      if (volunteersError) {
+        console.error('Erro ao carregar voluntários:', volunteersError);
+        throw volunteersError;
+      }
+
+      console.log('Voluntários carregados:', volunteersData);
 
       // Buscar as igrejas de cada voluntário
       const volunteersWithChurches = await Promise.all(
@@ -92,6 +99,7 @@ export const VolunteerManagement = () => {
 
   const loadChurches = async () => {
     try {
+      console.log('Carregando igrejas...', { profile });
       let query = supabase.from('churches').select('id, name');
       
       // Se for tesoureiro, filtrar apenas sua igreja
@@ -102,6 +110,7 @@ export const VolunteerManagement = () => {
       const { data, error } = await query.order('name');
 
       if (error) throw error;
+      console.log('Igrejas carregadas:', data);
       setChurches(data || []);
     } catch (error) {
       console.error('Erro ao carregar igrejas:', error);
@@ -110,6 +119,8 @@ export const VolunteerManagement = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    console.log('Iniciando submissão do formulário...', { formData, profile });
     
     // Validação obrigatória do nome
     if (!formData.name.trim()) {
@@ -126,6 +137,7 @@ export const VolunteerManagement = () => {
       let volunteerId: string;
 
       if (editingVolunteer) {
+        console.log('Atualizando voluntário existente...', editingVolunteer.id);
         // Atualizar voluntário existente
         const { error: updateError } = await supabase
           .from('volunteers')
@@ -137,7 +149,10 @@ export const VolunteerManagement = () => {
           })
           .eq('id', editingVolunteer.id);
 
-        if (updateError) throw updateError;
+        if (updateError) {
+          console.error('Erro ao atualizar voluntário:', updateError);
+          throw updateError;
+        }
         volunteerId = editingVolunteer.id;
 
         // Remover associações antigas
@@ -146,22 +161,33 @@ export const VolunteerManagement = () => {
           .delete()
           .eq('volunteer_id', volunteerId);
       } else {
+        console.log('Criando novo voluntário...');
         // Criar novo voluntário
+        const volunteerInsertData = {
+          name: formData.name,
+          phone: formData.phone || null,
+          pix_key: formData.pix_key || null,
+          area_atuacao: formData.area_atuacao || null,
+        };
+        
+        console.log('Dados para inserção:', volunteerInsertData);
+        
         const { data: volunteerData, error: volunteerError } = await supabase
           .from('volunteers')
-          .insert({
-            name: formData.name,
-            phone: formData.phone || null,
-            pix_key: formData.pix_key || null,
-            area_atuacao: formData.area_atuacao || null,
-          })
+          .insert(volunteerInsertData)
           .select()
           .single();
 
-        if (volunteerError) throw volunteerError;
+        if (volunteerError) {
+          console.error('Erro ao criar voluntário:', volunteerError);
+          throw volunteerError;
+        }
+        
+        console.log('Voluntário criado:', volunteerData);
         volunteerId = volunteerData.id;
       }
 
+      console.log('Criando associações com igrejas...', formData.church_ids);
       // Criar associações com igrejas
       const churchAssociations = formData.church_ids.map(churchId => ({
         volunteer_id: volunteerId,
@@ -172,8 +198,12 @@ export const VolunteerManagement = () => {
         .from('volunteer_churches')
         .insert(churchAssociations);
 
-      if (associationError) throw associationError;
+      if (associationError) {
+        console.error('Erro ao criar associações:', associationError);
+        throw associationError;
+      }
 
+      console.log('Voluntário salvo com sucesso!');
       toast.success(editingVolunteer ? 'Voluntário atualizado com sucesso!' : 'Voluntário criado com sucesso!');
       setFormData({ name: '', phone: '', pix_key: '', area_atuacao: '', church_ids: [] });
       setIsCreating(false);
@@ -201,12 +231,16 @@ export const VolunteerManagement = () => {
     if (!confirm('Tem certeza que deseja excluir este voluntário?')) return;
 
     try {
+      console.log('Deletando voluntário:', volunteerId);
       const { error } = await supabase
         .from('volunteers')
         .delete()
         .eq('id', volunteerId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao deletar voluntário:', error);
+        throw error;
+      }
 
       toast.success('Voluntário excluído com sucesso!');
       loadVolunteers();
@@ -273,7 +307,7 @@ export const VolunteerManagement = () => {
                     onChange={(e) => setFormData({...formData, name: e.target.value})}
                     placeholder="Nome completo"
                     required
-                    className={!formData.name.trim() && isCreating ? 'border-red-500' : ''}
+                    className={!formData.name.trim() ? 'border-red-500' : ''}
                   />
                   {!formData.name.trim() && (
                     <p className="text-sm text-red-500 mt-1">Nome é obrigatório</p>
@@ -327,6 +361,9 @@ export const VolunteerManagement = () => {
                     </Button>
                   ))}
                 </div>
+                {formData.church_ids.length === 0 && (
+                  <p className="text-sm text-red-500 mt-1">Selecione pelo menos uma igreja</p>
+                )}
               </div>
 
               <div className="flex justify-end space-x-2">
