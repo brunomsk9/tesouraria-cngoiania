@@ -27,8 +27,10 @@ interface SessionValidationProps {
 interface TransactionSummary {
   total_entradas: number;
   total_saidas: number;
+  total_pix: number;
   saldo: number;
   count_transactions: number;
+  count_pix: number;
 }
 
 export const SessionValidation = ({ session, onSessionValidated }: SessionValidationProps) => {
@@ -61,24 +63,41 @@ export const SessionValidation = ({ session, onSessionValidated }: SessionValida
   };
 
   const loadTransactionSummary = async () => {
-    const { data, error } = await supabase
+    // Carregar transações tradicionais
+    const { data: transactions, error: transError } = await supabase
       .from('transactions')
       .select('type, amount')
       .eq('cash_session_id', session.id);
 
-    if (error) {
-      console.error('Erro ao carregar resumo:', error);
+    if (transError) {
+      console.error('Erro ao carregar transações:', transError);
       return;
     }
 
-    const entradas = data?.filter(t => t.type === 'entrada').reduce((sum, t) => sum + Number(t.amount), 0) || 0;
-    const saidas = data?.filter(t => t.type === 'saida').reduce((sum, t) => sum + Number(t.amount), 0) || 0;
+    // Carregar entradas PIX
+    const { data: pixEntries, error: pixError } = await supabase
+      .from('pix_entries')
+      .select('amount')
+      .eq('cash_session_id', session.id);
+
+    if (pixError) {
+      console.error('Erro ao carregar PIX:', pixError);
+      return;
+    }
+
+    const entradas = transactions?.filter(t => t.type === 'entrada').reduce((sum, t) => sum + Number(t.amount), 0) || 0;
+    const saidas = transactions?.filter(t => t.type === 'saida').reduce((sum, t) => sum + Number(t.amount), 0) || 0;
+    const totalPix = pixEntries?.reduce((sum, p) => sum + Number(p.amount), 0) || 0;
+    
+    const totalEntradas = entradas + totalPix;
 
     setSummary({
-      total_entradas: entradas,
+      total_entradas: totalEntradas,
       total_saidas: saidas,
-      saldo: entradas - saidas,
-      count_transactions: data?.length || 0
+      total_pix: totalPix,
+      saldo: totalEntradas - saidas,
+      count_transactions: transactions?.length || 0,
+      count_pix: pixEntries?.length || 0
     });
   };
 
@@ -209,6 +228,11 @@ export const SessionValidation = ({ session, onSessionValidated }: SessionValida
                     R$ {summary.total_entradas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </div>
                   <div className="text-gray-600">Total Entradas</div>
+                  {summary.total_pix > 0 && (
+                    <div className="text-xs text-gray-500 mt-1">
+                      (incluindo R$ {summary.total_pix.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} em PIX)
+                    </div>
+                  )}
                 </div>
                 <div className="text-center">
                   <div className="text-red-600 font-bold text-xl">
@@ -224,7 +248,7 @@ export const SessionValidation = ({ session, onSessionValidated }: SessionValida
                 </div>
               </div>
               <div className="text-center text-sm text-gray-600 pt-2 border-t">
-                Total de {summary.count_transactions} transações registradas
+                Total de {summary.count_transactions} transações{summary.count_pix > 0 && ` e ${summary.count_pix} PIX`} registradas
               </div>
             </CardContent>
           </Card>
