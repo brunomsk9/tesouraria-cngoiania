@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { FileText, Download, Calendar, Building2 } from 'lucide-react';
+import { FileText, Download, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -56,6 +55,7 @@ export const CashBookReport = () => {
       setChurches(data || []);
     } catch (error) {
       console.error('Erro ao carregar igrejas:', error);
+      toast.error('Erro ao carregar igrejas');
     }
   };
 
@@ -65,9 +65,12 @@ export const CashBookReport = () => {
       return;
     }
 
+    console.log('Gerando relatório com parâmetros:', { startDate, endDate, selectedChurch });
     setLoading(true);
+    
     try {
       // Buscar transações do período
+      console.log('Buscando transações...');
       const { data: transactions, error: transError } = await supabase
         .from('transactions')
         .select(`
@@ -84,9 +87,15 @@ export const CashBookReport = () => {
         .lte('date_transaction', endDate)
         .order('date_transaction', { ascending: true });
 
-      if (transError) throw transError;
+      if (transError) {
+        console.error('Erro ao buscar transações:', transError);
+        throw transError;
+      }
+
+      console.log('Transações encontradas:', transactions?.length || 0);
 
       // Buscar entradas PIX do período
+      console.log('Buscando entradas PIX...');
       const { data: pixEntries, error: pixError } = await supabase
         .from('pix_entries')
         .select(`
@@ -100,9 +109,15 @@ export const CashBookReport = () => {
         .lte('cash_sessions.date_session', endDate)
         .order('created_at', { ascending: true });
 
-      if (pixError) throw pixError;
+      if (pixError) {
+        console.error('Erro ao buscar PIX:', pixError);
+        throw pixError;
+      }
+
+      console.log('Entradas PIX encontradas:', pixEntries?.length || 0);
 
       // Calcular saldo inicial (transações antes do período)
+      console.log('Calculando saldo inicial...');
       const { data: prevTransactions, error: prevError } = await supabase
         .from('transactions')
         .select(`
@@ -113,7 +128,10 @@ export const CashBookReport = () => {
         .eq('cash_sessions.church_id', selectedChurch)
         .lt('date_transaction', startDate);
 
-      if (prevError) throw prevError;
+      if (prevError) {
+        console.error('Erro ao buscar transações anteriores:', prevError);
+        throw prevError;
+      }
 
       const { data: prevPixEntries, error: prevPixError } = await supabase
         .from('pix_entries')
@@ -124,13 +142,17 @@ export const CashBookReport = () => {
         .eq('cash_sessions.church_id', selectedChurch)
         .lt('cash_sessions.date_session', startDate);
 
-      if (prevPixError) throw prevPixError;
+      if (prevPixError) {
+        console.error('Erro ao buscar PIX anteriores:', prevPixError);
+        throw prevPixError;
+      }
 
       // Calcular saldo inicial
       const prevBalance = (prevTransactions || []).reduce((acc, trans) => {
-        return acc + (trans.type === 'entrada' ? trans.amount : -trans.amount);
-      }, 0) + (prevPixEntries || []).reduce((acc, pix) => acc + pix.amount, 0);
+        return acc + (trans.type === 'entrada' ? Number(trans.amount) : -Number(trans.amount));
+      }, 0) + (prevPixEntries || []).reduce((acc, pix) => acc + Number(pix.amount), 0);
 
+      console.log('Saldo inicial calculado:', prevBalance);
       setInitialBalance(prevBalance);
 
       // Processar entradas do livro caixa
@@ -139,14 +161,14 @@ export const CashBookReport = () => {
 
       // Adicionar transações
       (transactions || []).forEach(trans => {
-        const amount = trans.type === 'entrada' ? trans.amount : -trans.amount;
+        const amount = trans.type === 'entrada' ? Number(trans.amount) : -Number(trans.amount);
         runningBalance += amount;
         
         cashBookEntries.push({
           date: trans.date_transaction,
           description: trans.description,
           type: trans.type,
-          amount: Math.abs(trans.amount),
+          amount: Math.abs(Number(trans.amount)),
           balance: runningBalance,
           session: trans.cash_sessions?.culto_evento || 'N/A',
           category: trans.category || undefined
@@ -155,13 +177,13 @@ export const CashBookReport = () => {
 
       // Adicionar entradas PIX
       (pixEntries || []).forEach(pix => {
-        runningBalance += pix.amount;
+        runningBalance += Number(pix.amount);
         
         cashBookEntries.push({
           date: pix.cash_sessions?.date_session || pix.created_at.split('T')[0],
           description: `PIX: ${pix.description || 'Entrada'}`,
           type: 'entrada',
-          amount: pix.amount,
+          amount: Number(pix.amount),
           balance: runningBalance,
           session: pix.cash_sessions?.culto_evento || 'N/A'
         });
@@ -170,11 +192,12 @@ export const CashBookReport = () => {
       // Ordenar por data
       cashBookEntries.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
+      console.log('Entradas processadas:', cashBookEntries.length);
       setEntries(cashBookEntries);
       toast.success('Relatório gerado com sucesso!');
     } catch (error) {
       console.error('Erro ao gerar relatório:', error);
-      toast.error('Erro ao gerar relatório');
+      toast.error('Erro ao gerar relatório. Verifique o console para mais detalhes.');
     } finally {
       setLoading(false);
     }
