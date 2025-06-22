@@ -85,19 +85,20 @@ export const useCashBookData = () => {
 
       console.log('Transações encontradas:', transactions?.length || 0);
 
-      // Buscar entradas PIX do período
+      // Buscar entradas PIX do período - corrigindo a consulta
       const { data: pixEntries, error: pixError } = await supabase
         .from('pix_entries')
         .select(`
           amount,
           description,
           created_at,
+          cash_session_id,
           cash_sessions!inner(culto_evento, church_id, date_session)
         `)
         .eq('cash_sessions.church_id', churchId)
         .gte('cash_sessions.date_session', startDate)
         .lte('cash_sessions.date_session', endDate)
-        .order('created_at', { ascending: true });
+        .order('cash_sessions.date_session', { ascending: true });
 
       if (pixError) {
         console.error('Erro ao buscar PIX:', pixError);
@@ -145,25 +146,23 @@ export const useCashBookData = () => {
       console.log('Saldo inicial calculado:', prevBalance);
       setInitialBalance(prevBalance);
 
-      // Processar entradas do livro caixa
-      const cashBookEntries: CashBookEntry[] = [];
-      let runningBalance = prevBalance;
+      // Processar todas as entradas - combinando transações e PIX
+      const allEntries: Array<CashBookEntry & { sortDate: Date }> = [];
 
       // Adicionar transações
       if (transactions) {
         transactions.forEach(trans => {
           const amount = Number(trans.amount) || 0;
-          const balanceChange = trans.type === 'entrada' ? amount : -amount;
-          runningBalance += balanceChange;
           
-          cashBookEntries.push({
+          allEntries.push({
             date: trans.date_transaction,
             description: trans.description || 'Sem descrição',
             type: trans.type,
             amount: amount,
-            balance: runningBalance,
+            balance: 0, // será calculado depois
             session: trans.cash_sessions?.culto_evento || 'N/A',
-            category: trans.category || undefined
+            category: trans.category || undefined,
+            sortDate: new Date(trans.date_transaction)
           });
         });
       }
@@ -172,29 +171,53 @@ export const useCashBookData = () => {
       if (pixEntries) {
         pixEntries.forEach(pix => {
           const amount = Number(pix.amount) || 0;
-          runningBalance += amount;
           
-          cashBookEntries.push({
+          allEntries.push({
             date: pix.cash_sessions?.date_session || pix.created_at.split('T')[0],
             description: `PIX: ${pix.description || 'Entrada'}`,
             type: 'entrada',
             amount: amount,
-            balance: runningBalance,
-            session: pix.cash_sessions?.culto_evento || 'N/A'
+            balance: 0, // será calculado depois
+            session: pix.cash_sessions?.culto_evento || 'N/A',
+            category: 'pix',
+            sortDate: new Date(pix.cash_sessions?.date_session || pix.created_at)
           });
         });
       }
 
-      // Ordenar por data
-      cashBookEntries.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      // Ordenar todas as entradas por data e hora
+      allEntries.sort((a, b) => a.sortDate.getTime() - b.sortDate.getTime());
 
-      console.log('Entradas processadas:', cashBookEntries.length);
-      setEntries(cashBookEntries);
+      // Calcular saldos progressivos
+      let runningBalance = prevBalance;
+      const processedEntries: CashBookEntry[] = allEntries.map(entry => {
+        const balanceChange = entry.type === 'entrada' ? entry.amount : -entry.amount;
+        runningBalance += balanceChange;
+        
+        return {
+          date: entry.date,
+          description: entry.description,
+          type: entry.type,
+          amount: entry.amount,
+          balance: runningBalance,
+          session: entry.session,
+          category: entry.category
+        };
+      });
+
+      console.log('Entradas processadas:', processedEntries.length);
+      console.log('Detalhamento:', {
+        transacoes: transactions?.length || 0,
+        pixEntries: pixEntries?.length || 0,
+        total: processedEntries.length
+      });
+
+      setEntries(processedEntries);
       
-      if (cashBookEntries.length === 0) {
+      if (processedEntries.length === 0) {
         toast.info('Nenhuma transação encontrada para a data selecionada');
       } else {
-        toast.success(`Relatório gerado com sucesso! ${cashBookEntries.length} registros encontrados.`);
+        toast.success(`Relatório gerado com sucesso! ${processedEntries.length} registros encontrados.`);
       }
       
     } catch (error) {
