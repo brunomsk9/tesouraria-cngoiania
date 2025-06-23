@@ -36,16 +36,24 @@ export const AdvancedReports = () => {
   const [dateRange, setDateRange] = useState('30days');
   const [customDateRange, setCustomDateRange] = useState<{ start?: Date; end?: Date }>({});
 
+  // Load churches on component mount
   useEffect(() => {
     loadChurches();
+  }, []);
+
+  // Set default church for non-supervisor users
+  useEffect(() => {
     if (profile?.role !== 'supervisor' && profile?.church_id) {
       setSelectedChurch(profile.church_id);
     }
   }, [profile]);
 
+  // Load data when filters change
   useEffect(() => {
-    loadData();
-  }, [dateRange, selectedChurch, profile?.church_id, customDateRange]);
+    if (profile) {
+      loadData();
+    }
+  }, [dateRange, selectedChurch, profile, customDateRange]);
 
   const loadChurches = async () => {
     try {
@@ -105,13 +113,14 @@ export const AdvancedReports = () => {
         .lte('date_transaction', format(end, 'yyyy-MM-dd'))
         .order('date_transaction', { ascending: false });
 
-      // Filter by church based on profile
-      if (selectedChurch !== 'all') {
-        const churchFilter = profile?.role === 'supervisor' ? selectedChurch : profile?.church_id;
-        if (churchFilter) {
-          query = query.eq('cash_sessions.church_id', churchFilter);
+      // Apply church filter
+      if (profile?.role === 'supervisor') {
+        // Supervisor can filter by specific church or see all
+        if (selectedChurch !== 'all') {
+          query = query.eq('cash_sessions.church_id', selectedChurch);
         }
-      } else if (profile?.role !== 'supervisor') {
+      } else {
+        // Non-supervisors can only see their own church
         if (profile?.church_id) {
           query = query.eq('cash_sessions.church_id', profile.church_id);
         }
@@ -219,7 +228,7 @@ export const AdvancedReports = () => {
           <div className="flex flex-col sm:flex-row gap-4 items-end">
             {profile?.role === 'supervisor' && (
               <div className="flex-1">
-                <label className="text-sm font-medium">Igreja</label>
+                <label className="text-sm font-medium mb-2 block">Igreja</label>
                 <Select value={selectedChurch} onValueChange={setSelectedChurch}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecionar Igreja" />
@@ -237,7 +246,7 @@ export const AdvancedReports = () => {
             )}
             
             <div className="flex-1">
-              <label className="text-sm font-medium">Período</label>
+              <label className="text-sm font-medium mb-2 block">Período</label>
               <Select value={dateRange} onValueChange={setDateRange}>
                 <SelectTrigger>
                   <SelectValue />
@@ -276,7 +285,7 @@ export const AdvancedReports = () => {
       {/* Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Transações Detalhadas</CardTitle>
+          <CardTitle>Transações Detalhadas ({data.length} registros)</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
