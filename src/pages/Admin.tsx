@@ -7,7 +7,8 @@ import { UserManagement } from "@/components/UserManagement";
 import { ChurchManagement } from "@/components/ChurchManagement";
 import { VolunteerManagement } from "@/components/VolunteerManagement";
 import { ChurchLogoManager } from "@/components/ChurchLogoManager";
-import { Users, Building2, Shield, ArrowLeft, Home, UserCheck, Image } from "lucide-react";
+import { CultosEventosManagement } from "@/components/CultosEventosManagement";
+import { Users, Building2, Shield, ArrowLeft, Home, UserCheck, Image, Calendar } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -57,8 +58,9 @@ const Admin = () => {
   const canManageChurches = profile.role === 'master';
   const canManageVolunteers = profile.role === 'master' || profile.role === 'tesoureiro';
   const canManageLogos = profile.role === 'master' || profile.role === 'tesoureiro';
+  const canManageCultosEventos = profile.role === 'master' || profile.role === 'tesoureiro';
 
-  if (!canManageUsers && !canManageChurches && !canManageVolunteers && !canManageLogos) {
+  if (!canManageUsers && !canManageChurches && !canManageVolunteers && !canManageLogos && !canManageCultosEventos) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center">
         <Card className="w-full max-w-md">
@@ -89,14 +91,15 @@ const Admin = () => {
     if (canManageUsers) return 'users';
     if (canManageChurches) return 'churches';
     if (canManageVolunteers) return 'volunteers';
+    if (canManageCultosEventos) return 'cultos-eventos';
     if (canManageLogos) return 'logos';
     return 'users';
   };
 
   // Determinar número de colunas para o grid
   const getGridCols = () => {
-    const tabCount = [canManageUsers, canManageChurches, canManageVolunteers, canManageLogos].filter(Boolean).length;
-    return `grid-cols-${Math.min(tabCount, 4)}`;
+    const tabCount = [canManageUsers, canManageChurches, canManageVolunteers, canManageCultosEventos, canManageLogos].filter(Boolean).length;
+    return `grid-cols-${Math.min(tabCount, 5)}`;
   };
 
   return (
@@ -137,29 +140,35 @@ const Admin = () => {
 
       <main className="max-w-7xl mx-auto py-6">
         <Tabs defaultValue={getDefaultTab()} className="w-full">
-          <TabsList className={`grid w-full ${getGridCols()} max-w-2xl mx-auto mb-6`}>
+          <TabsList className={`grid w-full ${getGridCols()} max-w-3xl mx-auto mb-6`}>
             {canManageUsers && (
               <TabsTrigger value="users" className="flex items-center space-x-2">
                 <Users className="h-4 w-4" />
-                <span>Usuários</span>
+                <span className="hidden sm:inline">Usuários</span>
               </TabsTrigger>
             )}
             {canManageChurches && (
               <TabsTrigger value="churches" className="flex items-center space-x-2">
                 <Building2 className="h-4 w-4" />
-                <span>Igrejas</span>
+                <span className="hidden sm:inline">Igrejas</span>
               </TabsTrigger>
             )}
             {canManageVolunteers && (
               <TabsTrigger value="volunteers" className="flex items-center space-x-2">
                 <UserCheck className="h-4 w-4" />
-                <span>Voluntários</span>
+                <span className="hidden sm:inline">Voluntários</span>
+              </TabsTrigger>
+            )}
+            {canManageCultosEventos && (
+              <TabsTrigger value="cultos-eventos" className="flex items-center space-x-2">
+                <Calendar className="h-4 w-4" />
+                <span className="hidden sm:inline">Cultos/Eventos</span>
               </TabsTrigger>
             )}
             {canManageLogos && (
               <TabsTrigger value="logos" className="flex items-center space-x-2">
                 <Image className="h-4 w-4" />
-                <span>Logos</span>
+                <span className="hidden sm:inline">Logos</span>
               </TabsTrigger>
             )}
           </TabsList>
@@ -179,6 +188,12 @@ const Admin = () => {
           {canManageVolunteers && (
             <TabsContent value="volunteers">
               <VolunteerManagement />
+            </TabsContent>
+          )}
+
+          {canManageCultosEventos && (
+            <TabsContent value="cultos-eventos">
+              <CultosEventosManagement />
             </TabsContent>
           )}
           
