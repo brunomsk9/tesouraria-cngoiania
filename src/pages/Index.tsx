@@ -6,6 +6,7 @@ import { Reports } from "@/components/Reports";
 import { CashBookReport } from "@/components/CashBookReport";
 import { ValidationAlert } from "@/components/ValidationAlert";
 import { DashboardCards } from "@/components/DashboardCards";
+import { DashboardChart } from "@/components/DashboardChart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState } from "react";
 
@@ -34,6 +35,10 @@ const Index = () => {
             </div>
             <div className="px-6 lg:px-8">
               <DashboardCards />
+            </div>
+            
+            <div className="px-6 lg:px-8">
+              <DashboardChart />
             </div>
             
             <div className="px-6 lg:px-8">
@@ -106,6 +111,10 @@ const Index = () => {
             </div>
             <div className="px-6 lg:px-8">
               <DashboardCards />
+            </div>
+            
+            <div className="px-6 lg:px-8">
+              <DashboardChart />
             </div>
             
             <div className="px-6 lg:px-8">
