@@ -1,7 +1,7 @@
 
 import { useAuth } from "@/hooks/useAuth";
 import { CashFlowManager } from "@/components/CashFlowManager";
-import { Sidebar } from "@/components/Sidebar";
+import { TopNavigation } from "@/components/TopNavigation";
 import { Reports } from "@/components/Reports";
 import { CashBookReport } from "@/components/CashBookReport";
 import { ValidationAlert } from "@/components/ValidationAlert";
@@ -45,7 +45,7 @@ const Index = () => {
                 </CardHeader>
                 <CardContent>
                   <p className="text-gray-600 text-lg text-center">
-                    Use o menu lateral para navegar entre as diferentes funcionalidades do sistema.
+                    Use o menu superior para navegar entre as diferentes funcionalidades do sistema.
                   </p>
                 </CardContent>
               </Card>
@@ -117,7 +117,7 @@ const Index = () => {
                 </CardHeader>
                 <CardContent>
                   <p className="text-gray-600 text-lg text-center">
-                    Use o menu lateral para navegar entre as diferentes funcionalidades do sistema.
+                    Use o menu superior para navegar entre as diferentes funcionalidades do sistema.
                   </p>
                 </CardContent>
               </Card>
@@ -129,14 +129,12 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 w-full">
-      <div className="flex w-full">
-        <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
-        
-        {/* Main content */}
-        <div className="flex-1 lg:ml-64">
-          <div className="min-h-screen py-6 lg:py-8">
-            {renderContent()}
-          </div>
+      <TopNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+      
+      {/* Main content */}
+      <div className="w-full">
+        <div className="min-h-screen py-6 lg:py-8">
+          {renderContent()}
         </div>
       </div>
     </div>
