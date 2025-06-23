@@ -8,7 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { LogIn, UserPlus, Lock, Mail, AlertCircle, CheckCircle, Info } from 'lucide-react';
+import { LogIn, UserPlus, Lock, Mail, AlertCircle, CheckCircle } from 'lucide-react';
+import { EmailConfirmationModal } from './EmailConfirmationModal';
 
 interface AuthPageProps {
   onLogin: () => void;
@@ -19,7 +20,7 @@ export const AuthPage = ({ onLogin }: AuthPageProps) => {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
-  const [showEmailConfirmation, setShowEmailConfirmation] = useState(false);
+  const [showEmailConfirmationModal, setShowEmailConfirmationModal] = useState(false);
   const [confirmationEmail, setConfirmationEmail] = useState('');
   const { toast } = useToast();
 
@@ -56,8 +57,8 @@ export const AuthPage = ({ onLogin }: AuthPageProps) => {
       } else {
         // Verificar se o usuário foi criado mas precisa confirmar email
         if (data.user && !data.session) {
-          setShowEmailConfirmation(true);
           setConfirmationEmail(email);
+          setShowEmailConfirmationModal(true);
           toast({
             title: "Cadastro realizado!",
             description: "Verifique seu email para confirmar a conta antes de fazer login."
@@ -104,8 +105,8 @@ export const AuthPage = ({ onLogin }: AuthPageProps) => {
             variant: "destructive"
           });
         } else if (error.message.includes('Email not confirmed')) {
-          setShowEmailConfirmation(true);
           setConfirmationEmail(email);
+          setShowEmailConfirmationModal(true);
           toast({
             title: "Email não confirmado",
             description: "Você precisa confirmar seu email antes de fazer login. Verifique sua caixa de entrada.",
@@ -136,223 +137,144 @@ export const AuthPage = ({ onLogin }: AuthPageProps) => {
     }
   };
 
-  const handleResendConfirmation = async () => {
-    if (!confirmationEmail) return;
-    
-    setLoading(true);
-    try {
-      const { error } = await supabase.auth.resend({
-        type: 'signup',
-        email: confirmationEmail,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`
-        }
-      });
-
-      if (error) {
-        toast({
-          title: "Erro ao reenviar email",
-          description: error.message,
-          variant: "destructive"
-        });
-      } else {
-        toast({
-          title: "Email reenviado!",
-          description: "Verifique sua caixa de entrada e spam."
-        });
-      }
-    } catch (error) {
-      toast({
-        title: "Erro inesperado",
-        description: "Não foi possível reenviar o email de confirmação.",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (showEmailConfirmation) {
-    return (
+  return (
+    <>
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center p-4">
         <Card className="w-full max-w-md shadow-lg border-0">
           <CardHeader className="text-center space-y-2">
-            <div className="w-16 h-16 mx-auto bg-blue-100 rounded-full flex items-center justify-center mb-4">
-              <Mail className="h-8 w-8 text-blue-600" />
-            </div>
-            <CardTitle className="text-2xl text-gray-800">Confirme seu Email</CardTitle>
-            <p className="text-gray-600">Enviamos um link de confirmação para seu email</p>
+            <CardTitle className="text-2xl text-gray-800">Sistema de Tesouraria</CardTitle>
+            <p className="text-gray-600">Gestão Financeira da Igreja</p>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <Alert>
-              <Info className="h-4 w-4" />
-              <AlertDescription>
-                Enviamos um email de confirmação para <strong>{confirmationEmail}</strong>. 
-                Clique no link do email para ativar sua conta.
-              </AlertDescription>
-            </Alert>
+          <CardContent>
+            <Tabs defaultValue="signin" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="signin" className="flex items-center gap-2">
+                  <LogIn className="h-4 w-4" />
+                  Entrar
+                </TabsTrigger>
+                <TabsTrigger value="signup" className="flex items-center gap-2">
+                  <UserPlus className="h-4 w-4" />
+                  Cadastrar
+                </TabsTrigger>
+              </TabsList>
 
-            <div className="space-y-3">
-              <p className="text-sm text-gray-600 text-center">
-                Não recebeu o email? Verifique sua pasta de spam ou clique no botão abaixo para reenviar.
-              </p>
-              
-              <Button 
-                onClick={handleResendConfirmation}
-                disabled={loading}
-                className="w-full"
-                variant="outline"
-              >
-                {loading ? 'Reenviando...' : 'Reenviar Email de Confirmação'}
-              </Button>
+              <TabsContent value="signin" className="space-y-4">
+                <form onSubmit={handleSignIn} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="signin-email">Email</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input
+                        id="signin-email"
+                        type="email"
+                        placeholder="seu@email.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="signin-password">Senha</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input
+                        id="signin-password"
+                        type="password"
+                        placeholder="Sua senha"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+                  
+                  <Button type="submit" className="w-full" disabled={loading}>
+                    {loading ? 'Entrando...' : 'Entrar'}
+                  </Button>
 
-              <Button 
-                onClick={() => {
-                  setShowEmailConfirmation(false);
-                  setConfirmationEmail('');
-                }}
-                variant="ghost"
-                className="w-full"
-              >
-                Voltar ao Login
-              </Button>
-            </div>
+                  <Alert>
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription className="text-xs">
+                      Problemas para entrar? Verifique se confirmou seu email após o cadastro.
+                    </AlertDescription>
+                  </Alert>
+                </form>
+              </TabsContent>
+
+              <TabsContent value="signup" className="space-y-4">
+                <form onSubmit={handleSignUp} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-name">Nome</Label>
+                    <Input
+                      id="signup-name"
+                      type="text"
+                      placeholder="Seu nome completo"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-email">Email</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input
+                        id="signup-email"
+                        type="email"
+                        placeholder="seu@email.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-password">Senha</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input
+                        id="signup-password"
+                        type="password"
+                        placeholder="Mínimo 6 caracteres"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        minLength={6}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+                  
+                  <Button type="submit" className="w-full" disabled={loading}>
+                    {loading ? 'Cadastrando...' : 'Cadastrar'}
+                  </Button>
+                  
+                  <Alert>
+                    <CheckCircle className="h-4 w-4" />
+                    <AlertDescription className="text-xs">
+                      Após o cadastro, você receberá um email de confirmação. 
+                      Novos usuários são cadastrados como Tesoureiro por padrão.
+                    </AlertDescription>
+                  </Alert>
+                </form>
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
       </div>
-    );
-  }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md shadow-lg border-0">
-        <CardHeader className="text-center space-y-2">
-          <CardTitle className="text-2xl text-gray-800">Sistema de Tesouraria</CardTitle>
-          <p className="text-gray-600">Gestão Financeira da Igreja</p>
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="signin" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="signin" className="flex items-center gap-2">
-                <LogIn className="h-4 w-4" />
-                Entrar
-              </TabsTrigger>
-              <TabsTrigger value="signup" className="flex items-center gap-2">
-                <UserPlus className="h-4 w-4" />
-                Cadastrar
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="signin" className="space-y-4">
-              <form onSubmit={handleSignIn} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signin-email">Email</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="signin-email"
-                      type="email"
-                      placeholder="seu@email.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="signin-password">Senha</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="signin-password"
-                      type="password"
-                      placeholder="Sua senha"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-                
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? 'Entrando...' : 'Entrar'}
-                </Button>
-
-                <Alert>
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription className="text-xs">
-                    Problemas para entrar? Verifique se confirmou seu email após o cadastro.
-                  </AlertDescription>
-                </Alert>
-              </form>
-            </TabsContent>
-
-            <TabsContent value="signup" className="space-y-4">
-              <form onSubmit={handleSignUp} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signup-name">Nome</Label>
-                  <Input
-                    id="signup-name"
-                    type="text"
-                    placeholder="Seu nome completo"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="signup-email"
-                      type="email"
-                      placeholder="seu@email.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password">Senha</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="signup-password"
-                      type="password"
-                      placeholder="Mínimo 6 caracteres"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      minLength={6}
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-                
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? 'Cadastrando...' : 'Cadastrar'}
-                </Button>
-                
-                <Alert>
-                  <CheckCircle className="h-4 w-4" />
-                  <AlertDescription className="text-xs">
-                    Após o cadastro, você receberá um email de confirmação. 
-                    Novos usuários são cadastrados como Tesoureiro por padrão.
-                  </AlertDescription>
-                </Alert>
-              </form>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
-    </div>
+      <EmailConfirmationModal
+        isOpen={showEmailConfirmationModal}
+        onClose={() => setShowEmailConfirmationModal(false)}
+        email={confirmationEmail}
+      />
+    </>
   );
 };
