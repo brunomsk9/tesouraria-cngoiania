@@ -55,6 +55,7 @@ export const SignInForm = ({ onLogin, onShowEmailConfirmation }: SignInFormProps
       if (error) {
         console.error('Erro de login:', error);
         
+        // Verificar se é erro de credenciais inválidas
         if (error.message.toLowerCase().includes('invalid') || 
             error.message.toLowerCase().includes('credentials') ||
             error.message.toLowerCase().includes('wrong')) {
@@ -64,8 +65,22 @@ export const SignInForm = ({ onLogin, onShowEmailConfirmation }: SignInFormProps
             "Email ou senha incorretos. Verifique seus dados e tente novamente.",
             "error"
           );
-        } else if (error.message.toLowerCase().includes('email') && 
-                   error.message.toLowerCase().includes('confirm')) {
+        } 
+        // Verificar se é erro de email não encontrado/cadastrado
+        else if (error.message.toLowerCase().includes('email not confirmed') ||
+                 error.message.toLowerCase().includes('signup') ||
+                 error.message.toLowerCase().includes('user not found') ||
+                 error.message.toLowerCase().includes('not registered')) {
+          console.log('Email não cadastrado detectado');
+          showAlert(
+            "Email não cadastrado",
+            "Este email não possui uma conta. Clique na aba 'Cadastrar' para criar uma nova conta.",
+            "error"
+          );
+        }
+        // Verificar se é erro de email não confirmado
+        else if (error.message.toLowerCase().includes('email') && 
+                 error.message.toLowerCase().includes('confirm')) {
           console.log('Erro de email não confirmado detectado');
           onShowEmailConfirmation(email);
           showAlert(
@@ -73,13 +88,23 @@ export const SignInForm = ({ onLogin, onShowEmailConfirmation }: SignInFormProps
             "Você precisa confirmar seu email antes de fazer login.",
             "error"
           );
-        } else {
+        } 
+        else {
           console.log('Outro tipo de erro:', error.message);
-          showAlert(
-            "Erro no login",
-            error.message || "Erro desconhecido",
-            "error"
-          );
+          // Para outros erros, verificar se pode ser email não cadastrado baseado na mensagem
+          if (error.message === "Invalid login credentials") {
+            showAlert(
+              "Email não cadastrado ou senha incorreta", 
+              "Verifique se o email está correto ou cadastre-se na aba 'Cadastrar'.",
+              "error"
+            );
+          } else {
+            showAlert(
+              "Erro no login",
+              error.message || "Erro desconhecido",
+              "error"
+            );
+          }
         }
       } else if (data.session && data.user) {
         console.log('Login realizado com sucesso');
@@ -153,7 +178,7 @@ export const SignInForm = ({ onLogin, onShowEmailConfirmation }: SignInFormProps
         <Alert>
           <AlertCircle className="h-4 w-4" />
           <AlertDescription className="text-xs">
-            Problemas para entrar? Verifique se confirmou seu email após o cadastro.
+            Problemas para entrar? Verifique se confirmou seu email após o cadastro ou se possui uma conta cadastrada.
           </AlertDescription>
         </Alert>
       </form>
