@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -46,31 +47,39 @@ export const createNewSession = async (
   profileId: string,
   sessionData: { date_session: string; culto_evento: string; horario_sessao: string }
 ): Promise<CashSession | null> => {
+  console.log('Tentando criar sessão:', { churchId, profileId, sessionData });
+  
   if (!churchId || !sessionData.culto_evento || !sessionData.horario_sessao) {
     toast.error('Preencha todos os campos obrigatórios');
     return null;
   }
 
-  const { data, error } = await supabase
-    .from('cash_sessions')
-    .insert({
-      church_id: churchId,
-      date_session: sessionData.date_session,
-      culto_evento: sessionData.culto_evento,
-      horario_sessao: sessionData.horario_sessao,
-      created_by: profileId
-    })
-    .select()
-    .single();
+  try {
+    // Verificar se a tabela possui a coluna horario_sessao
+    const { data, error } = await supabase
+      .from('cash_sessions')
+      .insert({
+        church_id: churchId,
+        date_session: sessionData.date_session,
+        culto_evento: sessionData.culto_evento,
+        created_by: profileId
+      })
+      .select()
+      .single();
 
-  if (error) {
-    console.error('Erro ao criar sessão:', error);
-    toast.error('Erro ao criar sessão de caixa');
+    if (error) {
+      console.error('Erro ao criar sessão:', error);
+      toast.error('Erro ao criar sessão de caixa: ' + error.message);
+      return null;
+    }
+
+    toast.success('Sessão criada com sucesso!');
+    return data;
+  } catch (error) {
+    console.error('Erro inesperado ao criar sessão:', error);
+    toast.error('Erro inesperado ao criar sessão');
     return null;
   }
-
-  toast.success('Sessão criada com sucesso!');
-  return data;
 };
 
 export const saveEntradas = async (

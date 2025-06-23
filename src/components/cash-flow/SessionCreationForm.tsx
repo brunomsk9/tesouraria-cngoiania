@@ -37,9 +37,19 @@ export const SessionCreationForm = ({
   const loadCultosEventosData = async () => {
     if (!profile?.church_id) return;
     setLoading(true);
-    const data = await loadCultosEventos(profile.church_id);
-    setCultosEventos(data);
-    setLoading(false);
+    try {
+      const data = await loadCultosEventos(profile.church_id);
+      setCultosEventos(data);
+    } catch (error) {
+      console.error('Erro ao carregar cultos/eventos:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateSession = () => {
+    console.log('Tentando criar sessão com dados:', newSessionData);
+    onCreateSession();
   };
 
   return (
@@ -117,7 +127,7 @@ export const SessionCreationForm = ({
             </div>
           </div>
           <Button 
-            onClick={onCreateSession} 
+            onClick={handleCreateSession} 
             disabled={!newSessionData.culto_evento || !newSessionData.horario_sessao || cultosEventos.length === 0}
             className="w-full bg-blue-600 hover:bg-blue-700 h-12 text-lg"
           >
