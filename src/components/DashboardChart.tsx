@@ -143,7 +143,8 @@ export const DashboardChart = () => {
   return (
     <Card className="shadow-sm">
       <CardHeader>
-        <CardTitle className="text-xl font-bold text-gray-900">Fluxo de Caixa Mensal</CardTitle>
+        <CardTitle className="text-xl font-bold text-gray-900">Dashboard - Sistema de Tesouraria</CardTitle>
+        <p className="text-gray-600">Visão geral das informações financeiras</p>
       </CardHeader>
       <CardContent>
         <ChartContainer config={chartConfig} className="h-80">

@@ -1,4 +1,3 @@
-
 import { useAuth } from "@/hooks/useAuth";
 import { CashFlowManager } from "@/components/CashFlowManager";
 import { TopNavigation } from "@/components/TopNavigation";
@@ -25,6 +24,9 @@ const Index = () => {
     );
   }
 
+  // Extract first name from profile
+  const firstName = profile?.name?.split(' ')[0] || '';
+
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
@@ -34,27 +36,12 @@ const Index = () => {
               <ValidationAlert />
             </div>
             
+            {/* Welcome Header */}
             <div className="px-6 lg:px-8">
-              <div className="mb-6">
-                <h1 className="text-3xl font-bold text-gray-900 text-center">
-                  Dashboard - Sistema de Tesouraria
-                </h1>
-                <p className="text-gray-600 text-lg text-center mt-2">
-                  Visão geral das informações financeiras
-                </p>
-              </div>
-              <DashboardCards />
-            </div>
-            
-            <div className="px-6 lg:px-8">
-              <DashboardChart />
-            </div>
-            
-            <div className="px-6 lg:px-8">
-              <Card className="shadow-sm max-w-4xl mx-auto">
+              <Card className="shadow-sm max-w-4xl mx-auto mb-8">
                 <CardHeader className="pb-4">
                   <CardTitle className="text-2xl font-bold text-gray-900 text-center">
-                    Bem-vindo ao Sistema de Tesouraria
+                    Bem-vindo ao Sistema de Tesouraria: {firstName}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -63,6 +50,14 @@ const Index = () => {
                   </p>
                 </CardContent>
               </Card>
+            </div>
+            
+            <div className="px-6 lg:px-8">
+              <DashboardCards />
+            </div>
+            
+            <div className="px-6 lg:px-8">
+              <DashboardChart />
             </div>
           </div>
         );
@@ -119,27 +114,12 @@ const Index = () => {
               <ValidationAlert />
             </div>
             
+            {/* Welcome Header */}
             <div className="px-6 lg:px-8">
-              <div className="mb-6">
-                <h1 className="text-3xl font-bold text-gray-900 text-center">
-                  Dashboard - Sistema de Tesouraria
-                </h1>
-                <p className="text-gray-600 text-lg text-center mt-2">
-                  Visão geral das informações financeiras
-                </p>
-              </div>
-              <DashboardCards />
-            </div>
-            
-            <div className="px-6 lg:px-8">
-              <DashboardChart />
-            </div>
-            
-            <div className="px-6 lg:px-8">
-              <Card className="shadow-sm max-w-4xl mx-auto">
+              <Card className="shadow-sm max-w-4xl mx-auto mb-8">
                 <CardHeader className="pb-4">
                   <CardTitle className="text-2xl font-bold text-gray-900 text-center">
-                    Bem-vindo ao Sistema de Tesouraria
+                    Bem-vindo ao Sistema de Tesouraria: {firstName}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -148,6 +128,14 @@ const Index = () => {
                   </p>
                 </CardContent>
               </Card>
+            </div>
+            
+            <div className="px-6 lg:px-8">
+              <DashboardCards />
+            </div>
+            
+            <div className="px-6 lg:px-8">
+              <DashboardChart />
             </div>
           </div>
         );
