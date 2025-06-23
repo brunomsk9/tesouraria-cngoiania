@@ -77,6 +77,7 @@ export const AuthPage = ({ onLogin }: AuthPageProps) => {
         setName('');
       }
     } catch (error) {
+      console.error('Erro no cadastro:', error);
       toast({
         title: "Erro inesperado",
         description: "Ocorreu um erro durante o cadastro.",
@@ -92,13 +93,19 @@ export const AuthPage = ({ onLogin }: AuthPageProps) => {
     setLoading(true);
 
     try {
+      console.log('Tentando fazer login com:', { email, password: '***' });
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
+      console.log('Resposta do login:', { data, error });
+
       if (error) {
-        if (error.message.includes('Invalid login credentials')) {
+        console.error('Erro de login:', error.message);
+        
+        if (error.message.includes('Invalid login credentials') || error.message.includes('invalid_credentials')) {
           toast({
             title: "Credenciais inválidas",
             description: "Email ou senha incorretos. Verifique seus dados e tente novamente.",
@@ -119,14 +126,23 @@ export const AuthPage = ({ onLogin }: AuthPageProps) => {
             variant: "destructive"
           });
         }
-      } else {
+      } else if (data.session && data.user) {
+        console.log('Login realizado com sucesso');
         toast({
           title: "Login realizado!",
           description: "Bem-vindo ao Sistema de Tesouraria."
         });
         onLogin();
+      } else {
+        console.error('Login falhou sem erro específico');
+        toast({
+          title: "Erro no login",
+          description: "Não foi possível fazer login. Tente novamente.",
+          variant: "destructive"
+        });
       }
     } catch (error) {
+      console.error('Erro inesperado no login:', error);
       toast({
         title: "Erro inesperado",
         description: "Ocorreu um erro durante o login.",
