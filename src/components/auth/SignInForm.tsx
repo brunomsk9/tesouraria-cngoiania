@@ -55,12 +55,12 @@ export const SignInForm = ({ onLogin, onShowEmailConfirmation }: SignInFormProps
       if (error) {
         console.error('Erro de login:', error);
         
-        // Para o erro "Invalid login credentials", vamos tratar como email não cadastrado
+        // Para o erro "Invalid login credentials", tratar como credenciais incorretas
         if (error.message === "Invalid login credentials") {
-          console.log('Email não cadastrado ou credenciais inválidas detectado');
+          console.log('Credenciais inválidas detectado');
           showAlert(
-            "Email não encontrado",
-            "Este email não possui uma conta cadastrada. Clique na aba 'Cadastrar' para criar uma nova conta ou verifique se digitou o email corretamente.",
+            "Email ou senha incorretos",
+            "Verifique se o email e senha estão corretos. Se não possui uma conta, clique na aba 'Cadastrar' para criar uma nova conta.",
             "error"
           );
         }
