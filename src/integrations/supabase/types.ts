@@ -91,9 +91,7 @@ export type Database = {
           ativo: boolean
           church_id: string
           created_at: string
-          data_evento: string | null
           descricao: string | null
-          horario_evento: string | null
           id: string
           nome: string
           updated_at: string
@@ -102,9 +100,7 @@ export type Database = {
           ativo?: boolean
           church_id: string
           created_at?: string
-          data_evento?: string | null
           descricao?: string | null
-          horario_evento?: string | null
           id?: string
           nome: string
           updated_at?: string
@@ -113,9 +109,7 @@ export type Database = {
           ativo?: boolean
           church_id?: string
           created_at?: string
-          data_evento?: string | null
           descricao?: string | null
-          horario_evento?: string | null
           id?: string
           nome?: string
           updated_at?: string

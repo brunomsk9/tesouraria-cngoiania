@@ -7,8 +7,6 @@ export interface CultoEvento {
   church_id: string;
   nome: string;
   descricao: string | null;
-  data_evento: string | null;
-  horario_evento: string | null;
   ativo: boolean;
   created_at: string;
   updated_at: string;
@@ -33,9 +31,7 @@ export const loadCultosEventos = async (churchId: string): Promise<CultoEvento[]
 export const createCultoEvento = async (
   churchId: string,
   nome: string,
-  descricao?: string,
-  dataEvento?: string,
-  horarioEvento?: string
+  descricao?: string
 ): Promise<CultoEvento | null> => {
   if (!churchId || !nome.trim()) {
     toast.error('Preencha todos os campos obrigatórios');
@@ -47,9 +43,7 @@ export const createCultoEvento = async (
     .insert({
       church_id: churchId,
       nome: nome.trim(),
-      descricao: descricao?.trim() || null,
-      data_evento: dataEvento || null,
-      horario_evento: horarioEvento || null
+      descricao: descricao?.trim() || null
     })
     .select()
     .single();
@@ -68,8 +62,6 @@ export const updateCultoEvento = async (
   id: string,
   nome: string,
   descricao?: string,
-  dataEvento?: string,
-  horarioEvento?: string,
   ativo: boolean = true
 ): Promise<boolean> => {
   if (!nome.trim()) {
@@ -82,8 +74,6 @@ export const updateCultoEvento = async (
     .update({
       nome: nome.trim(),
       descricao: descricao?.trim() || null,
-      data_evento: dataEvento || null,
-      horario_evento: horarioEvento || null,
       ativo,
       updated_at: new Date().toISOString()
     })
