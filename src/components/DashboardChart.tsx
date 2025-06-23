@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from 'recharts';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -147,7 +147,7 @@ export const DashboardChart = () => {
       </CardHeader>
       <CardContent>
         <ChartContainer config={chartConfig} className="h-80">
-          <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+          <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
             <XAxis 
               dataKey="month" 
               tick={{ fontSize: 12 }}
@@ -167,6 +167,7 @@ export const DashboardChart = () => {
                 ''
               ]}
             />
+            <ChartLegend content={<ChartLegendContent />} />
             <Bar 
               dataKey="entradas" 
               fill="var(--color-entradas)" 

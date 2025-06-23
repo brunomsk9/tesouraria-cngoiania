@@ -33,7 +33,16 @@ const Index = () => {
             <div className="px-6 lg:px-8">
               <ValidationAlert />
             </div>
+            
             <div className="px-6 lg:px-8">
+              <div className="mb-6">
+                <h1 className="text-3xl font-bold text-gray-900 text-center">
+                  Dashboard - Sistema de Tesouraria
+                </h1>
+                <p className="text-gray-600 text-lg text-center mt-2">
+                  Visão geral das informações financeiras
+                </p>
+              </div>
               <DashboardCards />
             </div>
             
@@ -109,7 +118,16 @@ const Index = () => {
             <div className="px-6 lg:px-8">
               <ValidationAlert />
             </div>
+            
             <div className="px-6 lg:px-8">
+              <div className="mb-6">
+                <h1 className="text-3xl font-bold text-gray-900 text-center">
+                  Dashboard - Sistema de Tesouraria
+                </h1>
+                <p className="text-gray-600 text-lg text-center mt-2">
+                  Visão geral das informações financeiras
+                </p>
+              </div>
               <DashboardCards />
             </div>
             
