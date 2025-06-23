@@ -1,183 +1,145 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, Download } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import { format, subMonths } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
-import { useAdvancedReportsData } from '@/hooks/useAdvancedReportsData';
-import { AdvancedReportSummary } from '@/components/reports/AdvancedReportSummary';
-import { AdvancedReportTable } from '@/components/reports/AdvancedReportTable';
-import { exportAdvancedReportToCSV } from '@/components/reports/AdvancedReportExport';
+
+interface PaymentTypeData {
+  type: string;
+  count: number;
+  total: number;
+}
 
 export const AdvancedReports = () => {
-  const [groupBy, setGroupBy] = useState('month');
-  const [selectedChurch, setSelectedChurch] = useState('all');
-  const [dateRange, setDateRange] = useState({
-    start: subMonths(new Date(), 1),
-    end: new Date()
-  });
+  const { profile } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [data, setData] = useState<PaymentTypeData[]>([]);
 
-  const reportParams = {
-    reportType: 'resumo',
-    groupBy,
-    selectedChurch,
-    dateRange
-  };
+  const loadData = async () => {
+    if (!profile) return;
+    
+    setLoading(true);
+    try {
+      const startDate = format(subMonths(new Date(), 3), 'yyyy-MM-dd');
+      const endDate = format(new Date(), 'yyyy-MM-dd');
 
-  const { loading, data, churches, profile } = useAdvancedReportsData(reportParams);
+      let query = supabase
+        .from('transactions')
+        .select(`
+          type,
+          amount,
+          cash_sessions!inner(church_id)
+        `)
+        .gte('date_transaction', startDate)
+        .lte('date_transaction', endDate);
 
-  const handleExport = () => {
-    if (data.length > 0) {
-      exportAdvancedReportToCSV(data, 'resumo', groupBy, churches);
+      // Filtro por igreja baseado no perfil
+      if (profile.role !== 'master' && profile.church_id) {
+        query = query.eq('cash_sessions.church_id', profile.church_id);
+      }
+
+      const { data: transactions, error } = await query;
+      
+      if (error) throw error;
+
+      // Agrupar por tipo de pagamento
+      const grouped: Record<string, PaymentTypeData> = {};
+      
+      transactions?.forEach(transaction => {
+        const type = transaction.type === 'entrada' ? 'Entradas' : 'Saídas';
+        
+        if (!grouped[type]) {
+          grouped[type] = {
+            type,
+            count: 0,
+            total: 0
+          };
+        }
+        
+        grouped[type].count += 1;
+        grouped[type].total += Number(transaction.amount);
+      });
+
+      setData(Object.values(grouped));
+    } catch (error) {
+      console.error('Erro ao carregar dados:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
+  useEffect(() => {
+    loadData();
+  }, [profile]);
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Relatórios por Tipo de Pagamento</h1>
+          <p className="text-gray-600 mt-2">Carregando dados...</p>
+        </div>
+        <Card>
+          <CardContent className="p-6">
+            <div className="h-64 animate-pulse bg-gray-200 rounded"></div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Relatórios Avançados</h1>
-          <p className="text-gray-600 mt-2">Análises detalhadas para supervisão e gestão</p>
-        </div>
-        <Button 
-          onClick={handleExport} 
-          variant="outline" 
-          disabled={loading || data.length === 0}
-          className="flex items-center gap-2"
-        >
-          <Download className="h-4 w-4" />
-          Exportar CSV
-        </Button>
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900">Relatórios por Tipo de Pagamento</h1>
+        <p className="text-gray-600 mt-2">Últimos 3 meses</p>
       </div>
 
-      {/* Filtros */}
       <Card>
         <CardHeader>
-          <CardTitle>Filtros</CardTitle>
+          <CardTitle>Resumo por Tipo</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {/* Agrupar Por */}
-            <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">
-                Agrupar Por
-              </label>
-              <Select value={groupBy} onValueChange={setGroupBy}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="month">Mês</SelectItem>
-                  <SelectItem value="church">Igreja</SelectItem>
-                  <SelectItem value="category">Categoria</SelectItem>
-                  <SelectItem value="event">Evento</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Igreja */}
-            {(profile?.role === 'master' || profile?.role === 'supervisor') && (
-              <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">
-                  Igreja
-                </label>
-                <Select value={selectedChurch} onValueChange={setSelectedChurch}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todas as Igrejas</SelectItem>
-                    {churches.map(church => (
-                      <SelectItem key={church.id} value={church.id}>
-                        {church.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            {/* Período */}
-            <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">
-                Período
-              </label>
-              <div className="flex gap-2">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !dateRange.start && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {dateRange.start ? (
-                        format(dateRange.start, "dd/MM/yyyy", { locale: ptBR })
-                      ) : (
-                        "Data inicial"
-                      )}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <Calendar
-                      mode="single"
-                      selected={dateRange.start}
-                      onSelect={(date) => date && setDateRange({...dateRange, start: date})}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !dateRange.end && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {dateRange.end ? (
-                        format(dateRange.end, "dd/MM/yyyy", { locale: ptBR })
-                      ) : (
-                        "Data final"
-                      )}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <Calendar
-                      mode="single"
-                      selected={dateRange.end}
-                      onSelect={(date) => date && setDateRange({...dateRange, end: date})}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-            </div>
-          </div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Tipo</TableHead>
+                <TableHead className="text-right">Quantidade</TableHead>
+                <TableHead className="text-right">Total</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {data.map((item) => (
+                <TableRow key={item.type}>
+                  <TableCell className="font-medium">{item.type}</TableCell>
+                  <TableCell className="text-right">{item.count}</TableCell>
+                  <TableCell className={`text-right font-bold ${
+                    item.type === 'Entradas' ? 'text-green-600' : 'text-red-600'
+                  }`}>
+                    {formatCurrency(item.total)}
+                  </TableCell>
+                </TableRow>
+              ))}
+              {data.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={3} className="text-center text-gray-500">
+                    Nenhum dado encontrado
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
-
-      {/* Resumo */}
-      <AdvancedReportSummary data={data} loading={loading} />
-
-      {/* Tabela Detalhada */}
-      <AdvancedReportTable 
-        data={data} 
-        reportType="resumo" 
-        groupBy={groupBy}
-        churches={churches}
-        loading={loading}
-      />
     </div>
   );
 };
