@@ -1,7 +1,9 @@
+
 import { useAuth } from "@/hooks/useAuth";
 import { CashFlowManager } from "@/components/CashFlowManager";
 import { TopNavigation } from "@/components/TopNavigation";
 import { Reports } from "@/components/Reports";
+import { AdvancedReports } from "@/components/AdvancedReports";
 import { CashBookReport } from "@/components/CashBookReport";
 import { ValidationAlert } from "@/components/ValidationAlert";
 import { DashboardCards } from "@/components/DashboardCards";
