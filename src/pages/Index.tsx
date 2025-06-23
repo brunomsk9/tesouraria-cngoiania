@@ -42,7 +42,7 @@ const Index = () => {
               <Card className="bg-gradient-to-r from-slate-500 to-slate-600 text-white shadow-lg hover:shadow-xl transition-shadow border-0">
                 <CardHeader className="pb-4">
                   <CardTitle className="text-2xl font-bold text-center">
-                    Bem-vindo{firstName}
+                    Bem-vindo - {firstName}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
