@@ -5,9 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { LogIn, UserPlus, Lock, Mail } from 'lucide-react';
+import { LogIn, UserPlus, Lock, Mail, AlertCircle, CheckCircle, Info } from 'lucide-react';
 
 interface AuthPageProps {
   onLogin: () => void;
@@ -18,6 +19,8 @@ export const AuthPage = ({ onLogin }: AuthPageProps) => {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showEmailConfirmation, setShowEmailConfirmation] = useState(false);
+  const [confirmationEmail, setConfirmationEmail] = useState('');
   const { toast } = useToast();
 
   const handleSignUp = async (e: React.FormEvent) => {
@@ -25,7 +28,7 @@ export const AuthPage = ({ onLogin }: AuthPageProps) => {
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -39,8 +42,8 @@ export const AuthPage = ({ onLogin }: AuthPageProps) => {
       if (error) {
         if (error.message.includes('User already registered')) {
           toast({
-            title: "Usuário já existe",
-            description: "Este email já está cadastrado. Tente fazer login.",
+            title: "Email já cadastrado",
+            description: "Este email já possui uma conta. Tente fazer login ou verifique se o email foi confirmado.",
             variant: "destructive"
           });
         } else {
@@ -51,10 +54,23 @@ export const AuthPage = ({ onLogin }: AuthPageProps) => {
           });
         }
       } else {
-        toast({
-          title: "Cadastro realizado!",
-          description: "Verifique seu email para confirmar a conta e fazer login."
-        });
+        // Verificar se o usuário foi criado mas precisa confirmar email
+        if (data.user && !data.session) {
+          setShowEmailConfirmation(true);
+          setConfirmationEmail(email);
+          toast({
+            title: "Cadastro realizado!",
+            description: "Verifique seu email para confirmar a conta antes de fazer login."
+          });
+        } else if (data.session) {
+          // Login automático se não precisar de confirmação
+          toast({
+            title: "Cadastro realizado!",
+            description: "Conta criada e login realizado com sucesso."
+          });
+          onLogin();
+        }
+        
         setEmail('');
         setPassword('');
         setName('');
@@ -75,7 +91,7 @@ export const AuthPage = ({ onLogin }: AuthPageProps) => {
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -84,7 +100,15 @@ export const AuthPage = ({ onLogin }: AuthPageProps) => {
         if (error.message.includes('Invalid login credentials')) {
           toast({
             title: "Credenciais inválidas",
-            description: "Email ou senha incorretos.",
+            description: "Email ou senha incorretos. Verifique seus dados e tente novamente.",
+            variant: "destructive"
+          });
+        } else if (error.message.includes('Email not confirmed')) {
+          setShowEmailConfirmation(true);
+          setConfirmationEmail(email);
+          toast({
+            title: "Email não confirmado",
+            description: "Você precisa confirmar seu email antes de fazer login. Verifique sua caixa de entrada.",
             variant: "destructive"
           });
         } else {
@@ -111,6 +135,93 @@ export const AuthPage = ({ onLogin }: AuthPageProps) => {
       setLoading(false);
     }
   };
+
+  const handleResendConfirmation = async () => {
+    if (!confirmationEmail) return;
+    
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: confirmationEmail,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`
+        }
+      });
+
+      if (error) {
+        toast({
+          title: "Erro ao reenviar email",
+          description: error.message,
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Email reenviado!",
+          description: "Verifique sua caixa de entrada e spam."
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Erro inesperado",
+        description: "Não foi possível reenviar o email de confirmação.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (showEmailConfirmation) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md shadow-lg border-0">
+          <CardHeader className="text-center space-y-2">
+            <div className="w-16 h-16 mx-auto bg-blue-100 rounded-full flex items-center justify-center mb-4">
+              <Mail className="h-8 w-8 text-blue-600" />
+            </div>
+            <CardTitle className="text-2xl text-gray-800">Confirme seu Email</CardTitle>
+            <p className="text-gray-600">Enviamos um link de confirmação para seu email</p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Alert>
+              <Info className="h-4 w-4" />
+              <AlertDescription>
+                Enviamos um email de confirmação para <strong>{confirmationEmail}</strong>. 
+                Clique no link do email para ativar sua conta.
+              </AlertDescription>
+            </Alert>
+
+            <div className="space-y-3">
+              <p className="text-sm text-gray-600 text-center">
+                Não recebeu o email? Verifique sua pasta de spam ou clique no botão abaixo para reenviar.
+              </p>
+              
+              <Button 
+                onClick={handleResendConfirmation}
+                disabled={loading}
+                className="w-full"
+                variant="outline"
+              >
+                {loading ? 'Reenviando...' : 'Reenviar Email de Confirmação'}
+              </Button>
+
+              <Button 
+                onClick={() => {
+                  setShowEmailConfirmation(false);
+                  setConfirmationEmail('');
+                }}
+                variant="ghost"
+                className="w-full"
+              >
+                Voltar ao Login
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center p-4">
@@ -169,6 +280,13 @@ export const AuthPage = ({ onLogin }: AuthPageProps) => {
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? 'Entrando...' : 'Entrar'}
                 </Button>
+
+                <Alert>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription className="text-xs">
+                    Problemas para entrar? Verifique se confirmou seu email após o cadastro.
+                  </AlertDescription>
+                </Alert>
               </form>
             </TabsContent>
 
@@ -223,9 +341,13 @@ export const AuthPage = ({ onLogin }: AuthPageProps) => {
                   {loading ? 'Cadastrando...' : 'Cadastrar'}
                 </Button>
                 
-                <p className="text-xs text-gray-500 text-center">
-                  Novos usuários são cadastrados como Tesoureiro por padrão.
-                </p>
+                <Alert>
+                  <CheckCircle className="h-4 w-4" />
+                  <AlertDescription className="text-xs">
+                    Após o cadastro, você receberá um email de confirmação. 
+                    Novos usuários são cadastrados como Tesoureiro por padrão.
+                  </AlertDescription>
+                </Alert>
               </form>
             </TabsContent>
           </Tabs>
