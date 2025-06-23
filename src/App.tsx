@@ -3,7 +3,6 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 import { AuthPage } from '@/components/AuthPage';
-import { Navigation } from '@/components/Navigation';
 import { useAuth, AuthProvider } from '@/hooks/useAuth';
 import Index from '@/pages/Index';
 import Admin from '@/pages/Admin';
@@ -34,7 +33,6 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navigation />
       <main>
         <Routes>
           <Route path="/" element={<Index />} />
