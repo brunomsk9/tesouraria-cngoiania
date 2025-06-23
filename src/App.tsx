@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 import { AuthPage } from '@/components/AuthPage';
 import { Navigation } from '@/components/Navigation';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth, AuthProvider } from '@/hooks/useAuth';
 import Index from '@/pages/Index';
 import Admin from '@/pages/Admin';
 import NotFound from '@/pages/NotFound';
@@ -54,10 +54,12 @@ function AppContent() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Router>
-        <AppContent />
-        <Toaster position="top-right" />
-      </Router>
+      <AuthProvider>
+        <Router>
+          <AppContent />
+          <Toaster position="top-right" />
+        </Router>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
