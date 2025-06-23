@@ -57,7 +57,7 @@ export const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
           variant="outline"
           size="sm"
           onClick={toggleSidebar}
-          className="bg-white shadow-md"
+          className="bg-white shadow-lg border-gray-200"
         >
           {isSidebarOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
         </Button>
@@ -73,26 +73,26 @@ export const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
 
       {/* Sidebar */}
       <div className={cn(
-        "fixed left-0 top-0 h-full w-64 bg-white border-r border-gray-200 shadow-lg transform transition-transform duration-300 ease-in-out z-50",
-        "lg:translate-x-0 lg:static lg:z-auto",
+        "fixed left-0 top-0 h-full w-64 bg-white border-r border-gray-200 shadow-xl transform transition-transform duration-300 ease-in-out z-50",
+        "lg:translate-x-0 lg:static lg:z-auto lg:shadow-none",
         isSidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="p-6 border-b border-gray-200">
+          <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-gray-900 to-gray-800">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gray-900 rounded-lg flex items-center justify-center">
-                <DollarSign className="h-6 w-6 text-white" />
+              <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm">
+                <DollarSign className="h-6 w-6 text-gray-900" />
               </div>
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">Tesouraria</h2>
-                <p className="text-sm text-gray-500">Sistema de Gestão</p>
+                <h2 className="text-lg font-bold text-white">Tesouraria</h2>
+                <p className="text-sm text-gray-300">Sistema de Gestão</p>
               </div>
             </div>
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 p-4 space-y-2">
+          <nav className="flex-1 p-4 space-y-2 bg-gray-50">
             {menuItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
@@ -102,10 +102,10 @@ export const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
                   key={item.id}
                   onClick={() => handleMenuClick(item.id)}
                   className={cn(
-                    "w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-colors",
+                    "w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-all duration-200",
                     isActive 
-                      ? "bg-gray-900 text-white" 
-                      : "text-gray-700 hover:bg-gray-100"
+                      ? "bg-gray-900 text-white shadow-md" 
+                      : "text-gray-700 hover:bg-white hover:shadow-sm"
                   )}
                 >
                   <Icon className="h-5 w-5" />
@@ -116,7 +116,7 @@ export const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
 
             {/* Admin section - only for masters */}
             {profile?.role === 'master' && (
-              <div className="pt-4 border-t border-gray-200 mt-4">
+              <div className="pt-6 border-t border-gray-200 mt-6">
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 px-4">
                   Administração
                 </p>
@@ -130,10 +130,10 @@ export const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
                       to={item.path!}
                       onClick={() => setIsSidebarOpen(false)}
                       className={cn(
-                        "w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors",
+                        "w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200",
                         isActive 
-                          ? "bg-purple-100 text-purple-900" 
-                          : "text-gray-700 hover:bg-gray-100"
+                          ? "bg-purple-100 text-purple-900 shadow-sm" 
+                          : "text-gray-700 hover:bg-white hover:shadow-sm"
                       )}
                     >
                       <Icon className="h-5 w-5" />
@@ -146,9 +146,9 @@ export const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
           </nav>
 
           {/* Footer */}
-          <div className="p-4 border-t border-gray-200">
+          <div className="p-4 border-t border-gray-200 bg-white">
             <div className="flex items-center space-x-3 mb-4">
-              <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+              <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
                 <UserCheck className="h-4 w-4 text-gray-600" />
               </div>
               <div className="flex-1 min-w-0">
@@ -164,7 +164,7 @@ export const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
               variant="outline" 
               size="sm" 
               onClick={signOut}
-              className="w-full"
+              className="w-full border-gray-300 hover:bg-gray-50"
             >
               Sair
             </Button>

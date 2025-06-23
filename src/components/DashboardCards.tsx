@@ -95,11 +95,11 @@ export const DashboardCards = () => {
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {[1, 2, 3, 4].map((i) => (
-          <Card key={i} className="animate-pulse">
-            <CardContent className="p-4">
-              <div className="h-16 bg-gray-200 rounded"></div>
+          <Card key={i} className="animate-pulse shadow-sm">
+            <CardContent className="p-6">
+              <div className="h-20 bg-gray-200 rounded"></div>
             </CardContent>
           </Card>
         ))}
@@ -108,53 +108,62 @@ export const DashboardCards = () => {
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
-        <CardContent className="p-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg hover:shadow-xl transition-shadow">
+        <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-blue-100">Sessões Ativas</p>
-              <p className="text-2xl font-bold">{data.activeSessions}</p>
+              <p className="text-blue-100 text-sm font-medium">Sessões Ativas</p>
+              <p className="text-3xl font-bold mt-1">{data.activeSessions}</p>
             </div>
-            <Clock className="h-8 w-8 text-blue-200" />
+            <div className="bg-blue-400/30 p-3 rounded-full">
+              <Clock className="h-6 w-6 text-blue-100" />
+            </div>
           </div>
         </CardContent>
       </Card>
       
-      <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white">
-        <CardContent className="p-4">
+      <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg hover:shadow-xl transition-shadow">
+        <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-green-100">Total Arrecadado</p>
-              <p className="text-2xl font-bold">
+              <p className="text-green-100 text-sm font-medium">Total Arrecadado</p>
+              <p className="text-3xl font-bold mt-1">
                 R$ {data.totalCollected.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
               </p>
+              <p className="text-green-100 text-xs mt-1">Últimos 30 dias</p>
             </div>
-            <TrendingUp className="h-8 w-8 text-green-200" />
+            <div className="bg-green-400/30 p-3 rounded-full">
+              <TrendingUp className="h-6 w-6 text-green-100" />
+            </div>
           </div>
         </CardContent>
       </Card>
       
-      <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white">
-        <CardContent className="p-4">
+      <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg hover:shadow-xl transition-shadow">
+        <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-purple-100">Sessões Validadas</p>
-              <p className="text-2xl font-bold">{data.validatedSessions}</p>
+              <p className="text-purple-100 text-sm font-medium">Sessões Validadas</p>
+              <p className="text-3xl font-bold mt-1">{data.validatedSessions}</p>
             </div>
-            <CheckCircle className="h-8 w-8 text-purple-200" />
+            <div className="bg-purple-400/30 p-3 rounded-full">
+              <CheckCircle className="h-6 w-6 text-purple-100" />
+            </div>
           </div>
         </CardContent>
       </Card>
       
-      <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
-        <CardContent className="p-4">
+      <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg hover:shadow-xl transition-shadow">
+        <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-orange-100">Total Sessões</p>
-              <p className="text-2xl font-bold">{data.totalReports}</p>
+              <p className="text-orange-100 text-sm font-medium">Total Sessões</p>
+              <p className="text-3xl font-bold mt-1">{data.totalReports}</p>
             </div>
-            <BarChart3 className="h-8 w-8 text-orange-200" />
+            <div className="bg-orange-400/30 p-3 rounded-full">
+              <BarChart3 className="h-6 w-6 text-orange-100" />
+            </div>
           </div>
         </CardContent>
       </Card>
