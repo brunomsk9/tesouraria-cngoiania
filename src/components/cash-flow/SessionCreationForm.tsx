@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Plus } from 'lucide-react';
+import { Calendar, Plus, Clock } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { loadCultosEventos, type CultoEvento } from '@/services/cultosEventosService';
 
@@ -39,6 +39,23 @@ export const SessionCreationForm = ({
     const data = await loadCultosEventos(profile.church_id);
     setCultosEventos(data);
     setLoading(false);
+  };
+
+  const formatCultoDisplay = (culto: CultoEvento) => {
+    let display = culto.nome;
+    
+    if (culto.data_evento || culto.horario_evento) {
+      const parts = [];
+      if (culto.data_evento) {
+        parts.push(new Date(culto.data_evento + 'T00:00:00').toLocaleDateString('pt-BR'));
+      }
+      if (culto.horario_evento) {
+        parts.push(culto.horario_evento);
+      }
+      display += ` (${parts.join(' às ')})`;
+    }
+    
+    return display;
   };
 
   return (
@@ -79,12 +96,14 @@ export const SessionCreationForm = ({
                   <SelectContent>
                     {cultosEventos.map((culto) => (
                       <SelectItem key={culto.id} value={culto.nome}>
-                        {culto.nome}
-                        {culto.descricao && (
-                          <span className="text-sm text-gray-500 block">
-                            {culto.descricao}
-                          </span>
-                        )}
+                        <div className="flex flex-col">
+                          <span>{formatCultoDisplay(culto)}</span>
+                          {culto.descricao && (
+                            <span className="text-sm text-gray-500">
+                              {culto.descricao}
+                            </span>
+                          )}
+                        </div>
                       </SelectItem>
                     ))}
                   </SelectContent>

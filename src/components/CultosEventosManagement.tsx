@@ -14,7 +14,7 @@ import {
   deleteCultoEvento,
   type CultoEvento 
 } from '@/services/cultosEventosService';
-import { Calendar, Plus, Edit, Trash2, Save, X } from 'lucide-react';
+import { Calendar, Plus, Edit, Trash2, Save, X, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 
 export const CultosEventosManagement = () => {
@@ -24,11 +24,15 @@ export const CultosEventosManagement = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [newCulto, setNewCulto] = useState({
     nome: '',
-    descricao: ''
+    descricao: '',
+    data_evento: '',
+    horario_evento: ''
   });
   const [editData, setEditData] = useState({
     nome: '',
-    descricao: ''
+    descricao: '',
+    data_evento: '',
+    horario_evento: ''
   });
 
   useEffect(() => {
@@ -51,11 +55,13 @@ export const CultosEventosManagement = () => {
     const result = await createCultoEvento(
       profile.church_id,
       newCulto.nome,
-      newCulto.descricao
+      newCulto.descricao,
+      newCulto.data_evento,
+      newCulto.horario_evento
     );
     
     if (result) {
-      setNewCulto({ nome: '', descricao: '' });
+      setNewCulto({ nome: '', descricao: '', data_evento: '', horario_evento: '' });
       loadData();
     }
   };
@@ -64,7 +70,9 @@ export const CultosEventosManagement = () => {
     setEditingId(culto.id);
     setEditData({
       nome: culto.nome,
-      descricao: culto.descricao || ''
+      descricao: culto.descricao || '',
+      data_evento: culto.data_evento || '',
+      horario_evento: culto.horario_evento || ''
     });
   };
 
@@ -74,19 +82,21 @@ export const CultosEventosManagement = () => {
     const success = await updateCultoEvento(
       editingId,
       editData.nome,
-      editData.descricao
+      editData.descricao,
+      editData.data_evento,
+      editData.horario_evento
     );
     
     if (success) {
       setEditingId(null);
-      setEditData({ nome: '', descricao: '' });
+      setEditData({ nome: '', descricao: '', data_evento: '', horario_evento: '' });
       loadData();
     }
   };
 
   const handleCancelEdit = () => {
     setEditingId(null);
-    setEditData({ nome: '', descricao: '' });
+    setEditData({ nome: '', descricao: '', data_evento: '', horario_evento: '' });
   };
 
   const handleDelete = async (id: string) => {
@@ -96,6 +106,20 @@ export const CultosEventosManagement = () => {
         loadData();
       }
     }
+  };
+
+  const formatDateTime = (date: string | null, time: string | null) => {
+    if (!date && !time) return null;
+    
+    let result = '';
+    if (date) {
+      result += new Date(date + 'T00:00:00').toLocaleDateString('pt-BR');
+    }
+    if (time) {
+      if (result) result += ' às ';
+      result += time;
+    }
+    return result;
   };
 
   if (profile?.role === 'supervisor') {
@@ -152,6 +176,32 @@ export const CultosEventosManagement = () => {
                   />
                 </div>
               </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="data_evento">Data do Evento</Label>
+                  <Input
+                    id="data_evento"
+                    type="date"
+                    value={newCulto.data_evento}
+                    onChange={(e) => setNewCulto({...newCulto, data_evento: e.target.value})}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Opcional - Para eventos com data específica
+                  </p>
+                </div>
+                <div>
+                  <Label htmlFor="horario_evento">Horário</Label>
+                  <Input
+                    id="horario_evento"
+                    type="time"
+                    value={newCulto.horario_evento}
+                    onChange={(e) => setNewCulto({...newCulto, horario_evento: e.target.value})}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Horário do culto/evento
+                  </p>
+                </div>
+              </div>
               <Button 
                 onClick={handleCreate}
                 disabled={!newCulto.nome.trim() || loading}
@@ -203,6 +253,24 @@ export const CultosEventosManagement = () => {
                             />
                           </div>
                         </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <Label>Data do Evento</Label>
+                            <Input
+                              type="date"
+                              value={editData.data_evento}
+                              onChange={(e) => setEditData({...editData, data_evento: e.target.value})}
+                            />
+                          </div>
+                          <div>
+                            <Label>Horário</Label>
+                            <Input
+                              type="time"
+                              value={editData.horario_evento}
+                              onChange={(e) => setEditData({...editData, horario_evento: e.target.value})}
+                            />
+                          </div>
+                        </div>
                         <div className="flex gap-2">
                           <Button
                             onClick={handleSaveEdit}
@@ -236,6 +304,14 @@ export const CultosEventosManagement = () => {
                           </div>
                           {culto.descricao && (
                             <p className="text-gray-600 mb-2">{culto.descricao}</p>
+                          )}
+                          {formatDateTime(culto.data_evento, culto.horario_evento) && (
+                            <div className="flex items-center gap-2 mb-2">
+                              <Clock className="h-4 w-4 text-gray-400" />
+                              <span className="text-sm text-gray-600">
+                                {formatDateTime(culto.data_evento, culto.horario_evento)}
+                              </span>
+                            </div>
                           )}
                           <p className="text-sm text-gray-500">
                             Criado em: {new Date(culto.created_at).toLocaleString('pt-BR')}
