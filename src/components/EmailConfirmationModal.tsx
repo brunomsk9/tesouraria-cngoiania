@@ -26,7 +26,7 @@ export const EmailConfirmationModal = ({ isOpen, onClose, email }: EmailConfirma
         type: 'signup',
         email: email,
         options: {
-          emailRedirectTo: `${window.location.origin}/`
+          emailRedirectTo: `${window.location.origin}/email-confirmation`
         }
       });
 

@@ -7,6 +7,7 @@ import { useAuth, AuthProvider } from '@/hooks/useAuth';
 import Index from '@/pages/Index';
 import Admin from '@/pages/Admin';
 import NotFound from '@/pages/NotFound';
+import EmailConfirmation from '@/pages/EmailConfirmation';
 import { CashFlowManager } from '@/components/CashFlowManager';
 import { Reports } from '@/components/Reports';
 import { VolunteerManagement } from '@/components/VolunteerManagement';
@@ -28,7 +29,12 @@ function AppContent() {
   }
 
   if (!user) {
-    return <AuthPage onLogin={() => {}} />;
+    return (
+      <Routes>
+        <Route path="/email-confirmation" element={<EmailConfirmation />} />
+        <Route path="*" element={<AuthPage onLogin={() => {}} />} />
+      </Routes>
+    );
   }
 
   return (
@@ -42,6 +48,7 @@ function AppContent() {
           <Route path="/volunteers" element={<VolunteerManagement />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/churches" element={<ChurchManagement />} />
+          <Route path="/email-confirmation" element={<EmailConfirmation />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
