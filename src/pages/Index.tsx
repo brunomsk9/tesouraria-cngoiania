@@ -1,3 +1,4 @@
+
 import { useAuth } from "@/hooks/useAuth";
 import { CashFlowManager } from "@/components/CashFlowManager";
 import { TopNavigation } from "@/components/TopNavigation";
@@ -38,14 +39,14 @@ const Index = () => {
             
             {/* Welcome Header */}
             <div className="px-6 lg:px-8">
-              <Card className="shadow-sm max-w-4xl mx-auto mb-8">
+              <Card className="bg-gradient-to-r from-slate-500 to-slate-600 text-white shadow-lg hover:shadow-xl transition-shadow border-0">
                 <CardHeader className="pb-4">
-                  <CardTitle className="text-2xl font-bold text-gray-900 text-center">
+                  <CardTitle className="text-2xl font-bold text-center">
                     Bem-vindo ao Sistema de Tesouraria: {firstName}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-gray-600 text-lg text-center">
+                  <p className="text-slate-100 text-lg text-center">
                     Use o menu superior para navegar entre as diferentes funcionalidades do sistema.
                   </p>
                 </CardContent>
@@ -116,14 +117,14 @@ const Index = () => {
             
             {/* Welcome Header */}
             <div className="px-6 lg:px-8">
-              <Card className="shadow-sm max-w-4xl mx-auto mb-8">
+              <Card className="bg-gradient-to-r from-slate-500 to-slate-600 text-white shadow-lg hover:shadow-xl transition-shadow border-0">
                 <CardHeader className="pb-4">
-                  <CardTitle className="text-2xl font-bold text-gray-900 text-center">
+                  <CardTitle className="text-2xl font-bold text-center">
                     Bem-vindo ao Sistema de Tesouraria: {firstName}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-gray-600 text-lg text-center">
+                  <p className="text-slate-100 text-lg text-center">
                     Use o menu superior para navegar entre as diferentes funcionalidades do sistema.
                   </p>
                 </CardContent>
