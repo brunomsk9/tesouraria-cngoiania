@@ -1,4 +1,3 @@
-
 import { useAuth } from "@/hooks/useAuth";
 import { CashFlowManager } from "@/components/CashFlowManager";
 import { TopNavigation } from "@/components/TopNavigation";
@@ -67,6 +66,13 @@ const Index = () => {
         return (
           <div className="p-6 lg:p-8 max-w-full">
             <Reports />
+          </div>
+        );
+      
+      case 'relatorios-avancados':
+        return (
+          <div className="p-6 lg:p-8 max-w-full">
+            <AdvancedReports />
           </div>
         );
       
