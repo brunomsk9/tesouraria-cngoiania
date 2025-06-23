@@ -28,7 +28,7 @@ export const TopNavigation = ({ activeTab, onTabChange }: TopNavigationProps) =>
     { id: 'caixa', label: 'Fluxo de Caixa', icon: DollarSign },
     { id: 'relatorios', label: 'Relatórios', icon: BarChart3 },
     ...(profile?.role === 'master' || profile?.role === 'supervisor' 
-      //? [{ id: 'relatorios-avancados', label: 'Relatórios Avançados', icon: BarChart3 }] 
+      ? [{ id: 'relatorios-avancados', label: 'Relatórios Avançados', icon: BarChart3 }] 
       : []
     ),
     { id: 'livro-caixa', label: 'Livro Caixa', icon: FileText }
