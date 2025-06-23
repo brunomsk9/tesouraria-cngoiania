@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -60,7 +59,7 @@ export const SignInForm = ({ onLogin, onShowEmailConfirmation }: SignInFormProps
           console.log('Credenciais inválidas detectado');
           showAlert(
             "Email ou senha incorretos",
-            "Verifique se o email e senha estão corretos. Se não possui uma conta, clique na aba 'Cadastrar' para criar uma nova conta.",
+            "Verifique se o email e senha estão corretos. Se não possui uma conta, clique na aba 'Cadastrar' para criar uma nova conta. Se o problema persistir, entre em contato com o suporte: suporte@comunidadedasnacoes.com.br",
             "error"
           );
         }
