@@ -28,22 +28,28 @@ const Index = () => {
     switch (activeTab) {
       case 'dashboard':
         return (
-          <div className="p-6 lg:p-8 space-y-8 max-w-full">
-            <ValidationAlert />
-            <DashboardCards />
+          <div className="space-y-8">
+            <div className="px-6 lg:px-8">
+              <ValidationAlert />
+            </div>
+            <div className="px-6 lg:px-8">
+              <DashboardCards />
+            </div>
             
-            <Card className="shadow-sm max-w-4xl mx-auto">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-2xl font-bold text-gray-900 text-center">
-                  Bem-vindo ao Sistema de Tesouraria
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600 text-lg text-center">
-                  Use o menu lateral para navegar entre as diferentes funcionalidades do sistema.
-                </p>
-              </CardContent>
-            </Card>
+            <div className="px-6 lg:px-8">
+              <Card className="shadow-sm max-w-4xl mx-auto">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-2xl font-bold text-gray-900 text-center">
+                    Bem-vindo ao Sistema de Tesouraria
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-600 text-lg text-center">
+                    Use o menu lateral para navegar entre as diferentes funcionalidades do sistema.
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         );
       
@@ -94,22 +100,28 @@ const Index = () => {
       
       default:
         return (
-          <div className="p-6 lg:p-8 space-y-8 max-w-full">
-            <ValidationAlert />
-            <DashboardCards />
+          <div className="space-y-8">
+            <div className="px-6 lg:px-8">
+              <ValidationAlert />
+            </div>
+            <div className="px-6 lg:px-8">
+              <DashboardCards />
+            </div>
             
-            <Card className="shadow-sm max-w-4xl mx-auto">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-2xl font-bold text-gray-900 text-center">
-                  Bem-vindo ao Sistema de Tesouraria
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600 text-lg text-center">
-                  Use o menu lateral para navegar entre as diferentes funcionalidades do sistema.
-                </p>
-              </CardContent>
-            </Card>
+            <div className="px-6 lg:px-8">
+              <Card className="shadow-sm max-w-4xl mx-auto">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-2xl font-bold text-gray-900 text-center">
+                    Bem-vindo ao Sistema de Tesouraria
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-600 text-lg text-center">
+                    Use o menu lateral para navegar entre as diferentes funcionalidades do sistema.
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         );
     }
@@ -122,7 +134,7 @@ const Index = () => {
         
         {/* Main content */}
         <div className="flex-1 lg:ml-64">
-          <div className="min-h-screen">
+          <div className="min-h-screen py-6 lg:py-8">
             {renderContent()}
           </div>
         </div>

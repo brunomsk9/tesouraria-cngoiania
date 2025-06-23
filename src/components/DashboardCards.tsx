@@ -96,7 +96,7 @@ export const DashboardCards = () => {
   if (loading) {
     return (
       <div className="w-full mb-8">
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {[1, 2, 3, 4].map((i) => (
             <Card key={i} className="animate-pulse shadow-sm">
               <CardContent className="p-6">
@@ -111,7 +111,7 @@ export const DashboardCards = () => {
 
   return (
     <div className="w-full mb-8">
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg hover:shadow-xl transition-shadow border-0">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
