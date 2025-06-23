@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -131,6 +130,7 @@ export const CashFlowManager = () => {
               </CardTitle>
               <p className="text-blue-100">
                 Data: {new Date(currentSession.date_session).toLocaleDateString('pt-BR')} | 
+                {currentSession.horario_sessao && ` Horário: ${currentSession.horario_sessao} |`}
                 Status: {currentSession.status.toUpperCase()}
               </p>
             </CardHeader>

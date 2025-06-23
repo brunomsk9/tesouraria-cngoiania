@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -6,6 +5,7 @@ interface CashSession {
   id: string;
   date_session: string;
   culto_evento: string;
+  horario_sessao?: string;
   status: string;
   church_id: string;
   created_by: string;
@@ -44,9 +44,9 @@ export const loadSessions = async (churchId: string): Promise<CashSession[]> => 
 export const createNewSession = async (
   churchId: string,
   profileId: string,
-  sessionData: { date_session: string; culto_evento: string }
+  sessionData: { date_session: string; culto_evento: string; horario_sessao: string }
 ): Promise<CashSession | null> => {
-  if (!churchId || !sessionData.culto_evento) {
+  if (!churchId || !sessionData.culto_evento || !sessionData.horario_sessao) {
     toast.error('Preencha todos os campos obrigatórios');
     return null;
   }
@@ -57,6 +57,7 @@ export const createNewSession = async (
       church_id: churchId,
       date_session: sessionData.date_session,
       culto_evento: sessionData.culto_evento,
+      horario_sessao: sessionData.horario_sessao,
       created_by: profileId
     })
     .select()

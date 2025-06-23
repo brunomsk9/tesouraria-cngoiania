@@ -1,10 +1,10 @@
-
 import { useState } from 'react';
 
 interface CashSession {
   id: string;
   date_session: string;
   culto_evento: string;
+  horario_sessao?: string;
   status: string;
   church_id: string;
   created_by: string;
@@ -29,7 +29,8 @@ export const useCashFlowState = () => {
   const [currentSession, setCurrentSession] = useState<CashSession | null>(null);
   const [newSessionData, setNewSessionData] = useState({
     date_session: new Date().toISOString().split('T')[0],
-    culto_evento: ''
+    culto_evento: '',
+    horario_sessao: new Date().toTimeString().slice(0, 5)
   });
   
   // Estados para entradas
