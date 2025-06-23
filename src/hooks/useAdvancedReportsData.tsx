@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { format } from 'date-fns';
 
 interface AdvancedReportParams {
@@ -19,7 +19,6 @@ interface Church {
 
 export const useAdvancedReportsData = (params: AdvancedReportParams) => {
   const { profile } = useAuth();
-  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<any[]>([]);
   const [churches, setChurches] = useState<Church[]>([]);
@@ -85,11 +84,7 @@ export const useAdvancedReportsData = (params: AdvancedReportParams) => {
 
     } catch (error: any) {
       console.error('Erro ao gerar relatório:', error);
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Não foi possível gerar o relatório."
-      });
+      toast.error('Não foi possível gerar o relatório.');
     } finally {
       setLoading(false);
     }

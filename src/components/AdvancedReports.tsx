@@ -3,137 +3,203 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CalendarIcon, Download, FileText, TrendingUp } from 'lucide-react';
-import { DateRangeModal } from './DateRangeModal';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { CalendarIcon, Download } from 'lucide-react';
+import { format, subMonths } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 import { useAdvancedReportsData } from '@/hooks/useAdvancedReportsData';
-import { AdvancedReportSummary } from './reports/AdvancedReportSummary';
-import { AdvancedReportChart } from './reports/AdvancedReportChart';
-import { AdvancedReportTable } from './reports/AdvancedReportTable';
-import { exportAdvancedReportToCSV } from './reports/AdvancedReportExport';
+import { AdvancedReportSummary } from '@/components/reports/AdvancedReportSummary';
+import { AdvancedReportChart } from '@/components/reports/AdvancedReportChart';
+import { AdvancedReportTable } from '@/components/reports/AdvancedReportTable';
+import { exportAdvancedReportToCSV } from '@/components/reports/AdvancedReportExport';
 
 export const AdvancedReports = () => {
-  const [reportType, setReportType] = useState('summary');
-  const [groupBy, setGroupBy] = useState('church');
+  const [reportType, setReportType] = useState('resumo');
+  const [groupBy, setGroupBy] = useState('month');
   const [selectedChurch, setSelectedChurch] = useState('all');
-  const [dateRange, setDateRange] = useState({ start: new Date(), end: new Date() });
+  const [dateRange, setDateRange] = useState({
+    start: subMonths(new Date(), 1),
+    end: new Date()
+  });
 
-  const {
-    loading,
-    data,
-    churches,
-    profile,
-    generateReport
-  } = useAdvancedReportsData({
+  const reportParams = {
     reportType,
     groupBy,
     selectedChurch,
     dateRange
-  });
-
-  const handleDateRangeSelect = (startDate: Date, endDate: Date) => {
-    setDateRange({ start: startDate, end: endDate });
   };
 
-  const handleExportCSV = () => {
-    exportAdvancedReportToCSV(data, reportType, groupBy, churches);
-  };
+  const { loading, data, churches, profile } = useAdvancedReportsData(reportParams);
 
-  if (profile?.role !== 'master' && profile?.role !== 'supervisor') {
-    return (
-      <Card className="border-orange-200 bg-orange-50">
-        <CardHeader>
-          <CardTitle className="text-orange-800">Acesso Restrito</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-orange-700">
-            Este relatório está disponível apenas para Masters e Supervisors.
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
+  const handleExport = () => {
+    if (data.length > 0) {
+      exportAdvancedReportToCSV(data, reportType, groupBy, churches);
+    }
+  };
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4">
+      <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Relatórios Avançados</h1>
-          <p className="text-gray-600">Análises detalhadas por período, igreja e categoria</p>
+          <h1 className="text-3xl font-bold text-gray-900">Relatórios Avançados</h1>
+          <p className="text-gray-600 mt-2">Análises detalhadas para supervisão e gestão</p>
         </div>
-
-        {/* Controls */}
-        <div className="flex flex-col sm:flex-row gap-2">
-          <Select value={reportType} onValueChange={setReportType}>
-            <SelectTrigger className="w-48">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="summary">Resumo Geral</SelectItem>
-              <SelectItem value="comparison">Comparativo</SelectItem>
-              <SelectItem value="trends">Tendências</SelectItem>
-              <SelectItem value="detailed">Detalhado</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select value={groupBy} onValueChange={setGroupBy}>
-            <SelectTrigger className="w-40">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="church">Por Igreja</SelectItem>
-              <SelectItem value="month">Por Mês</SelectItem>
-              <SelectItem value="category">Por Categoria</SelectItem>
-              <SelectItem value="event">Por Evento</SelectItem>
-            </SelectContent>
-          </Select>
-
-          {profile?.role === 'master' && (
-            <Select value={selectedChurch} onValueChange={setSelectedChurch}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Selecionar Igreja" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas as Igrejas</SelectItem>
-                {churches.map((church) => (
-                  <SelectItem key={church.id} value={church.id}>
-                    {church.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-
-          <DateRangeModal 
-            onDateRangeSelect={handleDateRangeSelect}
-            trigger={
-              <Button variant="outline" size="sm">
-                <CalendarIcon className="h-4 w-4" />
-              </Button>
-            }
-          />
-
-          <Button onClick={handleExportCSV} variant="outline" size="sm">
-            <Download className="h-4 w-4 mr-2" />
-            Exportar
-          </Button>
-        </div>
+        <Button 
+          onClick={handleExport} 
+          variant="outline" 
+          disabled={loading || data.length === 0}
+          className="flex items-center gap-2"
+        >
+          <Download className="h-4 w-4" />
+          Exportar CSV
+        </Button>
       </div>
 
-      {/* Summary Cards */}
-      <AdvancedReportSummary data={data} reportType={reportType} loading={loading} />
+      {/* Filtros */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Filtros</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Tipo de Relatório */}
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">
+                Tipo de Relatório
+              </label>
+              <Select value={reportType} onValueChange={setReportType}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="resumo">Resumo Financeiro</SelectItem>
+                  <SelectItem value="comparativo">Comparativo</SelectItem>
+                  <SelectItem value="tendencia">Análise de Tendência</SelectItem>
+                  <SelectItem value="detalhado">Detalhado</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-      {/* Chart */}
-      {(reportType === 'comparison' || reportType === 'trends') && (
-        <AdvancedReportChart 
-          data={data} 
-          reportType={reportType} 
-          groupBy={groupBy}
-          loading={loading}
-        />
-      )}
+            {/* Agrupar Por */}
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">
+                Agrupar Por
+              </label>
+              <Select value={groupBy} onValueChange={setGroupBy}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="month">Mês</SelectItem>
+                  <SelectItem value="church">Igreja</SelectItem>
+                  <SelectItem value="category">Categoria</SelectItem>
+                  <SelectItem value="event">Evento</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-      {/* Detailed Table */}
+            {/* Igreja */}
+            {(profile?.role === 'master' || profile?.role === 'supervisor') && (
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                  Igreja
+                </label>
+                <Select value={selectedChurch} onValueChange={setSelectedChurch}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas as Igrejas</SelectItem>
+                    {churches.map(church => (
+                      <SelectItem key={church.id} value={church.id}>
+                        {church.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Período */}
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">
+                Período
+              </label>
+              <div className="flex gap-2">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !dateRange.start && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {dateRange.start ? (
+                        format(dateRange.start, "dd/MM/yyyy", { locale: ptBR })
+                      ) : (
+                        "Data inicial"
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={dateRange.start}
+                      onSelect={(date) => date && setDateRange({...dateRange, start: date})}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !dateRange.end && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {dateRange.end ? (
+                        format(dateRange.end, "dd/MM/yyyy", { locale: ptBR })
+                      ) : (
+                        "Data final"
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={dateRange.end}
+                      onSelect={(date) => date && setDateRange({...dateRange, end: date})}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Resumo */}
+      <AdvancedReportSummary data={data} loading={loading} />
+
+      {/* Gráfico */}
+      <AdvancedReportChart 
+        data={data} 
+        reportType={reportType} 
+        groupBy={groupBy}
+        churches={churches}
+        loading={loading}
+      />
+
+      {/* Tabela Detalhada */}
       <AdvancedReportTable 
         data={data} 
         reportType={reportType} 
