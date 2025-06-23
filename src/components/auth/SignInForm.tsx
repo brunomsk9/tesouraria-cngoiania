@@ -55,26 +55,12 @@ export const SignInForm = ({ onLogin, onShowEmailConfirmation }: SignInFormProps
       if (error) {
         console.error('Erro de login:', error);
         
-        // Verificar se é erro de credenciais inválidas
-        if (error.message.toLowerCase().includes('invalid') || 
-            error.message.toLowerCase().includes('credentials') ||
-            error.message.toLowerCase().includes('wrong')) {
-          console.log('Erro de credenciais inválidas detectado');
+        // Para o erro "Invalid login credentials", vamos tratar como email não cadastrado
+        if (error.message === "Invalid login credentials") {
+          console.log('Email não cadastrado ou credenciais inválidas detectado');
           showAlert(
-            "Credenciais inválidas",
-            "Email ou senha incorretos. Verifique seus dados e tente novamente.",
-            "error"
-          );
-        } 
-        // Verificar se é erro de email não encontrado/cadastrado
-        else if (error.message.toLowerCase().includes('email not confirmed') ||
-                 error.message.toLowerCase().includes('signup') ||
-                 error.message.toLowerCase().includes('user not found') ||
-                 error.message.toLowerCase().includes('not registered')) {
-          console.log('Email não cadastrado detectado');
-          showAlert(
-            "Email não cadastrado",
-            "Este email não possui uma conta. Clique na aba 'Cadastrar' para criar uma nova conta.",
+            "Email não encontrado",
+            "Este email não possui uma conta cadastrada. Clique na aba 'Cadastrar' para criar uma nova conta ou verifique se digitou o email corretamente.",
             "error"
           );
         }
@@ -85,26 +71,28 @@ export const SignInForm = ({ onLogin, onShowEmailConfirmation }: SignInFormProps
           onShowEmailConfirmation(email);
           showAlert(
             "Email não confirmado",
-            "Você precisa confirmar seu email antes de fazer login.",
+            "Você precisa confirmar seu email antes de fazer login. Verifique sua caixa de entrada.",
             "error"
           );
         } 
+        // Outros erros específicos
+        else if (error.message.toLowerCase().includes('email not confirmed')) {
+          console.log('Email não confirmado detectado');
+          onShowEmailConfirmation(email);
+          showAlert(
+            "Email não confirmado",
+            "Você precisa confirmar seu email antes de fazer login. Verifique sua caixa de entrada.",
+            "error"
+          );
+        }
+        // Para outros erros
         else {
           console.log('Outro tipo de erro:', error.message);
-          // Para outros erros, verificar se pode ser email não cadastrado baseado na mensagem
-          if (error.message === "Invalid login credentials") {
-            showAlert(
-              "Email não cadastrado ou senha incorreta", 
-              "Verifique se o email está correto ou cadastre-se na aba 'Cadastrar'.",
-              "error"
-            );
-          } else {
-            showAlert(
-              "Erro no login",
-              error.message || "Erro desconhecido",
-              "error"
-            );
-          }
+          showAlert(
+            "Erro no login",
+            error.message || "Erro desconhecido. Tente novamente.",
+            "error"
+          );
         }
       } else if (data.session && data.user) {
         console.log('Login realizado com sucesso');
@@ -128,7 +116,7 @@ export const SignInForm = ({ onLogin, onShowEmailConfirmation }: SignInFormProps
       console.error('Erro inesperado no login:', error);
       showAlert(
         "Erro inesperado",
-        "Ocorreu um erro durante o login.",
+        "Ocorreu um erro durante o login. Tente novamente.",
         "error"
       );
     } finally {
@@ -178,7 +166,7 @@ export const SignInForm = ({ onLogin, onShowEmailConfirmation }: SignInFormProps
         <Alert>
           <AlertCircle className="h-4 w-4" />
           <AlertDescription className="text-xs">
-            Problemas para entrar? Verifique se confirmou seu email após o cadastro ou se possui uma conta cadastrada.
+            Não possui uma conta? Clique na aba 'Cadastrar' para criar uma nova conta.
           </AlertDescription>
         </Alert>
       </form>
