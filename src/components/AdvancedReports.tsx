@@ -18,6 +18,7 @@ interface ReportData {
   event_name: string;
   payment_type: string;
   amount: number;
+  type: 'entrada' | 'saida';
   description: string;
 }
 
@@ -41,9 +42,9 @@ export const AdvancedReports = () => {
     loadChurches();
   }, []);
 
-  // Set default church for non-supervisor users
+  // Set default church for non-supervisor/master users
   useEffect(() => {
-    if (profile?.role !== 'supervisor' && profile?.church_id) {
+    if (profile?.role !== 'supervisor' && profile?.role !== 'master' && profile?.church_id) {
       setSelectedChurch(profile.church_id);
     }
   }, [profile]);
@@ -114,13 +115,13 @@ export const AdvancedReports = () => {
         .order('date_transaction', { ascending: false });
 
       // Apply church filter
-      if (profile?.role === 'supervisor') {
-        // Supervisor can filter by specific church or see all
+      if (profile?.role === 'supervisor' || profile?.role === 'master') {
+        // Supervisor and master can filter by specific church or see all
         if (selectedChurch !== 'all') {
           query = query.eq('cash_sessions.church_id', selectedChurch);
         }
       } else {
-        // Non-supervisors can only see their own church
+        // Non-supervisors/masters can only see their own church
         if (profile?.church_id) {
           query = query.eq('cash_sessions.church_id', profile.church_id);
         }
@@ -138,6 +139,7 @@ export const AdvancedReports = () => {
         event_name: transaction.cash_sessions?.culto_evento || 'N/A',
         payment_type: transaction.category || 'Não especificado',
         amount: Number(transaction.amount),
+        type: transaction.type,
         description: transaction.description
       }));
 
@@ -164,7 +166,7 @@ export const AdvancedReports = () => {
   };
 
   const exportToCSV = () => {
-    const headers = ['Data', 'Igreja', 'Evento/Culto', 'Tipo de Pagamento', 'Valor', 'Descrição'];
+    const headers = ['Data', 'Igreja', 'Evento/Culto', 'Tipo de Pagamento', 'Entradas', 'Saídas', 'Descrição'];
     
     const csvContent = [
       headers.join(','),
@@ -173,7 +175,8 @@ export const AdvancedReports = () => {
         `"${item.church_name}"`,
         `"${item.event_name}"`,
         `"${item.payment_type}"`,
-        item.amount.toString().replace('.', ','),
+        item.type === 'entrada' ? item.amount.toString().replace('.', ',') : '0',
+        item.type === 'saida' ? item.amount.toString().replace('.', ',') : '0',
         `"${item.description}"`
       ].join(','))
     ].join('\n');
@@ -195,6 +198,14 @@ export const AdvancedReports = () => {
       currency: 'BRL'
     }).format(value);
   };
+
+  const calculateTotals = () => {
+    const totalEntradas = data.filter(item => item.type === 'entrada').reduce((sum, item) => sum + item.amount, 0);
+    const totalSaidas = data.filter(item => item.type === 'saida').reduce((sum, item) => sum + item.amount, 0);
+    return { totalEntradas, totalSaidas };
+  };
+
+  const { totalEntradas, totalSaidas } = calculateTotals();
 
   if (loading) {
     return (
@@ -226,7 +237,7 @@ export const AdvancedReports = () => {
         </CardHeader>
         <CardContent>
           <div className="flex flex-col sm:flex-row gap-4 items-end">
-            {profile?.role === 'supervisor' && (
+            {(profile?.role === 'supervisor' || profile?.role === 'master') && (
               <div className="flex-1">
                 <label className="text-sm font-medium mb-2 block">Igreja</label>
                 <Select value={selectedChurch} onValueChange={setSelectedChurch}>
@@ -296,7 +307,8 @@ export const AdvancedReports = () => {
                   <TableHead>Igreja</TableHead>
                   <TableHead>Evento/Culto</TableHead>
                   <TableHead>Tipo de Pagamento</TableHead>
-                  <TableHead className="text-right">Valor</TableHead>
+                  <TableHead className="text-right">Entradas</TableHead>
+                  <TableHead className="text-right">Saídas</TableHead>
                   <TableHead>Descrição</TableHead>
                 </TableRow>
               </TableHeader>
@@ -318,7 +330,10 @@ export const AdvancedReports = () => {
                       </span>
                     </TableCell>
                     <TableCell className="text-right font-medium text-green-600">
-                      {formatCurrency(item.amount)}
+                      {item.type === 'entrada' ? formatCurrency(item.amount) : '-'}
+                    </TableCell>
+                    <TableCell className="text-right font-medium text-red-600">
+                      {item.type === 'saida' ? formatCurrency(item.amount) : '-'}
                     </TableCell>
                     <TableCell className="max-w-xs truncate" title={item.description}>
                       {item.description}
@@ -327,8 +342,24 @@ export const AdvancedReports = () => {
                 ))}
                 {data.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center text-gray-500 py-8">
+                    <TableCell colSpan={7} className="text-center text-gray-500 py-8">
                       Nenhuma transação encontrada para o período selecionado
+                    </TableCell>
+                  </TableRow>
+                )}
+                {data.length > 0 && (
+                  <TableRow className="bg-gray-50 font-semibold">
+                    <TableCell colSpan={4} className="text-right">
+                      <strong>TOTAL:</strong>
+                    </TableCell>
+                    <TableCell className="text-right font-bold text-green-600">
+                      {formatCurrency(totalEntradas)}
+                    </TableCell>
+                    <TableCell className="text-right font-bold text-red-600">
+                      {formatCurrency(totalSaidas)}
+                    </TableCell>
+                    <TableCell className="text-right font-bold text-blue-600">
+                      Saldo: {formatCurrency(totalEntradas - totalSaidas)}
                     </TableCell>
                   </TableRow>
                 )}
