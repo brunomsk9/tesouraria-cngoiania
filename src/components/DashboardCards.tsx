@@ -95,11 +95,11 @@ export const DashboardCards = () => {
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
         {[1, 2, 3, 4].map((i) => (
           <Card key={i} className="animate-pulse shadow-sm">
             <CardContent className="p-6">
-              <div className="h-20 bg-gray-200 rounded"></div>
+              <div className="h-24 bg-gray-200 rounded"></div>
             </CardContent>
           </Card>
         ))}
@@ -108,13 +108,13 @@ export const DashboardCards = () => {
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-      <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg hover:shadow-xl transition-shadow">
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+      <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg hover:shadow-xl transition-shadow border-0">
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-blue-100 text-sm font-medium">Sessões Ativas</p>
-              <p className="text-3xl font-bold mt-1">{data.activeSessions}</p>
+              <p className="text-blue-100 text-sm font-medium mb-1">Sessões Ativas</p>
+              <p className="text-3xl font-bold">{data.activeSessions}</p>
             </div>
             <div className="bg-blue-400/30 p-3 rounded-full">
               <Clock className="h-6 w-6 text-blue-100" />
@@ -123,29 +123,29 @@ export const DashboardCards = () => {
         </CardContent>
       </Card>
       
-      <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg hover:shadow-xl transition-shadow">
+      <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg hover:shadow-xl transition-shadow border-0">
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
-            <div>
-              <p className="text-green-100 text-sm font-medium">Total Arrecadado</p>
-              <p className="text-3xl font-bold mt-1">
+            <div className="min-w-0">
+              <p className="text-green-100 text-sm font-medium mb-1">Total Arrecadado</p>
+              <p className="text-2xl lg:text-3xl font-bold truncate">
                 R$ {data.totalCollected.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
               </p>
               <p className="text-green-100 text-xs mt-1">Últimos 30 dias</p>
             </div>
-            <div className="bg-green-400/30 p-3 rounded-full">
+            <div className="bg-green-400/30 p-3 rounded-full flex-shrink-0">
               <TrendingUp className="h-6 w-6 text-green-100" />
             </div>
           </div>
         </CardContent>
       </Card>
       
-      <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg hover:shadow-xl transition-shadow">
+      <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg hover:shadow-xl transition-shadow border-0">
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-purple-100 text-sm font-medium">Sessões Validadas</p>
-              <p className="text-3xl font-bold mt-1">{data.validatedSessions}</p>
+              <p className="text-purple-100 text-sm font-medium mb-1">Sessões Validadas</p>
+              <p className="text-3xl font-bold">{data.validatedSessions}</p>
             </div>
             <div className="bg-purple-400/30 p-3 rounded-full">
               <CheckCircle className="h-6 w-6 text-purple-100" />
@@ -154,12 +154,12 @@ export const DashboardCards = () => {
         </CardContent>
       </Card>
       
-      <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg hover:shadow-xl transition-shadow">
+      <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg hover:shadow-xl transition-shadow border-0">
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-orange-100 text-sm font-medium">Total Sessões</p>
-              <p className="text-3xl font-bold mt-1">{data.totalReports}</p>
+              <p className="text-orange-100 text-sm font-medium mb-1">Total Sessões</p>
+              <p className="text-3xl font-bold">{data.totalReports}</p>
             </div>
             <div className="bg-orange-400/30 p-3 rounded-full">
               <BarChart3 className="h-6 w-6 text-orange-100" />

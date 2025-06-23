@@ -28,18 +28,18 @@ const Index = () => {
     switch (activeTab) {
       case 'dashboard':
         return (
-          <div className="p-4 lg:p-8 space-y-8 max-w-7xl mx-auto">
+          <div className="p-6 lg:p-8 space-y-8 max-w-full">
             <ValidationAlert />
             <DashboardCards />
             
-            <Card className="shadow-sm">
+            <Card className="shadow-sm max-w-4xl mx-auto">
               <CardHeader className="pb-4">
-                <CardTitle className="text-2xl font-bold text-gray-900">
+                <CardTitle className="text-2xl font-bold text-gray-900 text-center">
                   Bem-vindo ao Sistema de Tesouraria
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-600 text-lg">
+                <p className="text-gray-600 text-lg text-center">
                   Use o menu lateral para navegar entre as diferentes funcionalidades do sistema.
                 </p>
               </CardContent>
@@ -49,14 +49,14 @@ const Index = () => {
       
       case 'relatorios':
         return (
-          <div className="p-4 lg:p-8 max-w-7xl mx-auto">
+          <div className="p-6 lg:p-8 max-w-full">
             <Reports />
           </div>
         );
       
       case 'livro-caixa':
         return (
-          <div className="p-4 lg:p-8 max-w-7xl mx-auto">
+          <div className="p-6 lg:p-8 max-w-full">
             <CashBookReport />
           </div>
         );
@@ -65,7 +65,7 @@ const Index = () => {
         return (
           <div className="min-h-screen bg-gray-50">
             {!profile.church_id && profile.role !== 'supervisor' ? (
-              <div className="p-4 lg:p-8 max-w-4xl mx-auto">
+              <div className="p-6 lg:p-8 max-w-4xl mx-auto">
                 <Card className="border-orange-200 bg-orange-50 shadow-sm">
                   <CardHeader>
                     <CardTitle className="text-orange-800">Configuração Necessária</CardTitle>
@@ -94,18 +94,18 @@ const Index = () => {
       
       default:
         return (
-          <div className="p-4 lg:p-8 space-y-8 max-w-7xl mx-auto">
+          <div className="p-6 lg:p-8 space-y-8 max-w-full">
             <ValidationAlert />
             <DashboardCards />
             
-            <Card className="shadow-sm">
+            <Card className="shadow-sm max-w-4xl mx-auto">
               <CardHeader className="pb-4">
-                <CardTitle className="text-2xl font-bold text-gray-900">
+                <CardTitle className="text-2xl font-bold text-gray-900 text-center">
                   Bem-vindo ao Sistema de Tesouraria
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-600 text-lg">
+                <p className="text-gray-600 text-lg text-center">
                   Use o menu lateral para navegar entre as diferentes funcionalidades do sistema.
                 </p>
               </CardContent>
