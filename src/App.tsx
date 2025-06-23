@@ -1,55 +1,65 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider, useAuth } from "@/hooks/useAuth";
-import { AuthPage } from "@/components/AuthPage";
-import Index from "./pages/Index";
-import Admin from "./pages/Admin";
+
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Toaster } from 'sonner';
+import { AuthPage } from '@/components/AuthPage';
+import { Navigation } from '@/components/Navigation';
+import { useAuth } from '@/hooks/useAuth';
+import Index from '@/pages/Index';
+import Admin from '@/pages/Admin';
+import NotFound from '@/pages/NotFound';
+import { CashFlowManager } from '@/components/CashFlowManager';
+import { Reports } from '@/components/Reports';
+import { VolunteerManagement } from '@/components/VolunteerManagement';
+import { ChurchManagement } from '@/components/ChurchManagement';
+import { CultosEventosManagement } from '@/components/CultosEventosManagement';
+import './App.css';
 
 const queryClient = new QueryClient();
 
-const AppContent = () => {
+function AppContent() {
   const { user, loading } = useAuth();
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Carregando...</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
       </div>
     );
   }
 
   if (!user) {
-    return <AuthPage onLogin={() => {}} />;
+    return <AuthPage />;
   }
 
   return (
-    <Routes>
-      <Route path="/" element={<Index />} />
-      <Route path="/admin" element={<Admin />} />
-    </Routes>
+    <div className="min-h-screen bg-gray-50">
+      <Navigation />
+      <main>
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/cash-flow" element={<CashFlowManager />} />
+          <Route path="/cultos-eventos" element={<CultosEventosManagement />} />
+          <Route path="/reports" element={<Reports />} />
+          <Route path="/volunteers" element={<VolunteerManagement />} />
+          <Route path="/admin" element={<Admin />} />
+          <Route path="/churches" element={<ChurchManagement />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </main>
+    </div>
   );
-};
+}
 
-const App = () => {
+function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <AppContent />
-          </BrowserRouter>
-        </TooltipProvider>
-      </AuthProvider>
+      <Router>
+        <AppContent />
+        <Toaster position="top-right" />
+      </Router>
     </QueryClientProvider>
   );
-};
+}
 
 export default App;

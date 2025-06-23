@@ -1,9 +1,13 @@
 
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar, Plus } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { loadCultosEventos, type CultoEvento } from '@/services/cultosEventosService';
 
 interface SessionCreationFormProps {
   newSessionData: {
@@ -19,6 +23,24 @@ export const SessionCreationForm = ({
   setNewSessionData,
   onCreateSession
 }: SessionCreationFormProps) => {
+  const { profile } = useAuth();
+  const [cultosEventos, setCultosEventos] = useState<CultoEvento[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (profile?.church_id) {
+      loadCultosEventosData();
+    }
+  }, [profile]);
+
+  const loadCultosEventosData = async () => {
+    if (!profile?.church_id) return;
+    setLoading(true);
+    const data = await loadCultosEventos(profile.church_id);
+    setCultosEventos(data);
+    setLoading(false);
+  };
+
   return (
     <div className="max-w-2xl mx-auto">
       <Card className="border-0 shadow-lg bg-white">
@@ -42,19 +64,61 @@ export const SessionCreationForm = ({
             </div>
             <div>
               <Label htmlFor="evento" className="text-sm font-medium text-gray-700">Culto/Evento</Label>
-              <Input
-                id="evento"
-                placeholder="Ex: Culto Domingo Manhã"
-                value={newSessionData.culto_evento}
-                onChange={(e) => setNewSessionData({...newSessionData, culto_evento: e.target.value})}
-                className="mt-1"
-              />
+              {loading ? (
+                <div className="mt-1 flex items-center justify-center h-10 border border-gray-300 rounded-md">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                </div>
+              ) : cultosEventos.length > 0 ? (
+                <Select 
+                  value={newSessionData.culto_evento} 
+                  onValueChange={(value) => setNewSessionData({...newSessionData, culto_evento: value})}
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Selecione um culto/evento" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {cultosEventos.map((culto) => (
+                      <SelectItem key={culto.id} value={culto.nome}>
+                        {culto.nome}
+                        {culto.descricao && (
+                          <span className="text-sm text-gray-500 block">
+                            {culto.descricao}
+                          </span>
+                        )}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <div className="mt-1">
+                  <div className="text-center py-4 border border-gray-300 rounded-md bg-gray-50">
+                    <p className="text-sm text-gray-600 mb-2">
+                      Nenhum culto/evento cadastrado
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Cadastre cultos/eventos primeiro para continuar
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
-          <Button onClick={onCreateSession} className="w-full bg-blue-600 hover:bg-blue-700 h-12 text-lg">
+          <Button 
+            onClick={onCreateSession} 
+            disabled={!newSessionData.culto_evento || cultosEventos.length === 0}
+            className="w-full bg-blue-600 hover:bg-blue-700 h-12 text-lg"
+          >
             <Plus className="h-5 w-5 mr-2" />
             Iniciar Sessão de Caixa
           </Button>
+          
+          {cultosEventos.length === 0 && !loading && (
+            <div className="text-center">
+              <p className="text-sm text-orange-600 bg-orange-50 p-3 rounded-lg border border-orange-200">
+                <strong>Atenção:</strong> É necessário cadastrar pelo menos um culto/evento antes de criar uma sessão de caixa.
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
