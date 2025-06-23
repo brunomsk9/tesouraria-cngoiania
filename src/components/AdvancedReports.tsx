@@ -11,12 +11,10 @@ import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { useAdvancedReportsData } from '@/hooks/useAdvancedReportsData';
 import { AdvancedReportSummary } from '@/components/reports/AdvancedReportSummary';
-import { AdvancedReportChart } from '@/components/reports/AdvancedReportChart';
 import { AdvancedReportTable } from '@/components/reports/AdvancedReportTable';
 import { exportAdvancedReportToCSV } from '@/components/reports/AdvancedReportExport';
 
 export const AdvancedReports = () => {
-  const [reportType, setReportType] = useState('resumo');
   const [groupBy, setGroupBy] = useState('month');
   const [selectedChurch, setSelectedChurch] = useState('all');
   const [dateRange, setDateRange] = useState({
@@ -25,7 +23,7 @@ export const AdvancedReports = () => {
   });
 
   const reportParams = {
-    reportType,
+    reportType: 'resumo',
     groupBy,
     selectedChurch,
     dateRange
@@ -35,7 +33,7 @@ export const AdvancedReports = () => {
 
   const handleExport = () => {
     if (data.length > 0) {
-      exportAdvancedReportToCSV(data, reportType, groupBy, churches);
+      exportAdvancedReportToCSV(data, 'resumo', groupBy, churches);
     }
   };
 
@@ -63,25 +61,7 @@ export const AdvancedReports = () => {
           <CardTitle>Filtros</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Tipo de Relatório */}
-            <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">
-                Tipo de Relatório
-              </label>
-              <Select value={reportType} onValueChange={setReportType}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="resumo">Resumo Financeiro</SelectItem>
-                  <SelectItem value="comparativo">Comparativo</SelectItem>
-                  <SelectItem value="tendencia">Análise de Tendência</SelectItem>
-                  <SelectItem value="detalhado">Detalhado</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {/* Agrupar Por */}
             <div>
               <label className="text-sm font-medium text-gray-700 mb-2 block">
@@ -190,19 +170,10 @@ export const AdvancedReports = () => {
       {/* Resumo */}
       <AdvancedReportSummary data={data} loading={loading} />
 
-      {/* Gráfico */}
-      <AdvancedReportChart 
-        data={data} 
-        reportType={reportType} 
-        groupBy={groupBy}
-        churches={churches}
-        loading={loading}
-      />
-
       {/* Tabela Detalhada */}
       <AdvancedReportTable 
         data={data} 
-        reportType={reportType} 
+        reportType="resumo" 
         groupBy={groupBy}
         churches={churches}
         loading={loading}
