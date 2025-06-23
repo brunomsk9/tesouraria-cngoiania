@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
@@ -45,13 +44,8 @@ export const TopNavigation = ({ activeTab, onTabChange }: TopNavigationProps) =>
         <div className="flex justify-between h-16">
           {/* Logo only */}
           <div className="flex items-center">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center">
-                <DollarSign className="h-5 w-5 text-white" />
-              </div>
-              <div className="hidden sm:block">
-                <h1 className="text-xl font-bold text-gray-900">Tesouraria</h1>
-              </div>
+            <div className="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center">
+              <DollarSign className="h-5 w-5 text-white" />
             </div>
           </div>
 
