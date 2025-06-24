@@ -2,8 +2,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
 
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -18,15 +16,38 @@ interface CashBookEmailRequest {
 }
 
 const handler = async (req: Request): Promise<Response> => {
+  console.log("Function called with method:", req.method);
+  
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
+    console.log("Handling CORS preflight request");
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    console.log("Processing email request...");
+    
+    // Check if RESEND_API_KEY is available
+    const apiKey = Deno.env.get("RESEND_API_KEY");
+    if (!apiKey) {
+      console.error("RESEND_API_KEY not found in environment variables");
+      return new Response(
+        JSON.stringify({ error: "Configuração do servidor incompleta - chave da API não encontrada" }),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
+    console.log("API key found, initializing Resend...");
+    const resend = new Resend(apiKey);
+
     const { to, subject, message, emailContent }: CashBookEmailRequest = await req.json();
+    console.log("Request data parsed:", { to, subject: subject?.substring(0, 50) });
 
     if (!to || !subject) {
+      console.error("Missing required fields:", { to: !!to, subject: !!subject });
       return new Response(
         JSON.stringify({ error: "E-mail e assunto são obrigatórios" }),
         {
@@ -36,9 +57,9 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Use a more generic sender that works with custom domains
+    console.log("Sending email via Resend...");
     const emailResponse = await resend.emails.send({
-      from: "noreply@resend.dev", // This should work with custom domains
+      from: "noreply@resend.dev",
       to: [to],
       subject: subject,
       html: `
@@ -77,13 +98,24 @@ const handler = async (req: Request): Promise<Response> => {
     });
   } catch (error: any) {
     console.error("Error in send-cashbook-email function:", error);
+    console.error("Error details:", {
+      message: error.message,
+      name: error.name,
+      stack: error.stack
+    });
     
-    // Better error handling for domain issues
+    // Better error handling
     let errorMessage = "Erro interno do servidor";
-    if (error.message && error.message.includes("domain")) {
-      errorMessage = "Erro de configuração de domínio. Verifique se o domínio está verificado no Resend.";
-    } else if (error.message) {
-      errorMessage = error.message;
+    if (error.message) {
+      if (error.message.includes("API key")) {
+        errorMessage = "Erro na configuração da chave da API do Resend";
+      } else if (error.message.includes("domain")) {
+        errorMessage = "Erro de configuração de domínio. Verifique se o domínio está verificado no Resend.";
+      } else if (error.message.includes("rate limit")) {
+        errorMessage = "Limite de envio de e-mails atingido. Tente novamente em alguns minutos.";
+      } else {
+        errorMessage = `Erro: ${error.message}`;
+      }
     }
     
     return new Response(
