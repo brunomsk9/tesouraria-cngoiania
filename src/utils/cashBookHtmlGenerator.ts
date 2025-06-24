@@ -15,6 +15,54 @@ interface HtmlGeneratorParams {
   initialBalance: number;
 }
 
+interface CashBookSummary {
+  dinheiroLiquido: number;
+  somaPix: number;
+  somaCredito: number;
+  somaDebito: number;
+  somaSaida: number;
+}
+
+const calculateSummary = (entries: CashBookEntry[]): CashBookSummary => {
+  let somaDinheiro = 0;
+  let somaPix = 0;
+  let somaCredito = 0;
+  let somaDebito = 0;
+  let somaSaida = 0;
+
+  entries.forEach(entry => {
+    if (entry.type === 'entrada') {
+      switch (entry.category) {
+        case 'dinheiro':
+          somaDinheiro += entry.amount;
+          break;
+        case 'pix':
+          somaPix += entry.amount;
+          break;
+        case 'cartao_credito':
+          somaCredito += entry.amount;
+          break;
+        case 'cartao_debito':
+          somaDebito += entry.amount;
+          break;
+      }
+    } else if (entry.type === 'saida') {
+      somaSaida += entry.amount;
+    }
+  });
+
+  // Dinheiro líquido = Soma dinheiro - Todas as saídas
+  const dinheiroLiquido = somaDinheiro - somaSaida;
+
+  return {
+    dinheiroLiquido,
+    somaPix,
+    somaCredito,
+    somaDebito,
+    somaSaida
+  };
+};
+
 export const generateCashBookHtml = ({
   churchName,
   logoUrl,
@@ -35,6 +83,9 @@ export const generateCashBookHtml = ({
   const firstSession = sessions[0];
   const serviceName = firstSession?.culto_evento || 'Não especificado';
   const serviceDate = firstSession?.date_session || startDate;
+
+  // Calcular resumo financeiro
+  const summary = calculateSummary(entries);
 
   return `
     <!DOCTYPE html>
@@ -75,6 +126,44 @@ export const generateCashBookHtml = ({
             border-left: 4px solid #28a745;
           }
           .period { text-align: center; margin-bottom: 20px; color: #666; }
+          .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border: 2px solid #dee2e6;
+          }
+          .summary-card {
+            text-align: center;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+          }
+          .summary-card.dinheiro { background-color: #e3f2fd; border-color: #2196f3; }
+          .summary-card.pix { background-color: #f3e5f5; border-color: #9c27b0; }
+          .summary-card.credito { background-color: #e8f5e8; border-color: #4caf50; }
+          .summary-card.debito { background-color: #fff3e0; border-color: #ff9800; }
+          .summary-card.saida { background-color: #ffebee; border-color: #f44336; }
+          .summary-card h4 {
+            margin: 0 0 8px 0;
+            font-size: 12px;
+            text-transform: uppercase;
+            font-weight: bold;
+            color: #666;
+          }
+          .summary-card .value {
+            font-size: 16px;
+            font-weight: bold;
+            margin: 0;
+          }
+          .summary-card.dinheiro .value { color: #1976d2; }
+          .summary-card.pix .value { color: #7b1fa2; }
+          .summary-card.credito .value { color: #388e3c; }
+          .summary-card.debito .value { color: #f57c00; }
+          .summary-card.saida .value { color: #d32f2f; }
           table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
           th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
           th { background-color: #f5f5f5; font-weight: bold; }
@@ -135,6 +224,29 @@ export const generateCashBookHtml = ({
         
         <div class="period">
           Período: ${format(new Date(startDate), 'dd/MM/yyyy', { locale: ptBR })} a ${format(new Date(endDate), 'dd/MM/yyyy', { locale: ptBR })}
+        </div>
+        
+        <div class="summary-cards">
+          <div class="summary-card dinheiro">
+            <h4>Dinheiro Líquido</h4>
+            <p class="value">R$ ${summary.dinheiroLiquido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+          </div>
+          <div class="summary-card pix">
+            <h4>Soma PIX</h4>
+            <p class="value">R$ ${summary.somaPix.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+          </div>
+          <div class="summary-card credito">
+            <h4>Soma Crédito</h4>
+            <p class="value">R$ ${summary.somaCredito.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+          </div>
+          <div class="summary-card debito">
+            <h4>Soma Débito</h4>
+            <p class="value">R$ ${summary.somaDebito.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+          </div>
+          <div class="summary-card saida">
+            <h4>Soma Saída</h4>
+            <p class="value">R$ ${summary.somaSaida.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+          </div>
         </div>
         
         <table>
