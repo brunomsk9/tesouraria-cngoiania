@@ -1,15 +1,13 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { format, subMonths, subDays, startOfMonth, endOfMonth } from 'date-fns';
-import { Download, CalendarIcon, FileText, Calendar, DollarSign, TrendingUp } from 'lucide-react';
-import { DateRangeModal } from './DateRangeModal';
 import { useToast } from '@/hooks/use-toast';
+import { ReportsSummaryCards } from './reports/ReportsSummaryCards';
+import { ReportsTable } from './reports/ReportsTable';
+import { ReportsFilters } from './reports/ReportsFilters';
 
 interface ReportData {
   id: string;
@@ -192,21 +190,6 @@ export const Reports = () => {
     document.body.removeChild(link);
   };
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
-  };
-
-  const calculateTotals = () => {
-    const totalEntradas = data.filter(item => item.type === 'entrada').reduce((sum, item) => sum + item.amount, 0);
-    const totalSaidas = data.filter(item => item.type === 'saida').reduce((sum, item) => sum + item.amount, 0);
-    return { totalEntradas, totalSaidas };
-  };
-
-  const { totalEntradas, totalSaidas } = calculateTotals();
-
   if (loading) {
     return (
       <div className="space-y-6">
@@ -245,201 +228,28 @@ export const Reports = () => {
         <p className="text-gray-600 mt-2">Relatório detalhado de transações</p>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="min-w-0">
-                <p className="text-green-100 text-sm">Total Entradas</p>
-                <p className="text-lg lg:text-2xl font-bold truncate">
-                  {formatCurrency(totalEntradas)}
-                </p>
-              </div>
-              <TrendingUp className="h-6 w-6 lg:h-8 lg:w-8 text-green-200 flex-shrink-0" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-gradient-to-r from-red-500 to-red-600 text-white">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="min-w-0">
-                <p className="text-red-100 text-sm">Total Saídas</p>
-                <p className="text-lg lg:text-2xl font-bold truncate">
-                  {formatCurrency(totalSaidas)}
-                </p>
-              </div>
-              <DollarSign className="h-6 w-6 lg:h-8 lg:w-8 text-red-200 flex-shrink-0" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className={`bg-gradient-to-r ${(totalEntradas - totalSaidas) >= 0 ? 'from-blue-500 to-blue-600' : 'from-orange-500 to-orange-600'} text-white`}>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="min-w-0">
-                <p className={(totalEntradas - totalSaidas) >= 0 ? 'text-blue-100' : 'text-orange-100'}>Saldo</p>
-                <p className="text-lg lg:text-2xl font-bold truncate">
-                  {formatCurrency(totalEntradas - totalSaidas)}
-                </p>
-              </div>
-              <Calendar className={`h-6 w-6 lg:h-8 lg:w-8 ${(totalEntradas - totalSaidas) >= 0 ? 'text-blue-200' : 'text-orange-200'} flex-shrink-0`} />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="min-w-0">
-                <p className="text-purple-100 text-sm">Transações</p>
-                <p className="text-lg lg:text-2xl font-bold">{data.length}</p>
-              </div>
-              <FileText className="h-6 w-6 lg:h-8 lg:w-8 text-purple-200 flex-shrink-0" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <ReportsSummaryCards data={data} />
 
-      {/* Filters */}
       <Card>
         <CardHeader>
           <CardTitle>Filtros</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col sm:flex-row gap-4 items-end">
-            {(profile?.role === 'supervisor' || profile?.role === 'master') && (
-              <div className="flex-1">
-                <label className="text-sm font-medium mb-2 block">Igreja</label>
-                <Select value={selectedChurch} onValueChange={setSelectedChurch}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecionar Igreja" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todas as Igrejas</SelectItem>
-                    {churches.map((church) => (
-                      <SelectItem key={church.id} value={church.id}>
-                        {church.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-            
-            <div className="flex-1">
-              <label className="text-sm font-medium mb-2 block">Período</label>
-              <Select value={dateRange} onValueChange={setDateRange}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="7days">Últimos 7 dias</SelectItem>
-                  <SelectItem value="30days">Últimos 30 dias</SelectItem>
-                  <SelectItem value="thisMonth">Este mês</SelectItem>
-                  {customDateRange.start && customDateRange.end && (
-                    <SelectItem value="custom">
-                      {format(customDateRange.start, 'dd/MM')} - {format(customDateRange.end, 'dd/MM')}
-                    </SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <DateRangeModal 
-              onDateRangeSelect={handleCustomDateRange}
-              trigger={
-                <Button variant="outline">
-                  <CalendarIcon className="h-4 w-4 mr-2" />
-                  Data Personalizada
-                </Button>
-              }
-            />
-
-            <Button onClick={exportToCSV} variant="outline">
-              <Download className="h-4 w-4 mr-2" />
-              Download CSV
-            </Button>
-          </div>
+          <ReportsFilters
+            churches={churches}
+            selectedChurch={selectedChurch}
+            onChurchChange={setSelectedChurch}
+            dateRange={dateRange}
+            onDateRangeChange={setDateRange}
+            customDateRange={customDateRange}
+            onCustomDateRange={handleCustomDateRange}
+            onExportCSV={exportToCSV}
+            isSuper={profile?.role === 'supervisor' || profile?.role === 'master'}
+          />
         </CardContent>
       </Card>
 
-      {/* Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Transações Detalhadas ({data.length} registros)</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Igreja</TableHead>
-                  <TableHead>Evento/Culto</TableHead>
-                  <TableHead>Tipo de Pagamento</TableHead>
-                  <TableHead className="text-right">Entradas</TableHead>
-                  <TableHead className="text-right">Saídas</TableHead>
-                  <TableHead>Descrição</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell>
-                      {format(new Date(item.date_transaction), 'dd/MM/yyyy')}
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      {item.church_name}
-                    </TableCell>
-                    <TableCell>
-                      {item.event_name}
-                    </TableCell>
-                    <TableCell>
-                      <span className="px-2 py-1 bg-gray-100 rounded-full text-xs">
-                        {item.payment_type}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right font-medium text-green-600">
-                      {item.type === 'entrada' ? formatCurrency(item.amount) : '-'}
-                    </TableCell>
-                    <TableCell className="text-right font-medium text-red-600">
-                      {item.type === 'saida' ? formatCurrency(item.amount) : '-'}
-                    </TableCell>
-                    <TableCell className="max-w-xs truncate" title={item.description}>
-                      {item.description}
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {data.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center text-gray-500 py-8">
-                      Nenhuma transação encontrada para o período selecionado
-                    </TableCell>
-                  </TableRow>
-                )}
-                {data.length > 0 && (
-                  <TableRow className="bg-gray-50 font-semibold">
-                    <TableCell colSpan={4} className="text-right">
-                      <strong>TOTAL:</strong>
-                    </TableCell>
-                    <TableCell className="text-right font-bold text-green-600">
-                      {formatCurrency(totalEntradas)}
-                    </TableCell>
-                    <TableCell className="text-right font-bold text-red-600">
-                      {formatCurrency(totalSaidas)}
-                    </TableCell>
-                    <TableCell className="text-right font-bold text-blue-600">
-                      Saldo: {formatCurrency(totalEntradas - totalSaidas)}
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+      <ReportsTable data={data} />
     </div>
   );
 };
