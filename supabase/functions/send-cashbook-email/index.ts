@@ -36,8 +36,9 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    // Use a more generic sender that works with custom domains
     const emailResponse = await resend.emails.send({
-      from: "Livro Caixa <onboarding@resend.dev>",
+      from: "noreply@resend.dev", // This should work with custom domains
       to: [to],
       subject: subject,
       html: `
@@ -59,6 +60,7 @@ const handler = async (req: Request): Promise<Response> => {
           
           <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; color: #666; font-size: 12px; text-align: center;">
             <p>Este e-mail foi enviado automaticamente pelo sistema de Livro Caixa</p>
+            <p>Tesouraria CN Goiânia</p>
           </div>
         </div>
       `,
@@ -75,8 +77,17 @@ const handler = async (req: Request): Promise<Response> => {
     });
   } catch (error: any) {
     console.error("Error in send-cashbook-email function:", error);
+    
+    // Better error handling for domain issues
+    let errorMessage = "Erro interno do servidor";
+    if (error.message && error.message.includes("domain")) {
+      errorMessage = "Erro de configuração de domínio. Verifique se o domínio está verificado no Resend.";
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+    
     return new Response(
-      JSON.stringify({ error: error.message || "Erro interno do servidor" }),
+      JSON.stringify({ error: errorMessage }),
       {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },
