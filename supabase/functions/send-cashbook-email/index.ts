@@ -27,12 +27,17 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     console.log("Processing email request...");
     
-    // Check if RESEND_API_KEY is available
+    // Get and validate API key
     const apiKey = Deno.env.get("RESEND_API_KEY");
+    console.log("API key status:", apiKey ? "found" : "not found");
+    
     if (!apiKey) {
       console.error("RESEND_API_KEY not found in environment variables");
       return new Response(
-        JSON.stringify({ error: "Configuração do servidor incompleta - chave da API não encontrada" }),
+        JSON.stringify({ 
+          error: "Configuração do servidor incompleta - chave da API não encontrada",
+          details: "RESEND_API_KEY não configurada"
+        }),
         {
           status: 500,
           headers: { "Content-Type": "application/json", ...corsHeaders },
@@ -40,11 +45,32 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    console.log("API key found, initializing Resend...");
+    console.log("Initializing Resend with API key...");
     const resend = new Resend(apiKey);
 
-    const { to, subject, message, emailContent }: CashBookEmailRequest = await req.json();
-    console.log("Request data parsed:", { to, subject: subject?.substring(0, 50) });
+    // Parse request body
+    let requestData;
+    try {
+      requestData = await req.json();
+      console.log("Request data parsed successfully");
+    } catch (parseError) {
+      console.error("Failed to parse request JSON:", parseError);
+      return new Response(
+        JSON.stringify({ error: "Dados da requisição inválidos" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
+    const { to, subject, message, emailContent }: CashBookEmailRequest = requestData;
+    console.log("Email data:", { 
+      to: to ? "provided" : "missing", 
+      subject: subject ? subject.substring(0, 30) + "..." : "missing",
+      hasMessage: !!message,
+      hasContent: !!emailContent
+    });
 
     if (!to || !subject) {
       console.error("Missing required fields:", { to: !!to, subject: !!subject });
@@ -57,7 +83,7 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    console.log("Sending email via Resend...");
+    console.log("Attempting to send email via Resend...");
     const emailResponse = await resend.emails.send({
       from: "noreply@resend.dev",
       to: [to],
@@ -87,41 +113,58 @@ const handler = async (req: Request): Promise<Response> => {
       `,
     });
 
-    console.log("Email sent successfully:", emailResponse);
+    console.log("Email sent successfully:", { id: emailResponse.id });
 
-    return new Response(JSON.stringify({ success: true, data: emailResponse }), {
+    return new Response(JSON.stringify({ 
+      success: true, 
+      message: "E-mail enviado com sucesso",
+      emailId: emailResponse.id 
+    }), {
       status: 200,
       headers: {
         "Content-Type": "application/json",
         ...corsHeaders,
       },
     });
+
   } catch (error: any) {
     console.error("Error in send-cashbook-email function:", error);
     console.error("Error details:", {
       message: error.message,
       name: error.name,
-      stack: error.stack
+      stack: error.stack?.substring(0, 500)
     });
     
     // Better error handling
     let errorMessage = "Erro interno do servidor";
+    let statusCode = 500;
+    
     if (error.message) {
-      if (error.message.includes("API key")) {
-        errorMessage = "Erro na configuração da chave da API do Resend";
+      if (error.message.includes("API key") || error.message.includes("Invalid API key")) {
+        errorMessage = "Erro na configuração da chave da API do Resend. Verifique se a chave está correta.";
+        statusCode = 401;
       } else if (error.message.includes("domain")) {
         errorMessage = "Erro de configuração de domínio. Verifique se o domínio está verificado no Resend.";
+        statusCode = 403;
       } else if (error.message.includes("rate limit")) {
         errorMessage = "Limite de envio de e-mails atingido. Tente novamente em alguns minutos.";
+        statusCode = 429;
+      } else if (error.message.includes("network") || error.message.includes("fetch")) {
+        errorMessage = "Erro de conectividade. Tente novamente em alguns momentos.";
+        statusCode = 503;
       } else {
         errorMessage = `Erro: ${error.message}`;
       }
     }
     
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ 
+        error: errorMessage,
+        details: error.message,
+        timestamp: new Date().toISOString()
+      }),
       {
-        status: 500,
+        status: statusCode,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       }
     );
