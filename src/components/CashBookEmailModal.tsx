@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { Mail, Send } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface CashBookEntry {
   date: string;
@@ -58,12 +59,21 @@ export const CashBookEmailModal = ({
       // Gerar conteúdo do e-mail com resumo
       const emailContent = generateEmailContent();
       
-      // Aqui você implementaria a chamada para sua API de e-mail
-      // Por exemplo, usando Supabase Edge Functions com Resend
-      
-      // Simulação do envio (remova esta parte quando implementar a API real)
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
+      // Fazer chamada para a Edge Function
+      const { data, error } = await supabase.functions.invoke('send-cashbook-email', {
+        body: {
+          to: email.trim(),
+          subject: subject.trim(),
+          message: message.trim(),
+          emailContent: emailContent
+        }
+      });
+
+      if (error) {
+        console.error('Erro na Edge Function:', error);
+        throw new Error(error.message || 'Erro ao enviar e-mail');
+      }
+
       toast.success('E-mail enviado com sucesso!');
       onClose();
       
@@ -72,7 +82,7 @@ export const CashBookEmailModal = ({
       setMessage('');
     } catch (error) {
       console.error('Erro ao enviar e-mail:', error);
-      toast.error('Erro ao enviar e-mail. Tente novamente.');
+      toast.error(`Erro ao enviar e-mail: ${error.message || 'Tente novamente.'}`);
     } finally {
       setSending(false);
     }
@@ -82,27 +92,23 @@ export const CashBookEmailModal = ({
     const totalEntries = entries.length;
     const finalBalance = entries.length > 0 ? entries[entries.length - 1].balance : 0;
     
-    return `
-      ${message}
-      
-      === RESUMO DO LIVRO CAIXA ===
-      
-      Total de Transações: ${totalEntries}
-      
-      RESUMO FINANCEIRO:
-      • Dinheiro Líquido: R$ ${summary.dinheiroLiquido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-      • Soma PIX: R$ ${summary.somaPix.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-      • Soma Crédito: R$ ${summary.somaCredito.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-      • Soma Débito: R$ ${summary.somaDebito.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-      • Soma Saída: R$ ${summary.somaSaida.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-      
-      SALDO FINAL: R$ ${finalBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-      
-      === DETALHAMENTO DAS TRANSAÇÕES ===
-      ${entries.map((entry, index) => 
-        `${index + 1}. ${entry.date} - ${entry.description} (${entry.session}) - ${entry.type === 'entrada' ? '+' : '-'}R$ ${entry.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-      ).join('\n')}
-    `;
+    return `=== RESUMO DO LIVRO CAIXA ===
+
+Total de Transações: ${totalEntries}
+
+RESUMO FINANCEIRO:
+• Dinheiro Líquido: R$ ${summary.dinheiroLiquido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+• Soma PIX: R$ ${summary.somaPix.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+• Soma Crédito: R$ ${summary.somaCredito.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+• Soma Débito: R$ ${summary.somaDebito.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+• Soma Saída: R$ ${summary.somaSaida.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+
+SALDO FINAL: R$ ${finalBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+
+=== DETALHAMENTO DAS TRANSAÇÕES ===
+${entries.map((entry, index) => 
+  `${index + 1}. ${entry.date} - ${entry.description} (${entry.session}) - ${entry.type === 'entrada' ? '+' : '-'}R$ ${entry.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+).join('\n')}`;
   };
 
   return (
