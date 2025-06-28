@@ -1,26 +1,19 @@
 
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { MoneyInput } from '@/components/MoneyInput';
 import { VolunteerSelector } from '@/components/VolunteerSelector';
-import { Users, Plus, Trash2 } from 'lucide-react';
-import { useState } from 'react';
-import { toast } from 'sonner';
+import { Users, Shield, Receipt, ArrowDownCircle, Lock, AlertCircle } from 'lucide-react';
 
 interface SelectedVolunteer {
   id: string;
   name: string;
   amount: number;
-}
-
-interface SaidaEntry {
-  id: string;
-  type: 'seguranca' | 'outros';
-  amount: number;
-  description: string;
-  date: string;
 }
 
 interface SaidasTabProps {
@@ -31,288 +24,224 @@ interface SaidasTabProps {
     outros_gastos: number;
     outros_descricao: string;
   };
-  setSaidas: (saidas: { valor_seguranca: number; outros_gastos: number; outros_descricao: string }) => void;
+  setSaidas: (saidas: any) => void;
   totalVolunteers: number;
   totalSaidas: number;
   onSaveSaidas: () => void;
+  isSessionValidated?: boolean;
 }
 
-export const SaidasTab = ({
-  selectedVolunteers,
-  setSelectedVolunteers,
-  saidas,
-  setSaidas,
-  totalVolunteers,
-  totalSaidas,
-  onSaveSaidas
+export const SaidasTab = ({ 
+  selectedVolunteers, 
+  setSelectedVolunteers, 
+  saidas, 
+  setSaidas, 
+  totalVolunteers, 
+  totalSaidas, 
+  onSaveSaidas,
+  isSessionValidated = false
 }: SaidasTabProps) => {
-  const [saidaEntries, setSaidaEntries] = useState<SaidaEntry[]>([]);
-  const [newEntry, setNewEntry] = useState({
-    type: 'seguranca' as 'seguranca' | 'outros',
-    amount: '',
-    description: '',
-    date: new Date().toISOString().split('T')[0]
-  });
+  const [showVolunteerSelector, setShowVolunteerSelector] = useState(false);
 
-  const typeLabels = {
-    seguranca: 'Segurança',
-    outros: 'Outros Gastos'
+  const removeVolunteer = (id: string) => {
+    if (isSessionValidated) return;
+    setSelectedVolunteers(selectedVolunteers.filter(v => v.id !== id));
   };
 
-  const addSaidaEntry = () => {
-    const amount = parseFloat(newEntry.amount.replace(',', '.'));
-    
-    if (!amount || amount <= 0) {
-      toast.error('Digite um valor válido');
-      return;
-    }
-
-    if (!newEntry.date) {
-      toast.error('Digite uma data válida');
-      return;
-    }
-
-    const entry: SaidaEntry = {
-      id: Date.now().toString(),
-      type: newEntry.type,
-      amount,
-      description: newEntry.description || `${typeLabels[newEntry.type]} #${saidaEntries.length + 1}`,
-      date: newEntry.date
-    };
-
-    const updatedEntries = [...saidaEntries, entry];
-    setSaidaEntries(updatedEntries);
-    
-    // Atualizar os totais por tipo
-    updateSaidasFromEntries(updatedEntries);
-    
-    setNewEntry({
-      type: 'seguranca',
-      amount: '',
-      description: '',
-      date: new Date().toISOString().split('T')[0]
-    });
-    
-    toast.success('Saída adicionada!');
-  };
-
-  const removeSaidaEntry = (id: string) => {
-    const updatedEntries = saidaEntries.filter(entry => entry.id !== id);
-    setSaidaEntries(updatedEntries);
-    updateSaidasFromEntries(updatedEntries);
-    toast.success('Saída removida!');
-  };
-
-  const updateSaidaEntry = (id: string, field: keyof SaidaEntry, value: string | number) => {
-    const updatedEntries = saidaEntries.map(entry => {
-      if (entry.id === id) {
-        if (field === 'amount') {
-          const numericValue = typeof value === 'string' ? parseFloat(value.replace(',', '.')) || 0 : value;
-          return { ...entry, amount: numericValue };
-        } else {
-          return { ...entry, [field]: value };
-        }
-      }
-      return entry;
-    });
-    setSaidaEntries(updatedEntries);
-    updateSaidasFromEntries(updatedEntries);
-  };
-
-  const updateSaidasFromEntries = (entries: SaidaEntry[]) => {
-    const totals = entries.reduce((acc, entry) => {
-      if (entry.type === 'seguranca') {
-        acc.valor_seguranca += entry.amount;
-      } else {
-        acc.outros_gastos += entry.amount;
-      }
-      return acc;
-    }, { valor_seguranca: 0, outros_gastos: 0 });
-    
-    // Manter a descrição dos outros gastos existente ou usar a última descrição
-    const outrosDescricao = entries
-      .filter(e => e.type === 'outros')
-      .map(e => e.description)
-      .join('; ') || saidas.outros_descricao;
-    
-    setSaidas({
-      valor_seguranca: totals.valor_seguranca,
-      outros_gastos: totals.outros_gastos,
-      outros_descricao: outrosDescricao
-    });
+  const updateVolunteerAmount = (id: string, amount: number) => {
+    if (isSessionValidated) return;
+    setSelectedVolunteers(selectedVolunteers.map(v => 
+      v.id === id ? { ...v, amount } : v
+    ));
   };
 
   return (
-    <Card className="border-0 shadow-lg">
-      <CardHeader className="bg-red-50 border-b">
-        <CardTitle className="flex items-center gap-2 text-red-800">
-          <Users className="h-5 w-5" />
-          Registro de Saídas
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="p-6 space-y-6">
+    <div className="space-y-6">
+      {/* Alerta de Sessão Validada */}
+      {isSessionValidated && (
+        <Alert className="border-green-200 bg-green-50">
+          <Lock className="h-4 w-4 text-green-600" />
+          <AlertTitle className="text-green-800">Sessão Validada</AlertTitle>
+          <AlertDescription className="text-green-700">
+            Esta sessão foi validada e todos os campos estão travados. Não é possível fazer alterações.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Pagamento de Voluntários */}
+      <Card className={`shadow-lg ${isSessionValidated ? 'bg-gray-50' : ''}`}>
+        <CardHeader className="bg-blue-50 border-b">
+          <CardTitle className="flex items-center justify-between text-blue-800">
+            <div className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Pagamento de Voluntários
+              {isSessionValidated && <Lock className="h-4 w-4 text-gray-500" />}
+            </div>
+            {!isSessionValidated && (
+              <Button 
+                onClick={() => setShowVolunteerSelector(true)} 
+                size="sm" 
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                Adicionar Voluntário
+              </Button>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          {selectedVolunteers.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              {isSessionValidated ? 'Nenhum voluntário com pagamento registrado' : 'Nenhum voluntário selecionado ainda'}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {selectedVolunteers.map((volunteer) => (
+                <div key={volunteer.id} className={`flex items-center justify-between p-4 border rounded-lg ${isSessionValidated ? 'bg-gray-100' : 'bg-gray-50'}`}>
+                  <div className="flex-1">
+                    <h4 className="font-medium text-gray-800">{volunteer.name}</h4>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="w-32">
+                      <MoneyInput
+                        value={volunteer.amount}
+                        onChange={(value) => updateVolunteerAmount(volunteer.id, value)}
+                        placeholder="R$ 0,00"
+                        disabled={isSessionValidated}
+                        className={isSessionValidated ? 'bg-gray-200 cursor-not-allowed' : ''}
+                      />
+                    </div>
+                    {!isSessionValidated && (
+                      <Button
+                        onClick={() => removeVolunteer(volunteer.id)}
+                        variant="outline"
+                        size="sm"
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        Remover
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          
+          {selectedVolunteers.length > 0 && (
+            <div className="mt-4 pt-4 border-t">
+              <div className="flex justify-between items-center">
+                <span className="font-medium text-gray-700">Total Voluntários:</span>
+                <Badge variant="secondary" className="text-lg px-3 py-1">
+                  R$ {totalVolunteers.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </Badge>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Outras Saídas */}
+      <Card className={`shadow-lg ${isSessionValidated ? 'bg-gray-50' : ''}`}>
+        <CardHeader className="bg-orange-50 border-b">
+          <CardTitle className="flex items-center gap-2 text-orange-800">
+            <Receipt className="h-5 w-5" />
+            Outras Saídas
+            {isSessionValidated && <Lock className="h-4 w-4 text-gray-500" />}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6 space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="valor_seguranca" className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                <Shield className="h-4 w-4" />
+                Valor Segurança
+              </Label>
+              <MoneyInput
+                id="valor_seguranca"
+                value={saidas.valor_seguranca}
+                onChange={(value) => !isSessionValidated && setSaidas({...saidas, valor_seguranca: value})}
+                placeholder="R$ 0,00"
+                disabled={isSessionValidated}
+                className={isSessionValidated ? 'bg-gray-100 cursor-not-allowed' : ''}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="outros_gastos" className="text-sm font-medium text-gray-700">
+                Outros Gastos
+              </Label>
+              <MoneyInput
+                id="outros_gastos"
+                value={saidas.outros_gastos}
+                onChange={(value) => !isSessionValidated && setSaidas({...saidas, outros_gastos: value})}
+                placeholder="R$ 0,00"
+                disabled={isSessionValidated}
+                className={isSessionValidated ? 'bg-gray-100 cursor-not-allowed' : ''}
+              />
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="outros_descricao" className="text-sm font-medium text-gray-700">
+              Descrição dos Outros Gastos
+            </Label>
+            <Input
+              id="outros_descricao"
+              value={saidas.outros_descricao}
+              onChange={(e) => !isSessionValidated && setSaidas({...saidas, outros_descricao: e.target.value})}
+              placeholder="Descreva os outros gastos..."
+              disabled={isSessionValidated}
+              className={isSessionValidated ? 'bg-gray-100 cursor-not-allowed' : ''}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Resumo Total */}
+      <Card className="bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg">
+        <CardContent className="p-6">
+          <div className="flex justify-between items-center">
+            <div>
+              <h3 className="text-lg font-semibold mb-2">Total de Saídas</h3>
+              <div className="text-sm text-red-100">
+                Voluntários: R$ {totalVolunteers.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} • 
+                Segurança: R$ {saidas.valor_seguranca.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} • 
+                Outros: R$ {saidas.outros_gastos.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-3xl font-bold">
+                R$ {totalSaidas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Botão Salvar */}
+      {!isSessionValidated && (
+        <div className="flex justify-end">
+          <Button 
+            onClick={onSaveSaidas} 
+            size="lg" 
+            className="bg-red-600 hover:bg-red-700"
+          >
+            <ArrowDownCircle className="h-4 w-4 mr-2" />
+            Salvar Saídas
+          </Button>
+        </div>
+      )}
+
+      {/* Seletor de Voluntários */}
+      {showVolunteerSelector && !isSessionValidated && (
         <VolunteerSelector
           selectedVolunteers={selectedVolunteers}
-          onVolunteersChange={setSelectedVolunteers}
+          onSelectVolunteer={(volunteer) => {
+            setSelectedVolunteers([...selectedVolunteers, volunteer]);
+            setShowVolunteerSelector(false);
+          }}
+          onClose={() => setShowVolunteerSelector(false)}
         />
-
-        {/* Formulário para nova saída */}
-        <Card className="bg-red-50 border-red-200">
-          <CardContent className="p-4">
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-              <div>
-                <Label className="text-sm font-medium">Tipo</Label>
-                <select
-                  value={newEntry.type}
-                  onChange={(e) => setNewEntry({ ...newEntry, type: e.target.value as any })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                >
-                  <option value="seguranca">Segurança</option>
-                  <option value="outros">Outros Gastos</option>
-                </select>
-              </div>
-              
-              <div>
-                <Label className="text-sm font-medium">Valor</Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">R$</span>
-                  <Input
-                    type="text"
-                    value={newEntry.amount}
-                    onChange={(e) => setNewEntry({ ...newEntry, amount: e.target.value })}
-                    placeholder="0,00"
-                    className="pl-10 text-right font-mono"
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <Label className="text-sm font-medium">Data</Label>
-                <Input
-                  type="date"
-                  value={newEntry.date}
-                  onChange={(e) => setNewEntry({ ...newEntry, date: e.target.value })}
-                />
-              </div>
-              
-              <div>
-                <Label className="text-sm font-medium">Descrição</Label>
-                <Input
-                  value={newEntry.description}
-                  onChange={(e) => setNewEntry({ ...newEntry, description: e.target.value })}
-                  placeholder="Descrição opcional"
-                />
-              </div>
-              
-              <div className="flex items-end">
-                <Button onClick={addSaidaEntry} className="w-full bg-red-600 hover:bg-red-700">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Adicionar
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Lista de saídas */}
-        {saidaEntries.length > 0 && (
-          <div className="space-y-3">
-            {saidaEntries.map((entry, index) => (
-              <Card key={entry.id} className="border-gray-200 hover:shadow-md transition-shadow">
-                <CardContent className="p-4">
-                  <div className="grid grid-cols-1 md:grid-cols-6 gap-3 items-center">
-                    <div className="font-medium text-gray-600">
-                      {typeLabels[entry.type]} #{index + 1}
-                    </div>
-                    
-                    <div>
-                      <Label className="text-xs text-gray-500">Valor</Label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">R$</span>
-                        <Input
-                          type="text"
-                          value={entry.amount.toFixed(2)}
-                          onChange={(e) => updateSaidaEntry(entry.id, 'amount', e.target.value)}
-                          className="pl-10 text-right font-mono text-sm"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <Label className="text-xs text-gray-500">Data</Label>
-                      <Input
-                        type="date"
-                        value={entry.date}
-                        onChange={(e) => updateSaidaEntry(entry.id, 'date', e.target.value)}
-                        className="text-sm"
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label className="text-xs text-gray-500">Descrição</Label>
-                      <Input
-                        value={entry.description}
-                        onChange={(e) => updateSaidaEntry(entry.id, 'description', e.target.value)}
-                        className="text-sm"
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label className="text-xs text-gray-500">Tipo</Label>
-                      <select
-                        value={entry.type}
-                        onChange={(e) => updateSaidaEntry(entry.id, 'type', e.target.value)}
-                        className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-                      >
-                        <option value="seguranca">Segurança</option>
-                        <option value="outros">Outros Gastos</option>
-                      </select>
-                    </div>
-                    
-                    <div className="flex justify-end">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeSaidaEntry(entry.id)}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-
-        <Card className="bg-gray-50 border-gray-200">
-          <CardContent className="p-4">
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span>Voluntários ({selectedVolunteers.length}):</span>
-                <span className="font-medium">R$ {totalVolunteers.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Segurança:</span>
-                <span className="font-medium">R$ {saidas.valor_seguranca.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Outros:</span>
-                <span className="font-medium">R$ {saidas.outros_gastos.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between border-t pt-2 text-lg font-bold text-red-600">
-                <span>Total Saídas:</span>
-                <span>R$ {totalSaidas.toFixed(2)}</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Button onClick={onSaveSaidas} className="w-full bg-red-600 hover:bg-red-700 h-12 text-lg">
-          Salvar Saídas
-        </Button>
-      </CardContent>
-    </Card>
+      )}
+    </div>
   );
 };

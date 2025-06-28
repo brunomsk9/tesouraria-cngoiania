@@ -7,7 +7,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Shield, CheckCircle, AlertCircle, User, Clock } from 'lucide-react';
+import { Shield, CheckCircle, AlertCircle, User, Clock, Lock } from 'lucide-react';
 
 interface CashSession {
   id: string;
@@ -40,6 +40,7 @@ export const SessionValidation = ({ session, onSessionValidated }: SessionValida
   const [canValidate, setCanValidate] = useState(false);
   const [summary, setSummary] = useState<TransactionSummary | null>(null);
   const [creatorName, setCreatorName] = useState<string>('');
+  const [validatorName, setValidatorName] = useState<string>('');
   const [pendingPaymentsInfo, setPendingPaymentsInfo] = useState<{
     hasPendingPayments: boolean;
     totalPending: number;
@@ -50,6 +51,7 @@ export const SessionValidation = ({ session, onSessionValidated }: SessionValida
     checkValidationPermission();
     loadTransactionSummary();
     loadCreatorName();
+    loadValidatorName();
     checkPendingPayments();
   }, [session.id, profile?.id]);
 
@@ -157,6 +159,23 @@ export const SessionValidation = ({ session, onSessionValidated }: SessionValida
     setCreatorName(data?.name || 'Usuário desconhecido');
   };
 
+  const loadValidatorName = async () => {
+    if (!session.validated_by) return;
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('name')
+      .eq('id', session.validated_by)
+      .single();
+
+    if (error) {
+      console.error('Erro ao carregar nome do validador:', error);
+      return;
+    }
+
+    setValidatorName(data?.name || 'Usuário desconhecido');
+  };
+
   const validateSession = async () => {
     if (!profile?.id) return;
 
@@ -173,7 +192,7 @@ export const SessionValidation = ({ session, onSessionValidated }: SessionValida
 
       if (error) throw error;
 
-      toast.success('Sessão validada com sucesso!');
+      toast.success('Sessão validada com sucesso! Todos os campos foram travados.');
       onSessionValidated();
     } catch (error: any) {
       console.error('Erro ao validar sessão:', error);
@@ -201,21 +220,115 @@ export const SessionValidation = ({ session, onSessionValidated }: SessionValida
       <Card className="border-0 shadow-lg">
         <CardHeader className="bg-green-50 border-b">
           <CardTitle className="flex items-center gap-2 text-green-800">
-            <CheckCircle className="h-5 w-5" />
-            Sessão Validada
+            <Lock className="h-5 w-5" />
+            Sessão Validada - Campos Travados
           </CardTitle>
         </CardHeader>
         <CardContent className="p-6">
-          <div className="text-center space-y-4">
-            <CheckCircle className="h-16 w-16 mx-auto text-green-500" />
-            <div>
-              <p className="text-lg font-semibold text-green-800 mb-2">
-                Esta sessão já foi validada
-              </p>
-              <p className="text-gray-600">
-                Validada em: {session.validated_at ? new Date(session.validated_at).toLocaleString('pt-BR') : 'Data não disponível'}
-              </p>
+          <div className="space-y-6">
+            {/* Alerta de Campos Travados */}
+            <Alert className="border-green-200 bg-green-50">
+              <Lock className="h-4 w-4 text-green-600" />
+              <AlertTitle className="text-green-800">Sessão Validada</AlertTitle>
+              <AlertDescription className="text-green-700">
+                Esta sessão foi validada e todos os campos estão travados. Não é possível fazer alterações.
+              </AlertDescription>
+            </Alert>
+
+            {/* Informações da Validação */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card className="bg-blue-50 border-blue-200">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <User className="h-4 w-4 text-blue-600" />
+                    <span className="text-sm font-medium text-blue-800">Criada por:</span>
+                  </div>
+                  <p className="text-blue-700">{creatorName}</p>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-green-50 border-green-200">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                    <span className="text-sm font-medium text-green-800">Validada por:</span>
+                  </div>
+                  <p className="text-green-700">{validatorName}</p>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gray-50 border-gray-200">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Clock className="h-4 w-4 text-gray-600" />
+                    <span className="text-sm font-medium text-gray-800">Data da Validação:</span>
+                  </div>
+                  <p className="text-gray-700 text-sm">
+                    {session.validated_at ? new Date(session.validated_at).toLocaleString('pt-BR') : 'Data não disponível'}
+                  </p>
+                </CardContent>
+              </Card>
             </div>
+
+            {/* Resumo Financeiro Final */}
+            {summary && (
+              <Card className="bg-purple-50 border-purple-200">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-purple-800 text-lg flex items-center gap-2">
+                    <CheckCircle className="h-5 w-5" />
+                    Resumo Financeiro Final
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                    <div className="text-center">
+                      <div className="text-green-600 font-bold text-xl">
+                        R$ {summary.total_entradas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </div>
+                      <div className="text-gray-600">Total Entradas</div>
+                      {summary.total_pix > 0 && (
+                        <div className="text-xs text-gray-500 mt-1">
+                          (incluindo R$ {summary.total_pix.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} em PIX)
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-center">
+                      <div className="text-red-600 font-bold text-xl">
+                        R$ {summary.total_saidas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </div>
+                      <div className="text-gray-600">Total Saídas</div>
+                    </div>
+                    <div className="text-center">
+                      <div className={`font-bold text-xl ${summary.saldo >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        R$ {summary.saldo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </div>
+                      <div className="text-gray-600">Saldo Final</div>
+                    </div>
+                  </div>
+                  <div className="text-center text-sm text-gray-600 pt-2 border-t">
+                    Total de {summary.count_transactions} transações{summary.count_pix > 0 && ` e ${summary.count_pix} PIX`} registradas
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Pagamentos Pendentes se existirem */}
+            {pendingPaymentsInfo.hasPendingPayments && (
+              <Alert className="border-orange-200 bg-orange-50">
+                <AlertCircle className="h-4 w-4 text-orange-600" />
+                <AlertTitle className="text-orange-800">Pagamentos Pendentes Registrados</AlertTitle>
+                <AlertDescription className="text-orange-700">
+                  <p className="mb-3">
+                    No momento da validação, havia R$ {pendingPaymentsInfo.totalPending.toFixed(2)} em pagamentos pendentes:
+                  </p>
+                  <div className="bg-white p-3 rounded border max-h-32 overflow-y-auto">
+                    {pendingPaymentsInfo.details.map((detail, index) => (
+                      <div key={index} className="text-sm py-1">• {detail}</div>
+                    ))}
+                  </div>
+                </AlertDescription>
+              </Alert>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -346,6 +459,9 @@ export const SessionValidation = ({ session, onSessionValidated }: SessionValida
                       Nota: Existem pagamentos pendentes que devem ser resolvidos posteriormente.
                     </span>
                   )}
+                  <span className="block mt-2 font-medium text-yellow-700">
+                    ⚠️ Após a validação, todos os campos serão travados e não poderão ser editados.
+                  </span>
                 </p>
                 <Button
                   onClick={validateSession}

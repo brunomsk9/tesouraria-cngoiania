@@ -3,10 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { PixManager } from '@/components/PixManager';
-import { DollarSign, Plus, Trash2 } from 'lucide-react';
-import { useState } from 'react';
-import { toast } from 'sonner';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { MoneyInput } from '@/components/MoneyInput';
+import { Plus, Trash2, DollarSign, CreditCard, Smartphone, Lock, AlertCircle } from 'lucide-react';
 
 interface PixEntry {
   id: string;
@@ -15,285 +15,251 @@ interface PixEntry {
   data_pix: string;
 }
 
-interface EntradaEntry {
-  id: string;
-  type: 'dinheiro' | 'cartao_debito' | 'cartao_credito';
-  amount: number;
-  description: string;
-  date: string;
-}
-
 interface EntradasTabProps {
   entradas: {
     dinheiro: number;
     cartao_debito: number;
     cartao_credito: number;
   };
-  setEntradas: (entradas: { dinheiro: number; cartao_debito: number; cartao_credito: number }) => void;
+  setEntradas: (entradas: any) => void;
   pixEntries: PixEntry[];
   setPixEntries: (entries: PixEntry[]) => void;
   totalEntradas: number;
   onSaveEntradas: () => void;
+  isSessionValidated?: boolean;
 }
 
-export const EntradasTab = ({
-  entradas,
-  setEntradas,
-  pixEntries,
-  setPixEntries,
-  totalEntradas,
-  onSaveEntradas
+export const EntradasTab = ({ 
+  entradas, 
+  setEntradas, 
+  pixEntries, 
+  setPixEntries, 
+  totalEntradas, 
+  onSaveEntradas,
+  isSessionValidated = false
 }: EntradasTabProps) => {
-  const [entradaEntries, setEntradaEntries] = useState<EntradaEntry[]>([]);
-  const [newEntry, setNewEntry] = useState({
-    type: 'dinheiro' as 'dinheiro' | 'cartao_debito' | 'cartao_credito',
-    amount: '',
-    description: '',
-    date: new Date().toISOString().split('T')[0]
-  });
-
-  const typeLabels = {
-    dinheiro: 'Dinheiro',
-    cartao_debito: 'Cartão Débito',
-    cartao_credito: 'Cartão Crédito'
-  };
-
-  const addEntradaEntry = () => {
-    const amount = parseFloat(newEntry.amount.replace(',', '.'));
+  const addPixEntry = () => {
+    if (isSessionValidated) return;
     
-    if (!amount || amount <= 0) {
-      toast.error('Digite um valor válido');
-      return;
-    }
-
-    if (!newEntry.date) {
-      toast.error('Digite uma data válida');
-      return;
-    }
-
-    const entry: EntradaEntry = {
+    const newEntry: PixEntry = {
       id: Date.now().toString(),
-      type: newEntry.type,
-      amount,
-      description: newEntry.description || `${typeLabels[newEntry.type]} #${entradaEntries.length + 1}`,
-      date: newEntry.date
-    };
-
-    const updatedEntries = [...entradaEntries, entry];
-    setEntradaEntries(updatedEntries);
-    
-    // Atualizar os totais por tipo
-    updateEntradasFromEntries(updatedEntries);
-    
-    setNewEntry({
-      type: 'dinheiro',
-      amount: '',
+      amount: 0,
       description: '',
-      date: new Date().toISOString().split('T')[0]
-    });
+      data_pix: new Date().toISOString().split('T')[0]
+    };
+    setPixEntries([...pixEntries, newEntry]);
+  };
+
+  const removePixEntry = (id: string) => {
+    if (isSessionValidated) return;
+    setPixEntries(pixEntries.filter(entry => entry.id !== id));
+  };
+
+  const updatePixEntry = (id: string, field: keyof PixEntry, value: string | number) => {
+    if (isSessionValidated) return;
     
-    toast.success('Entrada adicionada!');
+    setPixEntries(pixEntries.map(entry => 
+      entry.id === id ? { ...entry, [field]: value } : entry
+    ));
   };
 
-  const removeEntradaEntry = (id: string) => {
-    const updatedEntries = entradaEntries.filter(entry => entry.id !== id);
-    setEntradaEntries(updatedEntries);
-    updateEntradasFromEntries(updatedEntries);
-    toast.success('Entrada removida!');
-  };
-
-  const updateEntradaEntry = (id: string, field: keyof EntradaEntry, value: string | number) => {
-    const updatedEntries = entradaEntries.map(entry => {
-      if (entry.id === id) {
-        if (field === 'amount') {
-          const numericValue = typeof value === 'string' ? parseFloat(value.replace(',', '.')) || 0 : value;
-          return { ...entry, amount: numericValue };
-        } else {
-          return { ...entry, [field]: value };
-        }
-      }
-      return entry;
-    });
-    setEntradaEntries(updatedEntries);
-    updateEntradasFromEntries(updatedEntries);
-  };
-
-  const updateEntradasFromEntries = (entries: EntradaEntry[]) => {
-    const totals = entries.reduce((acc, entry) => {
-      acc[entry.type] += entry.amount;
-      return acc;
-    }, { dinheiro: 0, cartao_debito: 0, cartao_credito: 0 });
-    
-    setEntradas(totals);
-  };
-
-  const formatCurrency = (value: number) => {
-    return value.toLocaleString('pt-BR', { 
-      style: 'currency', 
-      currency: 'BRL' 
-    });
-  };
+  const totalPix = pixEntries.reduce((sum, entry) => sum + entry.amount, 0);
 
   return (
-    <Card className="border-0 shadow-lg">
-      <CardHeader className="bg-green-50 border-b">
-        <CardTitle className="flex items-center gap-2 text-green-800">
-          <DollarSign className="h-5 w-5" />
-          Registro de Entradas
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="p-6 space-y-6">
-        {/* Formulário para nova entrada */}
-        <Card className="bg-green-50 border-green-200">
-          <CardContent className="p-4">
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-              <div>
-                <Label className="text-sm font-medium">Tipo</Label>
-                <select
-                  value={newEntry.type}
-                  onChange={(e) => setNewEntry({ ...newEntry, type: e.target.value as any })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                >
-                  <option value="dinheiro">Dinheiro</option>
-                  <option value="cartao_debito">Cartão Débito</option>
-                  <option value="cartao_credito">Cartão Crédito</option>
-                </select>
-              </div>
-              
-              <div>
-                <Label className="text-sm font-medium">Valor</Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">R$</span>
-                  <Input
-                    type="text"
-                    value={newEntry.amount}
-                    onChange={(e) => setNewEntry({ ...newEntry, amount: e.target.value })}
-                    placeholder="0,00"
-                    className="pl-10 text-right font-mono"
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <Label className="text-sm font-medium">Data</Label>
-                <Input
-                  type="date"
-                  value={newEntry.date}
-                  onChange={(e) => setNewEntry({ ...newEntry, date: e.target.value })}
-                />
-              </div>
-              
-              <div>
-                <Label className="text-sm font-medium">Descrição</Label>
-                <Input
-                  value={newEntry.description}
-                  onChange={(e) => setNewEntry({ ...newEntry, description: e.target.value })}
-                  placeholder="Descrição opcional"
-                />
-              </div>
-              
-              <div className="flex items-end">
-                <Button onClick={addEntradaEntry} className="w-full bg-green-600 hover:bg-green-700">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Adicionar
-                </Button>
-              </div>
+    <div className="space-y-6">
+      {/* Alerta de Sessão Validada */}
+      {isSessionValidated && (
+        <Alert className="border-green-200 bg-green-50">
+          <Lock className="h-4 w-4 text-green-600" />
+          <AlertTitle className="text-green-800">Sessão Validada</AlertTitle>
+          <AlertDescription className="text-green-700">
+            Esta sessão foi validada e todos os campos estão travados. Não é possível fazer alterações.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Entradas Tradicionais */}
+      <Card className={`shadow-lg ${isSessionValidated ? 'bg-gray-50' : ''}`}>
+        <CardHeader className="bg-green-50 border-b">
+          <CardTitle className="flex items-center gap-2 text-green-800">
+            <DollarSign className="h-5 w-5" />
+            Entradas Tradicionais
+            {isSessionValidated && <Lock className="h-4 w-4 text-gray-500" />}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6 space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="dinheiro" className="text-sm font-medium text-gray-700">
+                Dinheiro
+              </Label>
+              <MoneyInput
+                id="dinheiro"
+                value={entradas.dinheiro}
+                onChange={(value) => !isSessionValidated && setEntradas({...entradas, dinheiro: value})}
+                placeholder="R$ 0,00"
+                disabled={isSessionValidated}
+                className={isSessionValidated ? 'bg-gray-100 cursor-not-allowed' : ''}
+              />
             </div>
-          </CardContent>
-        </Card>
+            
+            <div className="space-y-2">
+              <Label htmlFor="cartao_debito" className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                <CreditCard className="h-4 w-4" />
+                Cartão Débito
+              </Label>
+              <MoneyInput
+                id="cartao_debito"
+                value={entradas.cartao_debito}
+                onChange={(value) => !isSessionValidated && setEntradas({...entradas, cartao_debito: value})}
+                placeholder="R$ 0,00"
+                disabled={isSessionValidated}
+                className={isSessionValidated ? 'bg-gray-100 cursor-not-allowed' : ''}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="cartao_credito" className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                <CreditCard className="h-4 w-4" />
+                Cartão Crédito
+              </Label>
+              <MoneyInput
+                id="cartao_credito"
+                value={entradas.cartao_credito}
+                onChange={(value) => !isSessionValidated && setEntradas({...entradas, cartao_credito: value})}
+                placeholder="R$ 0,00"
+                disabled={isSessionValidated}
+                className={isSessionValidated ? 'bg-gray-100 cursor-not-allowed' : ''}
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-        {/* Lista de entradas */}
-        {entradaEntries.length > 0 && (
-          <div className="space-y-3">
-            {entradaEntries.map((entry, index) => (
-              <Card key={entry.id} className="border-gray-200 hover:shadow-md transition-shadow">
-                <CardContent className="p-4">
-                  <div className="grid grid-cols-1 md:grid-cols-6 gap-3 items-center">
-                    <div className="font-medium text-gray-600">
-                      {typeLabels[entry.type]} #{index + 1}
-                    </div>
-                    
-                    <div>
-                      <Label className="text-xs text-gray-500">Valor</Label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">R$</span>
-                        <Input
-                          type="text"
-                          value={entry.amount.toFixed(2)}
-                          onChange={(e) => updateEntradaEntry(entry.id, 'amount', e.target.value)}
-                          className="pl-10 text-right font-mono text-sm"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <Label className="text-xs text-gray-500">Data</Label>
-                      <Input
-                        type="date"
-                        value={entry.date}
-                        onChange={(e) => updateEntradaEntry(entry.id, 'date', e.target.value)}
-                        className="text-sm"
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label className="text-xs text-gray-500">Descrição</Label>
-                      <Input
-                        value={entry.description}
-                        onChange={(e) => updateEntradaEntry(entry.id, 'description', e.target.value)}
-                        className="text-sm"
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label className="text-xs text-gray-500">Tipo</Label>
-                      <select
-                        value={entry.type}
-                        onChange={(e) => updateEntradaEntry(entry.id, 'type', e.target.value)}
-                        className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-                      >
-                        <option value="dinheiro">Dinheiro</option>
-                        <option value="cartao_debito">Cartão Débito</option>
-                        <option value="cartao_credito">Cartão Crédito</option>
-                      </select>
-                    </div>
-                    
-                    <div className="flex justify-end">
+      {/* Entradas PIX */}
+      <Card className={`shadow-lg ${isSessionValidated ? 'bg-gray-50' : ''}`}>
+        <CardHeader className="bg-blue-50 border-b">
+          <CardTitle className="flex items-center justify-between text-blue-800">
+            <div className="flex items-center gap-2">
+              <Smartphone className="h-5 w-5" />
+              Entradas PIX
+              {isSessionValidated && <Lock className="h-4 w-4 text-gray-500" />}
+            </div>
+            {!isSessionValidated && (
+              <Button onClick={addPixEntry} size="sm" className="bg-blue-600 hover:bg-blue-700">
+                <Plus className="h-4 w-4 mr-1" />
+                Adicionar PIX
+              </Button>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          {pixEntries.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              {isSessionValidated ? 'Nenhuma entrada PIX registrada' : 'Nenhuma entrada PIX adicionada ainda'}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {pixEntries.map((entry) => (
+                <div key={entry.id} className={`grid grid-cols-1 md:grid-cols-4 gap-4 p-4 border rounded-lg ${isSessionValidated ? 'bg-gray-100' : 'bg-gray-50'}`}>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-700">Valor</Label>
+                    <MoneyInput
+                      value={entry.amount}
+                      onChange={(value) => updatePixEntry(entry.id, 'amount', value)}
+                      placeholder="R$ 0,00"
+                      disabled={isSessionValidated}
+                      className={isSessionValidated ? 'bg-gray-200 cursor-not-allowed' : ''}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-700">Descrição</Label>
+                    <Input
+                      value={entry.description}
+                      onChange={(e) => updatePixEntry(entry.id, 'description', e.target.value)}
+                      placeholder="Descrição do PIX"
+                      disabled={isSessionValidated}
+                      className={isSessionValidated ? 'bg-gray-200 cursor-not-allowed' : ''}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-700">Data</Label>
+                    <Input
+                      type="date"
+                      value={entry.data_pix}
+                      onChange={(e) => updatePixEntry(entry.id, 'data_pix', e.target.value)}
+                      disabled={isSessionValidated}
+                      className={isSessionValidated ? 'bg-gray-200 cursor-not-allowed' : ''}
+                    />
+                  </div>
+                  
+                  <div className="flex items-end">
+                    {!isSessionValidated && (
                       <Button
-                        variant="ghost"
+                        onClick={() => removePixEntry(entry.id)}
+                        variant="outline"
                         size="sm"
-                        onClick={() => removeEntradaEntry(entry.id)}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        className="text-red-600 hover:text-red-700 hover:border-red-300"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
-                    </div>
+                    )}
                   </div>
-                </CardContent>
-              </Card>
-            ))}
+                </div>
+              ))}
+            </div>
+          )}
+          
+          {pixEntries.length > 0 && (
+            <div className="mt-4 pt-4 border-t">
+              <div className="flex justify-between items-center">
+                <span className="font-medium text-gray-700">Total PIX:</span>
+                <Badge variant="secondary" className="text-lg px-3 py-1">
+                  R$ {totalPix.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </Badge>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Resumo Total */}
+      <Card className="bg-gradient-to-r from-green-600 to-green-700 text-white shadow-lg">
+        <CardContent className="p-6">
+          <div className="flex justify-between items-center">
+            <div>
+              <h3 className="text-lg font-semibold mb-2">Total de Entradas</h3>
+              <div className="text-sm text-green-100">
+                Dinheiro: R$ {entradas.dinheiro.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} • 
+                Débito: R$ {entradas.cartao_debito.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} • 
+                Crédito: R$ {entradas.cartao_credito.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} • 
+                PIX: R$ {totalPix.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-3xl font-bold">
+                R$ {totalEntradas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              </div>
+            </div>
           </div>
-        )}
+        </CardContent>
+      </Card>
 
-        <div className="border-t pt-6">
-          <PixManager
-            entries={pixEntries}
-            onEntriesChange={setPixEntries}
-            onSave={() => {}}
-          />
+      {/* Botão Salvar */}
+      {!isSessionValidated && (
+        <div className="flex justify-end">
+          <Button 
+            onClick={onSaveEntradas} 
+            size="lg" 
+            className="bg-green-600 hover:bg-green-700"
+          >
+            <DollarSign className="h-4 w-4 mr-2" />
+            Salvar Entradas
+          </Button>
         </div>
-
-        <div className="flex justify-between items-center pt-4 border-t bg-green-50 p-4 rounded-lg">
-          <span className="text-lg font-semibold text-green-800">Total de Entradas:</span>
-          <span className="text-2xl font-bold text-green-800">
-            R$ {totalEntradas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-          </span>
-        </div>
-
-        <Button onClick={onSaveEntradas} className="w-full bg-green-600 hover:bg-green-700 h-12 text-lg">
-          Salvar Entradas
-        </Button>
-      </CardContent>
-    </Card>
+      )}
+    </div>
   );
 };

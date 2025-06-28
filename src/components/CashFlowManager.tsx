@@ -1,3 +1,4 @@
+
 import { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -89,6 +90,9 @@ export const CashFlowManager = () => {
     resetFormData();
   };
 
+  // Verificar se a sessão atual está validada
+  const isSessionValidated = currentSession?.status === 'validado';
+
   if (profile?.role === 'supervisor') {
     return (
       <div className="p-6">
@@ -117,23 +121,27 @@ export const CashFlowManager = () => {
         />
       ) : (
         <div className="space-y-6">
-          <Card className="bg-gradient-to-r from-blue-600 to-blue-700 text-white border-0 shadow-lg">
+          <Card className={`${isSessionValidated ? 'bg-gradient-to-r from-green-600 to-green-700' : 'bg-gradient-to-r from-blue-600 to-blue-700'} text-white border-0 shadow-lg`}>
             <CardHeader>
               <CardTitle className="text-xl flex items-center justify-between">
-                <span>Sessão Ativa: {currentSession.culto_evento}</span>
+                <span>
+                  {isSessionValidated ? '🔒 ' : ''}
+                  Sessão {isSessionValidated ? 'Validada' : 'Ativa'}: {currentSession.culto_evento}
+                </span>
                 <Button 
                   onClick={() => setCurrentSession(null)} 
                   variant="outline" 
                   size="sm"
-                  className="text-blue-600 border-white hover:bg-white"
+                  className={`${isSessionValidated ? 'text-green-600 border-white hover:bg-white' : 'text-blue-600 border-white hover:bg-white'}`}
                 >
                   Nova Sessão
                 </Button>
               </CardTitle>
-              <p className="text-blue-100">
+              <p className={`${isSessionValidated ? 'text-green-100' : 'text-blue-100'}`}>
                 Data: {new Date(currentSession.date_session).toLocaleDateString('pt-BR')} | 
                 {currentSession.horario_sessao && ` Horário: ${currentSession.horario_sessao} |`}
                 Status: {currentSession.status.toUpperCase()}
+                {isSessionValidated && ' - CAMPOS TRAVADOS'}
               </p>
             </CardHeader>
           </Card>
@@ -166,6 +174,7 @@ export const CashFlowManager = () => {
                 setPixEntries={setPixEntries}
                 totalEntradas={totalEntradas}
                 onSaveEntradas={handleSaveEntradas}
+                isSessionValidated={isSessionValidated}
               />
             </TabsContent>
 
@@ -178,6 +187,7 @@ export const CashFlowManager = () => {
                 totalVolunteers={totalVolunteers}
                 totalSaidas={totalSaidas}
                 onSaveSaidas={handleSaveSaidas}
+                isSessionValidated={isSessionValidated}
               />
             </TabsContent>
 
@@ -201,6 +211,7 @@ export const CashFlowManager = () => {
                 saldo={saldo}
                 pendingPayments={pendingPayments}
                 availableCash={availableCash}
+                isSessionValidated={isSessionValidated}
               />
             </TabsContent>
           </Tabs>
