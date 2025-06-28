@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -52,21 +51,31 @@ export const DateEventReport = () => {
   };
 
   const getDateRange = () => {
+    console.log('getDateRange called with:', { dateRange, customDateRange });
+    
     if (dateRange === 'custom' && customDateRange.start && customDateRange.end) {
+      console.log('Using custom date range:', customDateRange);
       return { start: customDateRange.start, end: customDateRange.end };
     }
     
     const now = new Date();
+    let result;
     switch (dateRange) {
       case '7days':
-        return { start: subDays(now, 7), end: now };
+        result = { start: subDays(now, 7), end: now };
+        break;
       case '30days':
-        return { start: subDays(now, 30), end: now };
+        result = { start: subDays(now, 30), end: now };
+        break;
       case 'thisMonth':
-        return { start: startOfMonth(now), end: endOfMonth(now) };
+        result = { start: startOfMonth(now), end: endOfMonth(now) };
+        break;
       default:
-        return { start: subDays(now, 30), end: now };
+        result = { start: subDays(now, 30), end: now };
     }
+    
+    console.log('Using predefined date range:', result);
+    return result;
   };
 
   const loadData = async () => {
@@ -76,7 +85,14 @@ export const DateEventReport = () => {
       const startDate = format(start, 'yyyy-MM-dd');
       const endDate = format(end, 'yyyy-MM-dd');
 
-      console.log('Date range for query:', { startDate, endDate, dateRange, customDateRange });
+      console.log('Final date range for query:', { 
+        startDate, 
+        endDate, 
+        dateRange, 
+        customDateRange,
+        startOriginal: start,
+        endOriginal: end
+      });
 
       // Query para transações
       let transactionsQuery = supabase
@@ -111,6 +127,8 @@ export const DateEventReport = () => {
         pixQuery = pixQuery.eq('cash_sessions.church_id', selectedChurch);
       }
 
+      console.log('About to execute queries with date range:', { startDate, endDate });
+
       const [{ data: transactions, error: transError }, { data: pixEntries, error: pixError }] = await Promise.all([
         transactionsQuery,
         pixQuery
@@ -126,8 +144,12 @@ export const DateEventReport = () => {
         throw pixError;
       }
 
-      console.log('Raw transactions:', transactions);
-      console.log('Raw PIX entries:', pixEntries);
+      console.log('Query results:', { 
+        transactions: transactions?.length || 0, 
+        pixEntries: pixEntries?.length || 0,
+        transactionsData: transactions,
+        pixData: pixEntries
+      });
 
       // Processar e agrupar dados por data e evento
       const groupedData: Record<string, DateEventReportData> = {};
@@ -137,6 +159,8 @@ export const DateEventReport = () => {
         const eventDate = transaction.cash_sessions?.date_session || '';
         const eventName = transaction.cash_sessions?.culto_evento || '';
         const key = `${eventDate}-${eventName}`;
+        
+        console.log('Processing transaction:', { eventDate, eventName, amount: transaction.amount, type: transaction.type });
         
         if (!groupedData[key]) {
           groupedData[key] = {
@@ -160,6 +184,8 @@ export const DateEventReport = () => {
         const eventDate = pix.cash_sessions?.date_session || '';
         const eventName = pix.cash_sessions?.culto_evento || '';
         const key = `${eventDate}-${eventName}`;
+        
+        console.log('Processing PIX:', { eventDate, eventName, amount: pix.amount });
         
         if (!groupedData[key]) {
           groupedData[key] = {
@@ -195,6 +221,7 @@ export const DateEventReport = () => {
   };
 
   const handleCustomDateRange = (startDate: Date, endDate: Date) => {
+    console.log('handleCustomDateRange called with:', { startDate, endDate });
     setCustomDateRange({ start: startDate, end: endDate });
     setDateRange('custom');
     toast({
