@@ -55,9 +55,9 @@ export const DateEventReport = () => {
       const startDate = format(start, 'yyyy-MM-dd');
       const endDate = format(end, 'yyyy-MM-dd');
 
-      console.log('Loading data for date range:', startDate, 'to', endDate);
+      console.log('Date range for query:', { startDate, endDate });
 
-      // Buscar todas as transações filtrando pela data da transação
+      // Buscar transações usando tanto date_transaction quanto date_session como fallback
       const { data: transactions, error } = await supabase
         .from('transactions')
         .select(`
@@ -70,17 +70,30 @@ export const DateEventReport = () => {
             churches!inner(name)
           )
         `)
-        .gte('date_transaction', startDate)
-        .lte('date_transaction', endDate);
+        .or(`date_transaction.gte.${startDate},cash_sessions.date_session.gte.${startDate}`)
+        .or(`date_transaction.lte.${endDate},cash_sessions.date_session.lte.${endDate}`);
 
       if (error) {
         console.error('Error fetching transactions:', error);
         throw error;
       }
 
-      console.log('Transactions found:', transactions?.length || 0);
+      console.log('Raw transactions:', transactions);
 
-      // Buscar entradas PIX filtrando pela data do PIX
+      // Filtrar transações que realmente estão no período
+      const filteredTransactions = transactions?.filter(transaction => {
+        const transDate = new Date(transaction.date_transaction);
+        const sessionDate = new Date(transaction.cash_sessions?.date_session || '');
+        const startDateObj = new Date(startDate);
+        const endDateObj = new Date(endDate);
+        
+        return (transDate >= startDateObj && transDate <= endDateObj) ||
+               (sessionDate >= startDateObj && sessionDate <= endDateObj);
+      }) || [];
+
+      console.log('Filtered transactions:', filteredTransactions.length);
+
+      // Buscar entradas PIX
       const { data: pixEntries, error: pixError } = await supabase
         .from('pix_entries')
         .select(`
@@ -92,22 +105,34 @@ export const DateEventReport = () => {
             churches!inner(name)
           )
         `)
-        .gte('data_pix', startDate)
-        .lte('data_pix', endDate);
+        .or(`data_pix.gte.${startDate},cash_sessions.date_session.gte.${startDate}`)
+        .or(`data_pix.lte.${endDate},cash_sessions.date_session.lte.${endDate}`);
 
       if (pixError) {
         console.error('Error fetching PIX entries:', pixError);
         throw pixError;
       }
 
-      console.log('PIX entries found:', pixEntries?.length || 0);
+      // Filtrar PIX entries que realmente estão no período
+      const filteredPixEntries = pixEntries?.filter(pix => {
+        const pixDate = new Date(pix.data_pix);
+        const sessionDate = new Date(pix.cash_sessions?.date_session || '');
+        const startDateObj = new Date(startDate);
+        const endDateObj = new Date(endDate);
+        
+        return (pixDate >= startDateObj && pixDate <= endDateObj) ||
+               (sessionDate >= startDateObj && sessionDate <= endDateObj);
+      }) || [];
+
+      console.log('Filtered PIX entries:', filteredPixEntries.length);
 
       // Processar e agrupar dados por data e evento
       const groupedData: Record<string, DateEventReportData> = {};
 
       // Processar transações
-      transactions?.forEach((transaction) => {
-        const transactionDate = transaction.date_transaction;
+      filteredTransactions.forEach((transaction) => {
+        // Usar date_transaction como principal, date_session como fallback
+        const transactionDate = transaction.date_transaction || transaction.cash_sessions?.date_session || '';
         const key = `${transactionDate}-${transaction.cash_sessions?.culto_evento}`;
         const churchName = transaction.cash_sessions?.churches?.name || '';
         
@@ -137,8 +162,9 @@ export const DateEventReport = () => {
       });
 
       // Processar entradas PIX
-      pixEntries?.forEach((pix) => {
-        const pixDate = pix.data_pix;
+      filteredPixEntries.forEach((pix) => {
+        // Usar data_pix como principal, date_session como fallback
+        const pixDate = pix.data_pix || pix.cash_sessions?.date_session || '';
         const key = `${pixDate}-${pix.cash_sessions?.culto_evento}`;
         const churchName = pix.cash_sessions?.churches?.name || '';
         
@@ -169,7 +195,7 @@ export const DateEventReport = () => {
         saldo: item.total_entradas - item.total_saidas
       })).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-      console.log('Processed data:', processedData);
+      console.log('Final processed data:', processedData);
       setData(processedData);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
