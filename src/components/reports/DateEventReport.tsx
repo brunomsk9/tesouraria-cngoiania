@@ -52,7 +52,7 @@ export const DateEventReport = () => {
   };
 
   const getDateRange = () => {
-    if (customDateRange.start && customDateRange.end) {
+    if (dateRange === 'custom' && customDateRange.start && customDateRange.end) {
       return { start: customDateRange.start, end: customDateRange.end };
     }
     
@@ -76,8 +76,9 @@ export const DateEventReport = () => {
       const startDate = format(start, 'yyyy-MM-dd');
       const endDate = format(end, 'yyyy-MM-dd');
 
-      console.log('Date range for query:', { startDate, endDate });
+      console.log('Date range for query:', { startDate, endDate, dateRange, customDateRange });
 
+      // Query para transações
       let transactionsQuery = supabase
         .from('transactions')
         .select(`
@@ -85,21 +86,20 @@ export const DateEventReport = () => {
           type,
           cash_sessions!inner(
             culto_evento,
-            date_session,
-            churches!inner(name)
+            date_session
           )
         `)
         .gte('cash_sessions.date_session', startDate)
         .lte('cash_sessions.date_session', endDate);
 
+      // Query para PIX
       let pixQuery = supabase
         .from('pix_entries')
         .select(`
           amount,
           cash_sessions!inner(
             culto_evento,
-            date_session,
-            churches!inner(name)
+            date_session
           )
         `)
         .gte('cash_sessions.date_session', startDate)
@@ -107,8 +107,8 @@ export const DateEventReport = () => {
 
       // Aplicar filtro de igreja se não for "all"
       if (selectedChurch !== 'all') {
-        transactionsQuery = transactionsQuery.eq('cash_sessions.churches.id', selectedChurch);
-        pixQuery = pixQuery.eq('cash_sessions.churches.id', selectedChurch);
+        transactionsQuery = transactionsQuery.eq('cash_sessions.church_id', selectedChurch);
+        pixQuery = pixQuery.eq('cash_sessions.church_id', selectedChurch);
       }
 
       const [{ data: transactions, error: transError }, { data: pixEntries, error: pixError }] = await Promise.all([
@@ -129,18 +129,19 @@ export const DateEventReport = () => {
       console.log('Raw transactions:', transactions);
       console.log('Raw PIX entries:', pixEntries);
 
-      // Processar e agrupar dados por data e evento (sem considerar igreja)
+      // Processar e agrupar dados por data e evento
       const groupedData: Record<string, DateEventReportData> = {};
 
-      // Processar transações - usar date_session como data do evento
+      // Processar transações
       transactions?.forEach((transaction) => {
         const eventDate = transaction.cash_sessions?.date_session || '';
-        const key = `${eventDate}-${transaction.cash_sessions?.culto_evento}`;
+        const eventName = transaction.cash_sessions?.culto_evento || '';
+        const key = `${eventDate}-${eventName}`;
         
         if (!groupedData[key]) {
           groupedData[key] = {
             date: eventDate,
-            event_name: transaction.cash_sessions?.culto_evento || '',
+            event_name: eventName,
             total_entradas: 0,
             total_saidas: 0,
             saldo: 0
@@ -154,15 +155,16 @@ export const DateEventReport = () => {
         }
       });
 
-      // Processar entradas PIX - usar date_session como data do evento
+      // Processar entradas PIX
       pixEntries?.forEach((pix) => {
         const eventDate = pix.cash_sessions?.date_session || '';
-        const key = `${eventDate}-${pix.cash_sessions?.culto_evento}`;
+        const eventName = pix.cash_sessions?.culto_evento || '';
+        const key = `${eventDate}-${eventName}`;
         
         if (!groupedData[key]) {
           groupedData[key] = {
             date: eventDate,
-            event_name: pix.cash_sessions?.culto_evento || '',
+            event_name: eventName,
             total_entradas: 0,
             total_saidas: 0,
             saldo: 0
