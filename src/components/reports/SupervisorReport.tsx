@@ -65,8 +65,7 @@ export const SupervisorReport = () => {
           )
         `)
         .gte('cash_sessions.date_session', format(start, 'yyyy-MM-dd'))
-        .lte('cash_sessions.date_session', format(end, 'yyyy-MM-dd'))
-        .order('cash_sessions.date_session', { ascending: false });
+        .lte('cash_sessions.date_session', format(end, 'yyyy-MM-dd'));
 
       if (error) throw error;
 
@@ -129,11 +128,11 @@ export const SupervisorReport = () => {
         groupedData[key].entradas += Number(pix.amount);
       });
 
-      // Calcular saldos
+      // Calcular saldos e ordenar por data
       const processedData = Object.values(groupedData).map(item => ({
         ...item,
         saldo: item.entradas - item.saidas
-      }));
+      })).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
       setData(processedData);
     } catch (error) {
