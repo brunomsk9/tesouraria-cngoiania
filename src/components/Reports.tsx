@@ -35,6 +35,7 @@ export const Reports = () => {
   const [selectedChurch, setSelectedChurch] = useState<string>('all');
   const [dateRange, setDateRange] = useState('30days');
   const [customDateRange, setCustomDateRange] = useState<{ start?: Date; end?: Date }>({});
+  const [activeTab, setActiveTab] = useState('supervisor');
 
   // Load churches on component mount
   useEffect(() => {
@@ -235,7 +236,7 @@ export const Reports = () => {
       </div>
 
       {(profile?.role === 'supervisor' || profile?.role === 'master') ? (
-        <Tabs defaultValue="supervisor" className="space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="supervisor">Relatório Supervisor</TabsTrigger>
             <TabsTrigger value="detailed">Relatório Detalhado</TabsTrigger>
