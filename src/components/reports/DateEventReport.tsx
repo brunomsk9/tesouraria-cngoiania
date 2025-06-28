@@ -10,50 +10,26 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { DateRangeModal } from '../DateRangeModal';
 
-interface SupervisorReportData {
+interface DateEventReportData {
   date: string;
-  church_name: string;
   event_name: string;
-  entradas: number;
-  saidas: number;
+  total_entradas: number;
+  total_saidas: number;
   saldo: number;
+  churches_count: number;
+  churches_names: string[];
 }
 
-interface Church {
-  id: string;
-  name: string;
-}
-
-export const SupervisorReport = () => {
-  const [data, setData] = useState<SupervisorReportData[]>([]);
-  const [churches, setChurches] = useState<Church[]>([]);
-  const [selectedChurch, setSelectedChurch] = useState<string>('all');
+export const DateEventReport = () => {
+  const [data, setData] = useState<DateEventReportData[]>([]);
   const [loading, setLoading] = useState(false);
   const [dateRange, setDateRange] = useState('30days');
   const [customDateRange, setCustomDateRange] = useState<{ start?: Date; end?: Date }>({});
   const { toast } = useToast();
 
   useEffect(() => {
-    loadChurches();
-  }, []);
-
-  useEffect(() => {
     loadData();
-  }, [dateRange, customDateRange, selectedChurch]);
-
-  const loadChurches = async () => {
-    try {
-      const { data: churchesData, error } = await supabase
-        .from('churches')
-        .select('id, name')
-        .order('name');
-
-      if (error) throw error;
-      setChurches(churchesData || []);
-    } catch (error) {
-      console.error('Erro ao carregar igrejas:', error);
-    }
-  };
+  }, [dateRange, customDateRange]);
 
   const getDateRange = () => {
     if (customDateRange.start && customDateRange.end) {
@@ -78,7 +54,8 @@ export const SupervisorReport = () => {
     try {
       const { start, end } = getDateRange();
 
-      let transactionsQuery = supabase
+      // Buscar todas as transações
+      const { data: transactions, error } = await supabase
         .from('transactions')
         .select(`
           amount,
@@ -86,93 +63,93 @@ export const SupervisorReport = () => {
           cash_sessions!inner(
             culto_evento,
             date_session,
-            church_id,
             churches!inner(name)
           )
         `)
         .gte('cash_sessions.date_session', format(start, 'yyyy-MM-dd'))
         .lte('cash_sessions.date_session', format(end, 'yyyy-MM-dd'));
 
-      // Apply church filter if selected
-      if (selectedChurch !== 'all') {
-        transactionsQuery = transactionsQuery.eq('cash_sessions.church_id', selectedChurch);
-      }
-
-      const { data: transactions, error } = await transactionsQuery;
-
       if (error) throw error;
 
       // Buscar entradas PIX
-      let pixQuery = supabase
+      const { data: pixEntries, error: pixError } = await supabase
         .from('pix_entries')
         .select(`
           amount,
           cash_sessions!inner(
             culto_evento,
             date_session,
-            church_id,
             churches!inner(name)
           )
         `)
         .gte('cash_sessions.date_session', format(start, 'yyyy-MM-dd'))
         .lte('cash_sessions.date_session', format(end, 'yyyy-MM-dd'));
 
-      // Apply church filter if selected
-      if (selectedChurch !== 'all') {
-        pixQuery = pixQuery.eq('cash_sessions.church_id', selectedChurch);
-      }
-
-      const { data: pixEntries, error: pixError } = await pixQuery;
-
       if (pixError) throw pixError;
 
-      // Processar e agrupar dados
-      const groupedData: Record<string, SupervisorReportData> = {};
+      // Processar e agrupar dados por data e evento
+      const groupedData: Record<string, DateEventReportData> = {};
 
       // Processar transações
       transactions?.forEach((transaction) => {
-        const key = `${transaction.cash_sessions?.date_session}-${transaction.cash_sessions?.churches?.name}-${transaction.cash_sessions?.culto_evento}`;
+        const key = `${transaction.cash_sessions?.date_session}-${transaction.cash_sessions?.culto_evento}`;
+        const churchName = transaction.cash_sessions?.churches?.name || '';
         
         if (!groupedData[key]) {
           groupedData[key] = {
             date: transaction.cash_sessions?.date_session || '',
-            church_name: transaction.cash_sessions?.churches?.name || '',
             event_name: transaction.cash_sessions?.culto_evento || '',
-            entradas: 0,
-            saidas: 0,
-            saldo: 0
+            total_entradas: 0,
+            total_saidas: 0,
+            saldo: 0,
+            churches_count: 0,
+            churches_names: []
           };
         }
 
+        // Adicionar igreja se não estiver na lista
+        if (!groupedData[key].churches_names.includes(churchName)) {
+          groupedData[key].churches_names.push(churchName);
+          groupedData[key].churches_count = groupedData[key].churches_names.length;
+        }
+
         if (transaction.type === 'entrada') {
-          groupedData[key].entradas += Number(transaction.amount);
+          groupedData[key].total_entradas += Number(transaction.amount);
         } else {
-          groupedData[key].saidas += Number(transaction.amount);
+          groupedData[key].total_saidas += Number(transaction.amount);
         }
       });
 
       // Processar entradas PIX
       pixEntries?.forEach((pix) => {
-        const key = `${pix.cash_sessions?.date_session}-${pix.cash_sessions?.churches?.name}-${pix.cash_sessions?.culto_evento}`;
+        const key = `${pix.cash_sessions?.date_session}-${pix.cash_sessions?.culto_evento}`;
+        const churchName = pix.cash_sessions?.churches?.name || '';
         
         if (!groupedData[key]) {
           groupedData[key] = {
             date: pix.cash_sessions?.date_session || '',
-            church_name: pix.cash_sessions?.churches?.name || '',
             event_name: pix.cash_sessions?.culto_evento || '',
-            entradas: 0,
-            saidas: 0,
-            saldo: 0
+            total_entradas: 0,
+            total_saidas: 0,
+            saldo: 0,
+            churches_count: 0,
+            churches_names: []
           };
         }
 
-        groupedData[key].entradas += Number(pix.amount);
+        // Adicionar igreja se não estiver na lista
+        if (!groupedData[key].churches_names.includes(churchName)) {
+          groupedData[key].churches_names.push(churchName);
+          groupedData[key].churches_count = groupedData[key].churches_names.length;
+        }
+
+        groupedData[key].total_entradas += Number(pix.amount);
       });
 
       // Calcular saldos e ordenar por data
       const processedData = Object.values(groupedData).map(item => ({
         ...item,
-        saldo: item.entradas - item.saidas
+        saldo: item.total_entradas - item.total_saidas
       })).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
       setData(processedData);
@@ -198,17 +175,18 @@ export const SupervisorReport = () => {
   };
 
   const exportToCSV = () => {
-    const headers = ['Data', 'Igreja', 'Evento/Culto', 'Entradas', 'Saídas', 'Saldo'];
+    const headers = ['Data', 'Evento/Culto', 'Entradas', 'Saídas', 'Saldo', 'Qtd Igrejas', 'Igrejas'];
     
     const csvContent = [
       headers.join(','),
       ...data.map(item => [
         format(new Date(item.date), 'dd/MM/yyyy'),
-        `"${item.church_name}"`,
         `"${item.event_name}"`,
-        item.entradas.toString().replace('.', ','),
-        item.saidas.toString().replace('.', ','),
-        item.saldo.toString().replace('.', ',')
+        item.total_entradas.toString().replace('.', ','),
+        item.total_saidas.toString().replace('.', ','),
+        item.saldo.toString().replace('.', ','),
+        item.churches_count.toString(),
+        `"${item.churches_names.join(', ')}"`
       ].join(','))
     ].join('\n');
 
@@ -216,7 +194,7 @@ export const SupervisorReport = () => {
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    link.setAttribute('download', `relatorio_supervisor_${format(new Date(), 'yyyy-MM-dd')}.csv`);
+    link.setAttribute('download', `relatorio_data_evento_${format(new Date(), 'yyyy-MM-dd')}.csv`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -231,8 +209,8 @@ export const SupervisorReport = () => {
   };
 
   const calculateTotals = () => {
-    const totalEntradas = data.reduce((sum, item) => sum + item.entradas, 0);
-    const totalSaidas = data.reduce((sum, item) => sum + item.saidas, 0);
+    const totalEntradas = data.reduce((sum, item) => sum + item.total_entradas, 0);
+    const totalSaidas = data.reduce((sum, item) => sum + item.total_saidas, 0);
     const totalSaldo = totalEntradas - totalSaidas;
     return { totalEntradas, totalSaidas, totalSaldo };
   };
@@ -243,7 +221,7 @@ export const SupervisorReport = () => {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Relatório do Supervisor</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Relatório por Data e Evento</h1>
           <p className="text-gray-600 mt-2">Carregando dados...</p>
         </div>
         <Card>
@@ -258,8 +236,8 @@ export const SupervisorReport = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Relatório do Supervisor</h1>
-        <p className="text-gray-600 mt-2">Resumo consolidado de todas as igrejas</p>
+        <h1 className="text-3xl font-bold text-gray-900">Relatório por Data e Evento</h1>
+        <p className="text-gray-600 mt-2">Consolidação de dados por data e evento/culto</p>
       </div>
 
       {/* Filtros */}
@@ -269,20 +247,6 @@ export const SupervisorReport = () => {
         </CardHeader>
         <CardContent>
           <div className="flex flex-col sm:flex-row gap-2">
-            <Select value={selectedChurch} onValueChange={setSelectedChurch}>
-              <SelectTrigger className="w-full sm:w-48">
-                <SelectValue placeholder="Selecionar Igreja" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas as Igrejas</SelectItem>
-                {churches.map((church) => (
-                  <SelectItem key={church.id} value={church.id}>
-                    {church.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
             <Select value={dateRange} onValueChange={setDateRange}>
               <SelectTrigger className="w-40">
                 <SelectValue />
@@ -351,7 +315,7 @@ export const SupervisorReport = () => {
       {/* Tabela */}
       <Card>
         <CardHeader>
-          <CardTitle>Relatório Detalhado ({data.length} registros)</CardTitle>
+          <CardTitle>Relatório por Data e Evento ({data.length} registros)</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -359,11 +323,12 @@ export const SupervisorReport = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Data</TableHead>
-                  <TableHead>Igreja</TableHead>
                   <TableHead>Evento/Culto</TableHead>
                   <TableHead className="text-right">Entradas</TableHead>
                   <TableHead className="text-right">Saídas</TableHead>
                   <TableHead className="text-right">Saldo</TableHead>
+                  <TableHead className="text-center">Qtd Igrejas</TableHead>
+                  <TableHead>Igrejas</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -373,25 +338,28 @@ export const SupervisorReport = () => {
                       {format(new Date(item.date), 'dd/MM/yyyy')}
                     </TableCell>
                     <TableCell className="font-medium">
-                      {item.church_name}
-                    </TableCell>
-                    <TableCell>
                       {item.event_name}
                     </TableCell>
                     <TableCell className="text-right font-medium text-green-600">
-                      {formatCurrency(item.entradas)}
+                      {formatCurrency(item.total_entradas)}
                     </TableCell>
                     <TableCell className="text-right font-medium text-red-600">
-                      {formatCurrency(item.saidas)}
+                      {formatCurrency(item.total_saidas)}
                     </TableCell>
                     <TableCell className={`text-right font-medium ${item.saldo >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                       {formatCurrency(item.saldo)}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      {item.churches_count}
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {item.churches_names.join(', ')}
                     </TableCell>
                   </TableRow>
                 ))}
                 {data.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center text-gray-500 py-8">
+                    <TableCell colSpan={7} className="text-center text-gray-500 py-8">
                       Nenhuma transação encontrada para o período selecionado
                     </TableCell>
                   </TableRow>

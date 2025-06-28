@@ -9,6 +9,7 @@ import { ReportsSummaryCards } from './reports/ReportsSummaryCards';
 import { ReportsTable } from './reports/ReportsTable';
 import { ReportsFilters } from './reports/ReportsFilters';
 import { SupervisorReport } from './reports/SupervisorReport';
+import { DateEventReport } from './reports/DateEventReport';
 
 interface ReportData {
   id: string;
@@ -237,13 +238,18 @@ export const Reports = () => {
 
       {(profile?.role === 'supervisor' || profile?.role === 'master') ? (
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="supervisor">Relatório Supervisor</TabsTrigger>
+            <TabsTrigger value="date-event">Data e Evento</TabsTrigger>
             <TabsTrigger value="detailed">Relatório Detalhado</TabsTrigger>
           </TabsList>
           
           <TabsContent value="supervisor" className="space-y-6">
             <SupervisorReport />
+          </TabsContent>
+          
+          <TabsContent value="date-event" className="space-y-6">
+            <DateEventReport />
           </TabsContent>
           
           <TabsContent value="detailed" className="space-y-6">
