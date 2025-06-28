@@ -1,13 +1,11 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CalendarIcon, Download, X } from 'lucide-react';
 import { format, subDays, startOfMonth, endOfMonth } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { DateRangeModal } from '../DateRangeModal';
+import { ReportsFilters } from './ReportsFilters';
 
 interface DateEventReportData {
   date: string;
@@ -19,16 +17,41 @@ interface DateEventReportData {
   churches_names: string[];
 }
 
+interface Church {
+  id: string;
+  name: string;
+}
+
 export const DateEventReport = () => {
   const [data, setData] = useState<DateEventReportData[]>([]);
   const [loading, setLoading] = useState(false);
+  const [churches, setChurches] = useState<Church[]>([]);
+  const [selectedChurch, setSelectedChurch] = useState('all');
   const [dateRange, setDateRange] = useState('30days');
   const [customDateRange, setCustomDateRange] = useState<{ start?: Date; end?: Date }>({});
   const { toast } = useToast();
 
   useEffect(() => {
+    loadChurches();
+  }, []);
+
+  useEffect(() => {
     loadData();
-  }, [dateRange, customDateRange]);
+  }, [dateRange, customDateRange, selectedChurch]);
+
+  const loadChurches = async () => {
+    try {
+      const { data: churchesData, error } = await supabase
+        .from('churches')
+        .select('id, name')
+        .order('name');
+
+      if (error) throw error;
+      setChurches(churchesData || []);
+    } catch (error) {
+      console.error('Error loading churches:', error);
+    }
+  };
 
   const getDateRange = () => {
     if (customDateRange.start && customDateRange.end) {
@@ -57,8 +80,7 @@ export const DateEventReport = () => {
 
       console.log('Date range for query:', { startDate, endDate });
 
-      // Buscar transações filtrando pela data da sessão (data do evento)
-      const { data: transactions, error } = await supabase
+      let transactionsQuery = supabase
         .from('transactions')
         .select(`
           amount,
@@ -73,15 +95,7 @@ export const DateEventReport = () => {
         .gte('cash_sessions.date_session', startDate)
         .lte('cash_sessions.date_session', endDate);
 
-      if (error) {
-        console.error('Error fetching transactions:', error);
-        throw error;
-      }
-
-      console.log('Raw transactions:', transactions);
-
-      // Buscar entradas PIX filtrando pela data da sessão (data do evento)
-      const { data: pixEntries, error: pixError } = await supabase
+      let pixQuery = supabase
         .from('pix_entries')
         .select(`
           amount,
@@ -95,11 +109,28 @@ export const DateEventReport = () => {
         .gte('cash_sessions.date_session', startDate)
         .lte('cash_sessions.date_session', endDate);
 
+      // Aplicar filtro de igreja se não for "all"
+      if (selectedChurch !== 'all') {
+        transactionsQuery = transactionsQuery.eq('cash_sessions.churches.id', selectedChurch);
+        pixQuery = pixQuery.eq('cash_sessions.churches.id', selectedChurch);
+      }
+
+      const [{ data: transactions, error: transError }, { data: pixEntries, error: pixError }] = await Promise.all([
+        transactionsQuery,
+        pixQuery
+      ]);
+
+      if (transError) {
+        console.error('Error fetching transactions:', transError);
+        throw transError;
+      }
+
       if (pixError) {
         console.error('Error fetching PIX entries:', pixError);
         throw pixError;
       }
 
+      console.log('Raw transactions:', transactions);
       console.log('Raw PIX entries:', pixEntries);
 
       // Processar e agrupar dados por data e evento
@@ -195,6 +226,7 @@ export const DateEventReport = () => {
   const handleClearFilters = () => {
     setDateRange('30days');
     setCustomDateRange({});
+    setSelectedChurch('all');
     toast({
       title: "Filtros limpos",
       description: "Todos os filtros foram resetados para os valores padrão."
@@ -273,46 +305,18 @@ export const DateEventReport = () => {
           <CardTitle>Filtros</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row gap-2">
-              <Select value={dateRange} onValueChange={setDateRange}>
-                <SelectTrigger className="w-40">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="7days">Últimos 7 dias</SelectItem>
-                  <SelectItem value="30days">Últimos 30 dias</SelectItem>
-                  <SelectItem value="thisMonth">Este mês</SelectItem>
-                  {customDateRange.start && customDateRange.end && (
-                    <SelectItem value="custom">
-                      {format(customDateRange.start, 'dd/MM')} - {format(customDateRange.end, 'dd/MM')}
-                    </SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
-
-              <DateRangeModal 
-                onDateRangeSelect={handleCustomDateRange}
-                trigger={
-                  <Button variant="outline" size="sm">
-                    <CalendarIcon className="h-4 w-4" />
-                  </Button>
-                }
-              />
-              
-              <Button onClick={exportToCSV} variant="outline" size="sm">
-                <Download className="h-4 w-4 mr-2" />
-                Exportar CSV
-              </Button>
-            </div>
-            
-            <div className="flex justify-end">
-              <Button onClick={handleClearFilters} variant="outline" size="sm">
-                <X className="h-4 w-4 mr-2" />
-                Limpar Filtros
-              </Button>
-            </div>
-          </div>
+          <ReportsFilters
+            churches={churches}
+            selectedChurch={selectedChurch}
+            onChurchChange={setSelectedChurch}
+            dateRange={dateRange}
+            onDateRangeChange={setDateRange}
+            customDateRange={customDateRange}
+            onCustomDateRange={handleCustomDateRange}
+            onExportCSV={exportToCSV}
+            onClearFilters={handleClearFilters}
+            isSuper={true}
+          />
         </CardContent>
       </Card>
 
