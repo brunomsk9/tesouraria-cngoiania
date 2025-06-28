@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -57,7 +56,6 @@ export const SupervisorReport = () => {
       const { data: transactions, error } = await supabase
         .from('transactions')
         .select(`
-          date_transaction,
           amount,
           type,
           cash_sessions!inner(
@@ -66,9 +64,9 @@ export const SupervisorReport = () => {
             churches!inner(name)
           )
         `)
-        .gte('date_transaction', format(start, 'yyyy-MM-dd'))
-        .lte('date_transaction', format(end, 'yyyy-MM-dd'))
-        .order('date_transaction', { ascending: false });
+        .gte('cash_sessions.date_session', format(start, 'yyyy-MM-dd'))
+        .lte('cash_sessions.date_session', format(end, 'yyyy-MM-dd'))
+        .order('cash_sessions.date_session', { ascending: false });
 
       if (error) throw error;
 
@@ -76,7 +74,6 @@ export const SupervisorReport = () => {
       const { data: pixEntries, error: pixError } = await supabase
         .from('pix_entries')
         .select(`
-          data_pix,
           amount,
           cash_sessions!inner(
             culto_evento,
@@ -84,8 +81,8 @@ export const SupervisorReport = () => {
             churches!inner(name)
           )
         `)
-        .gte('data_pix', format(start, 'yyyy-MM-dd'))
-        .lte('data_pix', format(end, 'yyyy-MM-dd'));
+        .gte('cash_sessions.date_session', format(start, 'yyyy-MM-dd'))
+        .lte('cash_sessions.date_session', format(end, 'yyyy-MM-dd'));
 
       if (pixError) throw pixError;
 
@@ -94,11 +91,11 @@ export const SupervisorReport = () => {
 
       // Processar transações
       transactions?.forEach((transaction) => {
-        const key = `${transaction.date_transaction}-${transaction.cash_sessions?.churches?.name}-${transaction.cash_sessions?.culto_evento}`;
+        const key = `${transaction.cash_sessions?.date_session}-${transaction.cash_sessions?.churches?.name}-${transaction.cash_sessions?.culto_evento}`;
         
         if (!groupedData[key]) {
           groupedData[key] = {
-            date: transaction.date_transaction,
+            date: transaction.cash_sessions?.date_session || '',
             church_name: transaction.cash_sessions?.churches?.name || '',
             event_name: transaction.cash_sessions?.culto_evento || '',
             entradas: 0,
@@ -116,11 +113,11 @@ export const SupervisorReport = () => {
 
       // Processar entradas PIX
       pixEntries?.forEach((pix) => {
-        const key = `${pix.data_pix}-${pix.cash_sessions?.churches?.name}-${pix.cash_sessions?.culto_evento}`;
+        const key = `${pix.cash_sessions?.date_session}-${pix.cash_sessions?.churches?.name}-${pix.cash_sessions?.culto_evento}`;
         
         if (!groupedData[key]) {
           groupedData[key] = {
-            date: pix.data_pix,
+            date: pix.cash_sessions?.date_session || '',
             church_name: pix.cash_sessions?.churches?.name || '',
             event_name: pix.cash_sessions?.culto_evento || '',
             entradas: 0,
