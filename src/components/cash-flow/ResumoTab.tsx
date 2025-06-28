@@ -42,6 +42,7 @@ interface ResumoTabProps {
   saldo: number;
   pendingPayments: PendingPayment[];
   availableCash: number;
+  isSessionValidated?: boolean;
 }
 
 export const ResumoTab = ({
@@ -55,7 +56,8 @@ export const ResumoTab = ({
   totalSaidas,
   saldo,
   pendingPayments,
-  availableCash
+  availableCash,
+  isSessionValidated = false
 }: ResumoTabProps) => {
   const getPaymentTypeLabel = (type: string) => {
     switch (type) {

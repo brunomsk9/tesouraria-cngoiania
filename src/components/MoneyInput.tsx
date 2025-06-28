@@ -4,14 +4,16 @@ import { Label } from '@/components/ui/label';
 import { useState, useEffect } from 'react';
 
 interface MoneyInputProps {
-  label: string;
+  label?: string;
   value: number;
   onChange: (value: number) => void;
   placeholder?: string;
   className?: string;
+  id?: string;
+  disabled?: boolean;
 }
 
-export const MoneyInput = ({ label, value, onChange, placeholder, className }: MoneyInputProps) => {
+export const MoneyInput = ({ label, value, onChange, placeholder, className, id, disabled }: MoneyInputProps) => {
   const [displayValue, setDisplayValue] = useState('');
 
   useEffect(() => {
@@ -33,6 +35,8 @@ export const MoneyInput = ({ label, value, onChange, placeholder, className }: M
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (disabled) return;
+    
     const inputValue = e.target.value;
     setDisplayValue(inputValue);
     
@@ -49,17 +53,19 @@ export const MoneyInput = ({ label, value, onChange, placeholder, className }: M
 
   return (
     <div className={className}>
-      <Label className="text-sm font-medium text-gray-700">{label}</Label>
+      {label && <Label className="text-sm font-medium text-gray-700">{label}</Label>}
       <div className="relative mt-1">
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
           <span className="text-gray-500 text-sm">R$</span>
         </div>
         <Input
+          id={id}
           type="text"
           value={displayValue}
           onChange={handleChange}
           placeholder={placeholder || "0,00"}
-          className="pl-10 text-right font-mono text-lg bg-gray-50 border-gray-200 focus:bg-white transition-colors"
+          disabled={disabled}
+          className={`pl-10 text-right font-mono text-lg ${disabled ? 'bg-gray-100 cursor-not-allowed' : 'bg-gray-50'} border-gray-200 focus:bg-white transition-colors`}
         />
       </div>
       {value > 0 && (

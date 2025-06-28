@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -235,11 +234,10 @@ export const SaidasTab = ({
       {showVolunteerSelector && !isSessionValidated && (
         <VolunteerSelector
           selectedVolunteers={selectedVolunteers}
-          onSelectVolunteer={(volunteer) => {
-            setSelectedVolunteers([...selectedVolunteers, volunteer]);
+          onVolunteersChange={(volunteers) => {
+            setSelectedVolunteers(volunteers);
             setShowVolunteerSelector(false);
           }}
-          onClose={() => setShowVolunteerSelector(false)}
         />
       )}
     </div>
