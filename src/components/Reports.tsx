@@ -1,6 +1,6 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { format, subMonths, subDays, startOfMonth, endOfMonth } from 'date-fns';
@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ReportsSummaryCards } from './reports/ReportsSummaryCards';
 import { ReportsTable } from './reports/ReportsTable';
 import { ReportsFilters } from './reports/ReportsFilters';
+import { SupervisorReport } from './reports/SupervisorReport';
 
 interface ReportData {
   id: string;
@@ -225,31 +226,76 @@ export const Reports = () => {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Relatórios</h1>
-        <p className="text-gray-600 mt-2">Relatório detalhado de transações</p>
+        <p className="text-gray-600 mt-2">
+          {profile?.role === 'supervisor' || profile?.role === 'master' 
+            ? 'Relatórios consolidados e detalhados' 
+            : 'Relatório detalhado de transações'
+          }
+        </p>
       </div>
 
-      <ReportsSummaryCards data={data} />
+      {(profile?.role === 'supervisor' || profile?.role === 'master') ? (
+        <Tabs defaultValue="supervisor" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="supervisor">Relatório Supervisor</TabsTrigger>
+            <TabsTrigger value="detailed">Relatório Detalhado</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="supervisor" className="space-y-6">
+            <SupervisorReport />
+          </TabsContent>
+          
+          <TabsContent value="detailed" className="space-y-6">
+            <ReportsSummaryCards data={data} />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Filtros</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ReportsFilters
-            churches={churches}
-            selectedChurch={selectedChurch}
-            onChurchChange={setSelectedChurch}
-            dateRange={dateRange}
-            onDateRangeChange={setDateRange}
-            customDateRange={customDateRange}
-            onCustomDateRange={handleCustomDateRange}
-            onExportCSV={exportToCSV}
-            isSuper={profile?.role === 'supervisor' || profile?.role === 'master'}
-          />
-        </CardContent>
-      </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>Filtros</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ReportsFilters
+                  churches={churches}
+                  selectedChurch={selectedChurch}
+                  onChurchChange={setSelectedChurch}
+                  dateRange={dateRange}
+                  onDateRangeChange={setDateRange}
+                  customDateRange={customDateRange}
+                  onCustomDateRange={handleCustomDateRange}
+                  onExportCSV={exportToCSV}
+                  isSuper={profile?.role === 'supervisor' || profile?.role === 'master'}
+                />
+              </CardContent>
+            </Card>
 
-      <ReportsTable data={data} />
+            <ReportsTable data={data} />
+          </TabsContent>
+        </Tabs>
+      ) : (
+        <>
+          <ReportsSummaryCards data={data} />
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Filtros</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ReportsFilters
+                churches={churches}
+                selectedChurch={selectedChurch}
+                onChurchChange={setSelectedChurch}
+                dateRange={dateRange}
+                onDateRangeChange={setDateRange}
+                customDateRange={customDateRange}
+                onCustomDateRange={handleCustomDateRange}
+                onExportCSV={exportToCSV}
+                isSuper={false}
+              />
+            </CardContent>
+          </Card>
+
+          <ReportsTable data={data} />
+        </>
+      )}
     </div>
   );
 };
