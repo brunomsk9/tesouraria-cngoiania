@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -166,6 +167,18 @@ export const Reports = () => {
     });
   };
 
+  const handleClearFilters = () => {
+    setDateRange('30days');
+    setCustomDateRange({});
+    if (profile?.role === 'supervisor' || profile?.role === 'master') {
+      setSelectedChurch('all');
+    }
+    toast({
+      title: "Filtros limpos",
+      description: "Todos os filtros foram resetados para os valores padrão."
+    });
+  };
+
   const exportToCSV = () => {
     const headers = ['Data', 'Igreja', 'Evento/Culto', 'Tipo de Pagamento', 'Entradas', 'Saídas', 'Descrição'];
     
@@ -269,6 +282,7 @@ export const Reports = () => {
                   customDateRange={customDateRange}
                   onCustomDateRange={handleCustomDateRange}
                   onExportCSV={exportToCSV}
+                  onClearFilters={handleClearFilters}
                   isSuper={profile?.role === 'supervisor' || profile?.role === 'master'}
                 />
               </CardContent>
@@ -295,6 +309,7 @@ export const Reports = () => {
                 customDateRange={customDateRange}
                 onCustomDateRange={handleCustomDateRange}
                 onExportCSV={exportToCSV}
+                onClearFilters={handleClearFilters}
                 isSuper={false}
               />
             </CardContent>

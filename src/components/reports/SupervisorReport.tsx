@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CalendarIcon, Download } from 'lucide-react';
+import { CalendarIcon, Download, X } from 'lucide-react';
 import { format, subDays, startOfMonth, endOfMonth } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -197,6 +197,16 @@ export const SupervisorReport = () => {
     });
   };
 
+  const handleClearFilters = () => {
+    setDateRange('30days');
+    setCustomDateRange({});
+    setSelectedChurch('all');
+    toast({
+      title: "Filtros limpos",
+      description: "Todos os filtros foram resetados para os valores padrão."
+    });
+  };
+
   const exportToCSV = () => {
     const headers = ['Data', 'Igreja', 'Evento/Culto', 'Entradas', 'Saídas', 'Saldo'];
     
@@ -268,50 +278,59 @@ export const SupervisorReport = () => {
           <CardTitle>Filtros</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col sm:flex-row gap-2">
-            <Select value={selectedChurch} onValueChange={setSelectedChurch}>
-              <SelectTrigger className="w-full sm:w-48">
-                <SelectValue placeholder="Selecionar Igreja" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas as Igrejas</SelectItem>
-                {churches.map((church) => (
-                  <SelectItem key={church.id} value={church.id}>
-                    {church.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Select value={selectedChurch} onValueChange={setSelectedChurch}>
+                <SelectTrigger className="w-full sm:w-48">
+                  <SelectValue placeholder="Selecionar Igreja" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas as Igrejas</SelectItem>
+                  {churches.map((church) => (
+                    <SelectItem key={church.id} value={church.id}>
+                      {church.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-            <Select value={dateRange} onValueChange={setDateRange}>
-              <SelectTrigger className="w-40">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="7days">Últimos 7 dias</SelectItem>
-                <SelectItem value="30days">Últimos 30 dias</SelectItem>
-                <SelectItem value="thisMonth">Este mês</SelectItem>
-                {customDateRange.start && customDateRange.end && (
-                  <SelectItem value="custom">
-                    {format(customDateRange.start, 'dd/MM')} - {format(customDateRange.end, 'dd/MM')}
-                  </SelectItem>
-                )}
-              </SelectContent>
-            </Select>
+              <Select value={dateRange} onValueChange={setDateRange}>
+                <SelectTrigger className="w-40">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="7days">Últimos 7 dias</SelectItem>
+                  <SelectItem value="30days">Últimos 30 dias</SelectItem>
+                  <SelectItem value="thisMonth">Este mês</SelectItem>
+                  {customDateRange.start && customDateRange.end && (
+                    <SelectItem value="custom">
+                      {format(customDateRange.start, 'dd/MM')} - {format(customDateRange.end, 'dd/MM')}
+                    </SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
 
-            <DateRangeModal 
-              onDateRangeSelect={handleCustomDateRange}
-              trigger={
-                <Button variant="outline" size="sm">
-                  <CalendarIcon className="h-4 w-4" />
-                </Button>
-              }
-            />
+              <DateRangeModal 
+                onDateRangeSelect={handleCustomDateRange}
+                trigger={
+                  <Button variant="outline" size="sm">
+                    <CalendarIcon className="h-4 w-4" />
+                  </Button>
+                }
+              />
+              
+              <Button onClick={exportToCSV} variant="outline" size="sm">
+                <Download className="h-4 w-4 mr-2" />
+                Exportar CSV
+              </Button>
+            </div>
             
-            <Button onClick={exportToCSV} variant="outline" size="sm">
-              <Download className="h-4 w-4 mr-2" />
-              Exportar CSV
-            </Button>
+            <div className="flex justify-end">
+              <Button onClick={handleClearFilters} variant="outline" size="sm">
+                <X className="h-4 w-4 mr-2" />
+                Limpar Filtros
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
