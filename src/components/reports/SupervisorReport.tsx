@@ -2,13 +2,10 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CalendarIcon, Download, X } from 'lucide-react';
 import { format, subDays, startOfMonth, endOfMonth } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { DateRangeModal } from '../DateRangeModal';
+import { ReportsFilters } from './ReportsFilters';
 
 interface SupervisorReportData {
   date: string;
@@ -77,6 +74,10 @@ export const SupervisorReport = () => {
     setLoading(true);
     try {
       const { start, end } = getDateRange();
+      const startDate = format(start, 'yyyy-MM-dd');
+      const endDate = format(end, 'yyyy-MM-dd');
+
+      console.log('Date range for supervisor query:', { startDate, endDate });
 
       let transactionsQuery = supabase
         .from('transactions')
@@ -90,19 +91,9 @@ export const SupervisorReport = () => {
             churches!inner(name)
           )
         `)
-        .gte('cash_sessions.date_session', format(start, 'yyyy-MM-dd'))
-        .lte('cash_sessions.date_session', format(end, 'yyyy-MM-dd'));
+        .gte('cash_sessions.date_session', startDate)
+        .lte('cash_sessions.date_session', endDate);
 
-      // Apply church filter if selected
-      if (selectedChurch !== 'all') {
-        transactionsQuery = transactionsQuery.eq('cash_sessions.church_id', selectedChurch);
-      }
-
-      const { data: transactions, error } = await transactionsQuery;
-
-      if (error) throw error;
-
-      // Buscar entradas PIX
       let pixQuery = supabase
         .from('pix_entries')
         .select(`
@@ -114,17 +105,32 @@ export const SupervisorReport = () => {
             churches!inner(name)
           )
         `)
-        .gte('cash_sessions.date_session', format(start, 'yyyy-MM-dd'))
-        .lte('cash_sessions.date_session', format(end, 'yyyy-MM-dd'));
+        .gte('cash_sessions.date_session', startDate)
+        .lte('cash_sessions.date_session', endDate);
 
       // Apply church filter if selected
       if (selectedChurch !== 'all') {
+        transactionsQuery = transactionsQuery.eq('cash_sessions.church_id', selectedChurch);
         pixQuery = pixQuery.eq('cash_sessions.church_id', selectedChurch);
       }
 
-      const { data: pixEntries, error: pixError } = await pixQuery;
+      const [{ data: transactions, error: transError }, { data: pixEntries, error: pixError }] = await Promise.all([
+        transactionsQuery,
+        pixQuery
+      ]);
 
-      if (pixError) throw pixError;
+      if (transError) {
+        console.error('Error fetching transactions:', transError);
+        throw transError;
+      }
+
+      if (pixError) {
+        console.error('Error fetching PIX entries:', pixError);
+        throw pixError;
+      }
+
+      console.log('Raw transactions:', transactions);
+      console.log('Raw PIX entries:', pixEntries);
 
       // Processar e agrupar dados
       const groupedData: Record<string, SupervisorReportData> = {};
@@ -175,6 +181,7 @@ export const SupervisorReport = () => {
         saldo: item.entradas - item.saidas
       })).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
+      console.log('Final processed supervisor data:', processedData);
       setData(processedData);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
@@ -278,60 +285,18 @@ export const SupervisorReport = () => {
           <CardTitle>Filtros</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row gap-2">
-              <Select value={selectedChurch} onValueChange={setSelectedChurch}>
-                <SelectTrigger className="w-full sm:w-48">
-                  <SelectValue placeholder="Selecionar Igreja" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas as Igrejas</SelectItem>
-                  {churches.map((church) => (
-                    <SelectItem key={church.id} value={church.id}>
-                      {church.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <Select value={dateRange} onValueChange={setDateRange}>
-                <SelectTrigger className="w-40">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="7days">Últimos 7 dias</SelectItem>
-                  <SelectItem value="30days">Últimos 30 dias</SelectItem>
-                  <SelectItem value="thisMonth">Este mês</SelectItem>
-                  {customDateRange.start && customDateRange.end && (
-                    <SelectItem value="custom">
-                      {format(customDateRange.start, 'dd/MM')} - {format(customDateRange.end, 'dd/MM')}
-                    </SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
-
-              <DateRangeModal 
-                onDateRangeSelect={handleCustomDateRange}
-                trigger={
-                  <Button variant="outline" size="sm">
-                    <CalendarIcon className="h-4 w-4" />
-                  </Button>
-                }
-              />
-              
-              <Button onClick={exportToCSV} variant="outline" size="sm">
-                <Download className="h-4 w-4 mr-2" />
-                Exportar CSV
-              </Button>
-            </div>
-            
-            <div className="flex justify-end">
-              <Button onClick={handleClearFilters} variant="outline" size="sm">
-                <X className="h-4 w-4 mr-2" />
-                Limpar Filtros
-              </Button>
-            </div>
-          </div>
+          <ReportsFilters
+            churches={churches}
+            selectedChurch={selectedChurch}
+            onChurchChange={setSelectedChurch}
+            dateRange={dateRange}
+            onDateRangeChange={setDateRange}
+            customDateRange={customDateRange}
+            onCustomDateRange={handleCustomDateRange}
+            onExportCSV={exportToCSV}
+            onClearFilters={handleClearFilters}
+            isSuper={true}
+          />
         </CardContent>
       </Card>
 
