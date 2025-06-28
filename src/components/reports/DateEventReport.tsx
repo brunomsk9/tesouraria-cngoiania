@@ -13,8 +13,6 @@ interface DateEventReportData {
   total_entradas: number;
   total_saidas: number;
   saldo: number;
-  churches_count: number;
-  churches_names: string[];
 }
 
 interface Church {
@@ -85,7 +83,6 @@ export const DateEventReport = () => {
         .select(`
           amount,
           type,
-          date_transaction,
           cash_sessions!inner(
             culto_evento,
             date_session,
@@ -99,7 +96,6 @@ export const DateEventReport = () => {
         .from('pix_entries')
         .select(`
           amount,
-          data_pix,
           cash_sessions!inner(
             culto_evento,
             date_session,
@@ -133,14 +129,13 @@ export const DateEventReport = () => {
       console.log('Raw transactions:', transactions);
       console.log('Raw PIX entries:', pixEntries);
 
-      // Processar e agrupar dados por data e evento
+      // Processar e agrupar dados por data e evento (sem considerar igreja)
       const groupedData: Record<string, DateEventReportData> = {};
 
       // Processar transações - usar date_session como data do evento
       transactions?.forEach((transaction) => {
         const eventDate = transaction.cash_sessions?.date_session || '';
         const key = `${eventDate}-${transaction.cash_sessions?.culto_evento}`;
-        const churchName = transaction.cash_sessions?.churches?.name || '';
         
         if (!groupedData[key]) {
           groupedData[key] = {
@@ -148,16 +143,8 @@ export const DateEventReport = () => {
             event_name: transaction.cash_sessions?.culto_evento || '',
             total_entradas: 0,
             total_saidas: 0,
-            saldo: 0,
-            churches_count: 0,
-            churches_names: []
+            saldo: 0
           };
-        }
-
-        // Adicionar igreja se não estiver na lista
-        if (churchName && !groupedData[key].churches_names.includes(churchName)) {
-          groupedData[key].churches_names.push(churchName);
-          groupedData[key].churches_count = groupedData[key].churches_names.length;
         }
 
         if (transaction.type === 'entrada') {
@@ -171,7 +158,6 @@ export const DateEventReport = () => {
       pixEntries?.forEach((pix) => {
         const eventDate = pix.cash_sessions?.date_session || '';
         const key = `${eventDate}-${pix.cash_sessions?.culto_evento}`;
-        const churchName = pix.cash_sessions?.churches?.name || '';
         
         if (!groupedData[key]) {
           groupedData[key] = {
@@ -179,16 +165,8 @@ export const DateEventReport = () => {
             event_name: pix.cash_sessions?.culto_evento || '',
             total_entradas: 0,
             total_saidas: 0,
-            saldo: 0,
-            churches_count: 0,
-            churches_names: []
+            saldo: 0
           };
-        }
-
-        // Adicionar igreja se não estiver na lista
-        if (churchName && !groupedData[key].churches_names.includes(churchName)) {
-          groupedData[key].churches_names.push(churchName);
-          groupedData[key].churches_count = groupedData[key].churches_names.length;
         }
 
         groupedData[key].total_entradas += Number(pix.amount);
@@ -234,7 +212,7 @@ export const DateEventReport = () => {
   };
 
   const exportToCSV = () => {
-    const headers = ['Data', 'Evento/Culto', 'Entradas', 'Saídas', 'Saldo', 'Qtd Igrejas', 'Igrejas'];
+    const headers = ['Data', 'Evento/Culto', 'Entradas', 'Saídas', 'Saldo'];
     
     const csvContent = [
       headers.join(','),
@@ -243,9 +221,7 @@ export const DateEventReport = () => {
         `"${item.event_name}"`,
         item.total_entradas.toString().replace('.', ','),
         item.total_saidas.toString().replace('.', ','),
-        item.saldo.toString().replace('.', ','),
-        item.churches_count.toString(),
-        `"${item.churches_names.join(', ')}"`
+        item.saldo.toString().replace('.', ',')
       ].join(','))
     ].join('\n');
 
@@ -367,8 +343,6 @@ export const DateEventReport = () => {
                   <TableHead className="text-right">Entradas</TableHead>
                   <TableHead className="text-right">Saídas</TableHead>
                   <TableHead className="text-right">Saldo</TableHead>
-                  <TableHead className="text-center">Qtd Igrejas</TableHead>
-                  <TableHead>Igrejas</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -389,17 +363,11 @@ export const DateEventReport = () => {
                     <TableCell className={`text-right font-medium ${item.saldo >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                       {formatCurrency(item.saldo)}
                     </TableCell>
-                    <TableCell className="text-center">
-                      {item.churches_count}
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      {item.churches_names.join(', ')}
-                    </TableCell>
                   </TableRow>
                 ))}
                 {data.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center text-gray-500 py-8">
+                    <TableCell colSpan={5} className="text-center text-gray-500 py-8">
                       Nenhuma transação encontrada para o período selecionado
                     </TableCell>
                   </TableRow>
