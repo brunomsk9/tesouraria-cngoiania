@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -94,32 +95,34 @@ export const DateEventReport = () => {
         endOriginal: end
       });
 
-      // Query para transações
+      // Query para transações - filtrar por date_transaction ao invés de cash_sessions.date_session
       let transactionsQuery = supabase
         .from('transactions')
         .select(`
           amount,
           type,
+          date_transaction,
           cash_sessions!inner(
             culto_evento,
             date_session
           )
         `)
-        .gte('cash_sessions.date_session', startDate)
-        .lte('cash_sessions.date_session', endDate);
+        .gte('date_transaction', startDate)
+        .lte('date_transaction', endDate);
 
-      // Query para PIX
+      // Query para PIX - filtrar por data_pix ao invés de cash_sessions.date_session
       let pixQuery = supabase
         .from('pix_entries')
         .select(`
           amount,
+          data_pix,
           cash_sessions!inner(
             culto_evento,
             date_session
           )
         `)
-        .gte('cash_sessions.date_session', startDate)
-        .lte('cash_sessions.date_session', endDate);
+        .gte('data_pix', startDate)
+        .lte('data_pix', endDate);
 
       // Aplicar filtro de igreja se não for "all"
       if (selectedChurch !== 'all') {
@@ -154,9 +157,9 @@ export const DateEventReport = () => {
       // Processar e agrupar dados por data e evento
       const groupedData: Record<string, DateEventReportData> = {};
 
-      // Processar transações
+      // Processar transações - usar date_transaction como data do evento
       transactions?.forEach((transaction) => {
-        const eventDate = transaction.cash_sessions?.date_session || '';
+        const eventDate = transaction.date_transaction || '';
         const eventName = transaction.cash_sessions?.culto_evento || '';
         const key = `${eventDate}-${eventName}`;
         
@@ -179,9 +182,9 @@ export const DateEventReport = () => {
         }
       });
 
-      // Processar entradas PIX
+      // Processar entradas PIX - usar data_pix como data do evento
       pixEntries?.forEach((pix) => {
-        const eventDate = pix.cash_sessions?.date_session || '';
+        const eventDate = pix.data_pix || '';
         const eventName = pix.cash_sessions?.culto_evento || '';
         const key = `${eventDate}-${eventName}`;
         
