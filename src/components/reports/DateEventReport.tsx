@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -53,51 +52,68 @@ export const DateEventReport = () => {
     setLoading(true);
     try {
       const { start, end } = getDateRange();
+      const startDate = format(start, 'yyyy-MM-dd');
+      const endDate = format(end, 'yyyy-MM-dd');
 
-      // Buscar todas as transações
+      console.log('Loading data for date range:', startDate, 'to', endDate);
+
+      // Buscar todas as transações filtrando pela data da transação
       const { data: transactions, error } = await supabase
         .from('transactions')
         .select(`
           amount,
           type,
+          date_transaction,
           cash_sessions!inner(
             culto_evento,
             date_session,
             churches!inner(name)
           )
         `)
-        .gte('cash_sessions.date_session', format(start, 'yyyy-MM-dd'))
-        .lte('cash_sessions.date_session', format(end, 'yyyy-MM-dd'));
+        .gte('date_transaction', startDate)
+        .lte('date_transaction', endDate);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching transactions:', error);
+        throw error;
+      }
 
-      // Buscar entradas PIX
+      console.log('Transactions found:', transactions?.length || 0);
+
+      // Buscar entradas PIX filtrando pela data do PIX
       const { data: pixEntries, error: pixError } = await supabase
         .from('pix_entries')
         .select(`
           amount,
+          data_pix,
           cash_sessions!inner(
             culto_evento,
             date_session,
             churches!inner(name)
           )
         `)
-        .gte('cash_sessions.date_session', format(start, 'yyyy-MM-dd'))
-        .lte('cash_sessions.date_session', format(end, 'yyyy-MM-dd'));
+        .gte('data_pix', startDate)
+        .lte('data_pix', endDate);
 
-      if (pixError) throw pixError;
+      if (pixError) {
+        console.error('Error fetching PIX entries:', pixError);
+        throw pixError;
+      }
+
+      console.log('PIX entries found:', pixEntries?.length || 0);
 
       // Processar e agrupar dados por data e evento
       const groupedData: Record<string, DateEventReportData> = {};
 
       // Processar transações
       transactions?.forEach((transaction) => {
-        const key = `${transaction.cash_sessions?.date_session}-${transaction.cash_sessions?.culto_evento}`;
+        const transactionDate = transaction.date_transaction;
+        const key = `${transactionDate}-${transaction.cash_sessions?.culto_evento}`;
         const churchName = transaction.cash_sessions?.churches?.name || '';
         
         if (!groupedData[key]) {
           groupedData[key] = {
-            date: transaction.cash_sessions?.date_session || '',
+            date: transactionDate,
             event_name: transaction.cash_sessions?.culto_evento || '',
             total_entradas: 0,
             total_saidas: 0,
@@ -108,7 +124,7 @@ export const DateEventReport = () => {
         }
 
         // Adicionar igreja se não estiver na lista
-        if (!groupedData[key].churches_names.includes(churchName)) {
+        if (churchName && !groupedData[key].churches_names.includes(churchName)) {
           groupedData[key].churches_names.push(churchName);
           groupedData[key].churches_count = groupedData[key].churches_names.length;
         }
@@ -122,12 +138,13 @@ export const DateEventReport = () => {
 
       // Processar entradas PIX
       pixEntries?.forEach((pix) => {
-        const key = `${pix.cash_sessions?.date_session}-${pix.cash_sessions?.culto_evento}`;
+        const pixDate = pix.data_pix;
+        const key = `${pixDate}-${pix.cash_sessions?.culto_evento}`;
         const churchName = pix.cash_sessions?.churches?.name || '';
         
         if (!groupedData[key]) {
           groupedData[key] = {
-            date: pix.cash_sessions?.date_session || '',
+            date: pixDate,
             event_name: pix.cash_sessions?.culto_evento || '',
             total_entradas: 0,
             total_saidas: 0,
@@ -138,7 +155,7 @@ export const DateEventReport = () => {
         }
 
         // Adicionar igreja se não estiver na lista
-        if (!groupedData[key].churches_names.includes(churchName)) {
+        if (churchName && !groupedData[key].churches_names.includes(churchName)) {
           groupedData[key].churches_names.push(churchName);
           groupedData[key].churches_count = groupedData[key].churches_names.length;
         }
@@ -152,6 +169,7 @@ export const DateEventReport = () => {
         saldo: item.total_entradas - item.total_saidas
       })).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
+      console.log('Processed data:', processedData);
       setData(processedData);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
