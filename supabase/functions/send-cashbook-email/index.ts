@@ -12,7 +12,7 @@ interface CashBookEmailRequest {
   to: string;
   subject: string;
   message: string;
-  emailContent: string;
+  htmlContent: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -64,12 +64,12 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    const { to, subject, message, emailContent }: CashBookEmailRequest = requestData;
+    const { to, subject, message, htmlContent }: CashBookEmailRequest = requestData;
     console.log("Email data:", { 
       to: to ? "provided" : "missing", 
       subject: subject ? subject.substring(0, 30) + "..." : "missing",
       hasMessage: !!message,
-      hasContent: !!emailContent
+      hasHtmlContent: !!htmlContent
     });
 
     if (!to || !subject) {
@@ -88,7 +88,7 @@ const handler = async (req: Request): Promise<Response> => {
       from: "noreply@resend.dev",
       to: [to],
       subject: subject,
-      html: `
+      html: htmlContent || `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
           <h2 style="color: #333; border-bottom: 2px solid #007bff; padding-bottom: 10px;">
             ${subject}
@@ -100,10 +100,6 @@ const handler = async (req: Request): Promise<Response> => {
               <p style="margin-bottom: 0; line-height: 1.5;">${message.replace(/\n/g, '<br>')}</p>
             </div>
           ` : ''}
-          
-          <div style="background-color: #fff; border: 1px solid #ddd; border-radius: 5px; padding: 20px;">
-            <pre style="white-space: pre-line; font-family: monospace; line-height: 1.4; margin: 0;">${emailContent}</pre>
-          </div>
           
           <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; color: #666; font-size: 12px; text-align: center;">
             <p>Este e-mail foi enviado automaticamente pelo sistema de Livro Caixa</p>
