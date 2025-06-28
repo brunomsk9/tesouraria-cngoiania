@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 
 interface CashSession {
@@ -23,6 +24,13 @@ interface SelectedVolunteer {
   id: string;
   name: string;
   amount: number;
+}
+
+interface PendingPayment {
+  id: string;
+  name: string;
+  amount: number;
+  type: 'volunteer' | 'security' | 'others';
 }
 
 export const useCashFlowState = () => {
@@ -71,6 +79,71 @@ export const useCashFlowState = () => {
   const totalSaidas = totalVolunteers + saidas.valor_seguranca + saidas.outros_gastos;
   const saldo = totalEntradas - totalSaidas;
 
+  // Nova lógica para calcular pagamentos pendentes
+  const calculatePendingPayments = (): { pendingPayments: PendingPayment[], availableCash: number } => {
+    const availableCash = entradas.dinheiro;
+    let remainingCash = availableCash;
+    const pendingPayments: PendingPayment[] = [];
+
+    // Processar pagamentos de voluntários primeiro
+    selectedVolunteers.forEach(volunteer => {
+      if (remainingCash >= volunteer.amount) {
+        remainingCash -= volunteer.amount;
+      } else {
+        const pendingAmount = volunteer.amount - Math.max(0, remainingCash);
+        if (pendingAmount > 0) {
+          pendingPayments.push({
+            id: volunteer.id,
+            name: volunteer.name,
+            amount: pendingAmount,
+            type: 'volunteer'
+          });
+        }
+        remainingCash = 0;
+      }
+    });
+
+    // Processar segurança
+    if (saidas.valor_seguranca > 0) {
+      if (remainingCash >= saidas.valor_seguranca) {
+        remainingCash -= saidas.valor_seguranca;
+      } else {
+        const pendingAmount = saidas.valor_seguranca - Math.max(0, remainingCash);
+        if (pendingAmount > 0) {
+          pendingPayments.push({
+            id: 'security',
+            name: 'Pagamento Segurança',
+            amount: pendingAmount,
+            type: 'security'
+          });
+        }
+        remainingCash = 0;
+      }
+    }
+
+    // Processar outros gastos
+    if (saidas.outros_gastos > 0) {
+      if (remainingCash >= saidas.outros_gastos) {
+        remainingCash -= saidas.outros_gastos;
+      } else {
+        const pendingAmount = saidas.outros_gastos - Math.max(0, remainingCash);
+        if (pendingAmount > 0) {
+          pendingPayments.push({
+            id: 'others',
+            name: saidas.outros_descricao || 'Outros Gastos',
+            amount: pendingAmount,
+            type: 'others'
+          });
+        }
+        remainingCash = 0;
+      }
+    }
+
+    return { pendingPayments, availableCash: Math.max(0, remainingCash) };
+  };
+
+  const { pendingPayments, availableCash } = calculatePendingPayments();
+
   return {
     currentSession,
     setCurrentSession,
@@ -91,6 +164,8 @@ export const useCashFlowState = () => {
     totalEntradas,
     totalVolunteers,
     totalSaidas,
-    saldo
+    saldo,
+    pendingPayments,
+    availableCash
   };
 };

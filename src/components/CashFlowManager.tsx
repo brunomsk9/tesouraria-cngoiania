@@ -35,7 +35,9 @@ export const CashFlowManager = () => {
     totalEntradas,
     totalVolunteers,
     totalSaidas,
-    saldo
+    saldo,
+    pendingPayments,
+    availableCash
   } = useCashFlowState();
 
   useEffect(() => {
@@ -197,6 +199,8 @@ export const CashFlowManager = () => {
                 totalVolunteers={totalVolunteers}
                 totalSaidas={totalSaidas}
                 saldo={saldo}
+                pendingPayments={pendingPayments}
+                availableCash={availableCash}
               />
             </TabsContent>
           </Tabs>

@@ -1,6 +1,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { TrendingUp } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { TrendingUp, AlertTriangle } from 'lucide-react';
 
 interface PixEntry {
   id: string;
@@ -12,6 +13,13 @@ interface SelectedVolunteer {
   id: string;
   name: string;
   amount: number;
+}
+
+interface PendingPayment {
+  id: string;
+  name: string;
+  amount: number;
+  type: 'volunteer' | 'security' | 'others';
 }
 
 interface ResumoTabProps {
@@ -32,6 +40,8 @@ interface ResumoTabProps {
   totalVolunteers: number;
   totalSaidas: number;
   saldo: number;
+  pendingPayments: PendingPayment[];
+  availableCash: number;
 }
 
 export const ResumoTab = ({
@@ -43,8 +53,23 @@ export const ResumoTab = ({
   totalEntradas,
   totalVolunteers,
   totalSaidas,
-  saldo
+  saldo,
+  pendingPayments,
+  availableCash
 }: ResumoTabProps) => {
+  const getPaymentTypeLabel = (type: string) => {
+    switch (type) {
+      case 'volunteer':
+        return 'Voluntário';
+      case 'security':
+        return 'Segurança';
+      case 'others':
+        return 'Outros Gastos';
+      default:
+        return 'Pagamento';
+    }
+  };
+
   return (
     <Card className="border-0 shadow-lg">
       <CardHeader className="bg-blue-50 border-b">
@@ -117,6 +142,66 @@ export const ResumoTab = ({
             </CardContent>
           </Card>
         </div>
+
+        {/* Seção de Análise de Pagamentos */}
+        <Card className="mt-6 bg-yellow-50 border-yellow-200">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-yellow-800 text-lg">ANÁLISE DE PAGAMENTOS (Apenas Dinheiro)</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span>Dinheiro Disponível:</span>
+                <span className="font-medium">R$ {entradas.dinheiro.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Total de Saídas:</span>
+                <span className="font-medium">R$ {totalSaidas.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between border-t pt-2">
+                <span>Dinheiro Restante:</span>
+                <span className={`font-medium ${availableCash >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  R$ {availableCash.toFixed(2)}
+                </span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Alerta de Pagamentos Pendentes */}
+        {pendingPayments.length > 0 && (
+          <Alert className="mt-6 border-orange-200 bg-orange-50">
+            <AlertTriangle className="h-4 w-4 text-orange-600" />
+            <AlertTitle className="text-orange-800">Pagamentos Pendentes</AlertTitle>
+            <AlertDescription className="text-orange-700">
+              <p className="mb-3">
+                O dinheiro disponível (R$ {entradas.dinheiro.toFixed(2)}) não é suficiente para cobrir todas as saídas. 
+                Os seguintes pagamentos ficaram pendentes:
+              </p>
+              <div className="space-y-2">
+                {pendingPayments.map((payment, index) => (
+                  <div key={payment.id} className="flex justify-between bg-white p-2 rounded border">
+                    <span>
+                      <span className="font-medium">{payment.name}</span>
+                      <span className="text-sm text-gray-600 ml-2">({getPaymentTypeLabel(payment.type)})</span>
+                    </span>
+                    <span className="font-medium text-red-600">R$ {payment.amount.toFixed(2)}</span>
+                  </div>
+                ))}
+                <div className="flex justify-between bg-red-100 p-2 rounded border border-red-200 font-bold">
+                  <span>Total Pendente:</span>
+                  <span className="text-red-600">
+                    R$ {pendingPayments.reduce((sum, p) => sum + p.amount, 0).toFixed(2)}
+                  </span>
+                </div>
+              </div>
+              <p className="mt-3 text-sm">
+                <strong>Nota:</strong> Estes pagamentos pendentes não impedem a validação da sessão, 
+                mas devem ser resolvidos posteriormente.
+              </p>
+            </AlertDescription>
+          </Alert>
+        )}
 
         <Card className={`mt-6 ${saldo >= 0 ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
           <CardContent className="p-6 text-center">

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -39,11 +38,17 @@ export const SessionValidation = ({ session, onSessionValidated }: SessionValida
   const [canValidate, setCanValidate] = useState(false);
   const [summary, setSummary] = useState<TransactionSummary | null>(null);
   const [creatorName, setCreatorName] = useState<string>('');
+  const [pendingPaymentsInfo, setPendingPaymentsInfo] = useState<{
+    hasPendingPayments: boolean;
+    totalPending: number;
+    details: string[];
+  }>({ hasPendingPayments: false, totalPending: 0, details: [] });
 
   useEffect(() => {
     checkValidationPermission();
     loadTransactionSummary();
     loadCreatorName();
+    checkPendingPayments();
   }, [session.id, profile?.id]);
 
   const checkValidationPermission = async () => {
@@ -99,6 +104,40 @@ export const SessionValidation = ({ session, onSessionValidated }: SessionValida
       count_transactions: transactions?.length || 0,
       count_pix: pixEntries?.length || 0
     });
+  };
+
+  const checkPendingPayments = async () => {
+    // Carregar transações para verificar dinheiro vs saídas
+    const { data: transactions, error: transError } = await supabase
+      .from('transactions')
+      .select('type, amount, category, description')
+      .eq('cash_session_id', session.id);
+
+    if (transError) {
+      console.error('Erro ao carregar transações para verificação:', transError);
+      return;
+    }
+
+    const dinheiroEntrada = transactions
+      ?.filter(t => t.type === 'entrada' && t.category === 'dinheiro')
+      .reduce((sum, t) => sum + Number(t.amount), 0) || 0;
+
+    const totalSaidas = transactions
+      ?.filter(t => t.type === 'saida')
+      .reduce((sum, t) => sum + Number(t.amount), 0) || 0;
+
+    if (totalSaidas > dinheiroEntrada) {
+      const deficit = totalSaidas - dinheiroEntrada;
+      const saidasDetails = transactions
+        ?.filter(t => t.type === 'saida')
+        .map(t => `${t.description}: R$ ${Number(t.amount).toFixed(2)}`) || [];
+
+      setPendingPaymentsInfo({
+        hasPendingPayments: true,
+        totalPending: deficit,
+        details: saidasDetails
+      });
+    }
   };
 
   const loadCreatorName = async () => {
@@ -254,6 +293,28 @@ export const SessionValidation = ({ session, onSessionValidated }: SessionValida
           </Card>
         )}
 
+        {/* Alerta de Pagamentos Pendentes */}
+        {pendingPaymentsInfo.hasPendingPayments && (
+          <Alert className="border-orange-200 bg-orange-50">
+            <AlertCircle className="h-4 w-4 text-orange-600" />
+            <AlertTitle className="text-orange-800">Atenção: Pagamentos Pendentes Detectados</AlertTitle>
+            <AlertDescription className="text-orange-700">
+              <p className="mb-3">
+                As saídas excedem o dinheiro disponível em R$ {pendingPaymentsInfo.totalPending.toFixed(2)}. 
+                Alguns pagamentos podem estar pendentes:
+              </p>
+              <div className="bg-white p-3 rounded border max-h-32 overflow-y-auto">
+                {pendingPaymentsInfo.details.map((detail, index) => (
+                  <div key={index} className="text-sm py-1">• {detail}</div>
+                ))}
+              </div>
+              <p className="mt-3 text-sm font-medium">
+                Esta situação não impede a validação da sessão, mas deve ser resolvida posteriormente.
+              </p>
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Ações de Validação */}
         <div className="text-center space-y-4">
           {!canValidate ? (
@@ -278,6 +339,11 @@ export const SessionValidation = ({ session, onSessionValidated }: SessionValida
                 </h3>
                 <p className="text-green-700 text-sm mb-4">
                   Você pode validar esta sessão. Ao validar, você confirma que todos os valores estão corretos.
+                  {pendingPaymentsInfo.hasPendingPayments && (
+                    <span className="block mt-2 font-medium">
+                      Nota: Existem pagamentos pendentes que devem ser resolvidos posteriormente.
+                    </span>
+                  )}
                 </p>
                 <Button
                   onClick={validateSession}
