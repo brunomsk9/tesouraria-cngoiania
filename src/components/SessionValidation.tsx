@@ -28,6 +28,7 @@ export const SessionValidation = ({ session, onSessionValidated }: SessionValida
   const {
     loading,
     canValidate,
+    createdByCurrentUser,
     summary,
     creatorName,
     validatorName,
@@ -133,7 +134,7 @@ export const SessionValidation = ({ session, onSessionValidated }: SessionValida
           <ValidationActions
             canValidate={canValidate}
             loading={loading}
-            createdByCurrentUser={session.created_by === creatorName}
+            createdByCurrentUser={createdByCurrentUser}
             hasPendingPayments={pendingPaymentsInfo.hasPendingPayments}
             onValidate={validateSession}
             onClose={closeSession}
