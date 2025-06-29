@@ -36,7 +36,6 @@ const App = () => {
         );
       case 'caixa':
         return <CashFlowManager />;
-      case 'pending-payments':
       case 'volunteer-payments':
         return <PendingVolunteerPayments />;
       case 'volunteers':

@@ -12,8 +12,7 @@ import {
   X,
   FileText,
   UserCheck,
-  Users,
-  Clock
+  Users
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -28,7 +27,6 @@ export const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
     { id: 'caixa', label: 'Fluxo de Caixa', icon: DollarSign },
-    { id: 'pending-payments', label: 'Pagamentos Pendentes', icon: Clock },
     { id: 'volunteer-payments', label: 'Pagamentos Voluntários', icon: Users },
     { id: 'volunteers', label: 'Voluntários', icon: Users },
     { id: 'relatorios', label: 'Relatórios', icon: BarChart3 },
