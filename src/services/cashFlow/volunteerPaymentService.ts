@@ -123,27 +123,49 @@ export const updateVolunteerPaymentStatus = async (
 
 export const loadVolunteerPayments = async (churchId: string): Promise<VolunteerPayment[]> => {
   try {
-    // Fazer query manual para contornar problema de tipos
-    const { data: payments, error } = await supabase
+    // Primeiro carregar os pagamentos
+    const { data: payments, error: paymentsError } = await supabase
       .from('volunteer_payments' as any)
-      .select(`
-        *,
-        cash_sessions!inner(
-          id,
-          date_session,
-          culto_evento,
-          church_id
-        )
-      `)
-      .eq('cash_sessions.church_id', churchId)
-      .order('created_at', { ascending: false });
+      .select('*');
 
-    if (error) {
-      console.error('Erro ao carregar pagamentos de voluntários:', error);
+    if (paymentsError) {
+      console.error('Erro ao carregar pagamentos de voluntários:', paymentsError);
       return [];
     }
 
-    return (payments || []) as VolunteerPayment[];
+    if (!payments || payments.length === 0) {
+      return [];
+    }
+
+    // Depois carregar as sessões correspondentes
+    const sessionIds = [...new Set(payments.map((p: any) => p.cash_session_id))];
+    
+    const { data: sessions, error: sessionsError } = await supabase
+      .from('cash_sessions')
+      .select('id, date_session, culto_evento, church_id')
+      .in('id', sessionIds)
+      .eq('church_id', churchId);
+
+    if (sessionsError) {
+      console.error('Erro ao carregar sessões:', sessionsError);
+      return [];
+    }
+
+    // Combinar os dados
+    const sessionsMap = new Map(sessions?.map(s => [s.id, s]) || []);
+    
+    const result = payments
+      .filter((payment: any) => {
+        const session = sessionsMap.get(payment.cash_session_id);
+        return session && session.church_id === churchId;
+      })
+      .map((payment: any) => ({
+        ...payment,
+        cash_sessions: sessionsMap.get(payment.cash_session_id)
+      }))
+      .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+    return result as VolunteerPayment[];
   } catch (error) {
     console.error('Erro ao carregar pagamentos de voluntários:', error);
     return [];
