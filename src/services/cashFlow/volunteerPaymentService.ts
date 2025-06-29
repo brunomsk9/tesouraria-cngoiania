@@ -60,9 +60,9 @@ export const saveVolunteerPayments = async (
       status: 'pendente' as const
     }));
 
-    // Usar rpc ou query direta para contornar problema de tipos
+    // Inserir pagamentos na tabela volunteer_payments
     const { data: payments, error: paymentsError } = await supabase
-      .from('volunteer_payments' as any)
+      .from('volunteer_payments')
       .insert(volunteerPayments)
       .select();
 
@@ -73,6 +73,7 @@ export const saveVolunteerPayments = async (
     }
 
     console.log('Pagamentos de voluntários salvos:', payments);
+    toast.success('Pagamentos de voluntários salvos com sucesso!');
     return true;
   } catch (error) {
     console.error('Erro geral ao salvar pagamentos de voluntários:', error);
@@ -102,7 +103,7 @@ export const updateVolunteerPaymentStatus = async (
     }
 
     const { error } = await supabase
-      .from('volunteer_payments' as any)
+      .from('volunteer_payments')
       .update(updateData)
       .eq('id', paymentId);
 
@@ -123,51 +124,31 @@ export const updateVolunteerPaymentStatus = async (
 
 export const loadVolunteerPayments = async (churchId: string): Promise<VolunteerPayment[]> => {
   try {
-    // Primeiro carregar os pagamentos
+    // Carregar pagamentos com informações das sessões
     const { data: payments, error: paymentsError } = await supabase
-      .from('volunteer_payments' as any)
-      .select('*');
+      .from('volunteer_payments')
+      .select(`
+        *,
+        cash_sessions!inner (
+          id,
+          date_session,
+          culto_evento,
+          church_id
+        )
+      `)
+      .eq('cash_sessions.church_id', churchId)
+      .order('created_at', { ascending: false });
 
     if (paymentsError) {
       console.error('Erro ao carregar pagamentos de voluntários:', paymentsError);
+      toast.error('Erro ao carregar pagamentos de voluntários');
       return [];
     }
 
-    if (!payments || payments.length === 0) {
-      return [];
-    }
-
-    // Depois carregar as sessões correspondentes
-    const sessionIds = [...new Set(payments.map((p: any) => p.cash_session_id))];
-    
-    const { data: sessions, error: sessionsError } = await supabase
-      .from('cash_sessions')
-      .select('id, date_session, culto_evento, church_id')
-      .in('id', sessionIds)
-      .eq('church_id', churchId);
-
-    if (sessionsError) {
-      console.error('Erro ao carregar sessões:', sessionsError);
-      return [];
-    }
-
-    // Combinar os dados
-    const sessionsMap = new Map(sessions?.map(s => [s.id, s]) || []);
-    
-    const result = payments
-      .filter((payment: any) => {
-        const session = sessionsMap.get(payment.cash_session_id);
-        return session && session.church_id === churchId;
-      })
-      .map((payment: any) => ({
-        ...payment,
-        cash_sessions: sessionsMap.get(payment.cash_session_id)
-      }))
-      .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-
-    return result as VolunteerPayment[];
+    return payments || [];
   } catch (error) {
     console.error('Erro ao carregar pagamentos de voluntários:', error);
+    toast.error('Erro ao carregar pagamentos de voluntários');
     return [];
   }
 };

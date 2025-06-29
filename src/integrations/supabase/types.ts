@@ -298,6 +298,70 @@ export type Database = {
           },
         ]
       }
+      volunteer_payments: {
+        Row: {
+          amount: number
+          cash_session_id: string
+          created_at: string
+          id: string
+          paid_at: string | null
+          paid_by: string | null
+          status: string
+          transaction_id: string | null
+          updated_at: string
+          volunteer_id: string
+          volunteer_name: string
+        }
+        Insert: {
+          amount: number
+          cash_session_id: string
+          created_at?: string
+          id?: string
+          paid_at?: string | null
+          paid_by?: string | null
+          status?: string
+          transaction_id?: string | null
+          updated_at?: string
+          volunteer_id: string
+          volunteer_name: string
+        }
+        Update: {
+          amount?: number
+          cash_session_id?: string
+          created_at?: string
+          id?: string
+          paid_at?: string | null
+          paid_by?: string | null
+          status?: string
+          transaction_id?: string | null
+          updated_at?: string
+          volunteer_id?: string
+          volunteer_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "volunteer_payments_cash_session_id_fkey"
+            columns: ["cash_session_id"]
+            isOneToOne: false
+            referencedRelation: "cash_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "volunteer_payments_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "volunteer_payments_volunteer_id_fkey"
+            columns: ["volunteer_id"]
+            isOneToOne: false
+            referencedRelation: "volunteers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       volunteers: {
         Row: {
           area_atuacao: string | null

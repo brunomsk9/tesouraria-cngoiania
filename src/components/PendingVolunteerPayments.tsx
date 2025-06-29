@@ -46,7 +46,7 @@ export const PendingVolunteerPayments = () => {
     setLoading(true);
     try {
       const paymentsData = await loadVolunteerPayments(profile.church_id);
-      setPayments(paymentsData as VolunteerPayment[]);
+      setPayments(paymentsData);
     } catch (error) {
       console.error('Erro ao carregar pagamentos:', error);
       toast.error('Erro ao carregar pagamentos');

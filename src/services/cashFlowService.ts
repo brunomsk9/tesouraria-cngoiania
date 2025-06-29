@@ -80,6 +80,7 @@ export const saveSaidas = async (
     const transactionsSuccess = await saveTransactionExits(currentSession, transactions);
     if (!transactionsSuccess) return false;
 
+    toast.success('Saídas salvas com sucesso!');
     return true;
   } catch (error) {
     console.error('Erro geral ao salvar saídas:', error);
