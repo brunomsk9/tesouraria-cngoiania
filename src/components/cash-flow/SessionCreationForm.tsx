@@ -13,9 +13,8 @@ interface SessionCreationFormProps {
   newSessionData: {
     date_session: string;
     culto_evento: string;
-    horario_sessao: string;
   };
-  setNewSessionData: (data: { date_session: string; culto_evento: string; horario_sessao: string }) => void;
+  setNewSessionData: (data: { date_session: string; culto_evento: string }) => void;
   onCreateSession: () => void;
 }
 
@@ -66,14 +65,6 @@ export const SessionCreationForm = ({
     return dateString;
   };
 
-  // Função para obter hora atual
-  const getCurrentTimeString = () => {
-    const now = new Date();
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    return `${hours}:${minutes}`;
-  };
-
   // Inicializar data apenas uma vez
   useEffect(() => {
     if (!newSessionData.date_session) {
@@ -81,8 +72,7 @@ export const SessionCreationForm = ({
       console.log('Inicializando com data de hoje:', todayDate);
       setNewSessionData({
         ...newSessionData,
-        date_session: todayDate,
-        horario_sessao: newSessionData.horario_sessao || getCurrentTimeString()
+        date_session: todayDate
       });
     }
   }, []);
@@ -116,7 +106,7 @@ export const SessionCreationForm = ({
           </CardTitle>
         </CardHeader>
         <CardContent className="p-6 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <Label htmlFor="date" className="text-sm font-medium text-gray-700">Data da Sessão</Label>
               <Input
@@ -130,16 +120,6 @@ export const SessionCreationForm = ({
                 <div>Valor do input: {newSessionData.date_session}</div>
                 <div>Data formatada: {formatDateForDisplay(newSessionData.date_session)}</div>
               </div>
-            </div>
-            <div>
-              <Label htmlFor="horario" className="text-sm font-medium text-gray-700">Horário da Sessão</Label>
-              <Input
-                id="horario"
-                type="time"
-                value={newSessionData.horario_sessao}
-                onChange={(e) => setNewSessionData({...newSessionData, horario_sessao: e.target.value})}
-                className="mt-1"
-              />
             </div>
             <div>
               <Label htmlFor="evento" className="text-sm font-medium text-gray-700">Culto/Evento</Label>
@@ -186,7 +166,7 @@ export const SessionCreationForm = ({
           </div>
           <Button 
             onClick={handleCreateSession} 
-            disabled={!newSessionData.culto_evento || !newSessionData.horario_sessao || !newSessionData.date_session || cultosEventos.length === 0}
+            disabled={!newSessionData.culto_evento || !newSessionData.date_session || cultosEventos.length === 0}
             className="w-full bg-blue-600 hover:bg-blue-700 h-12 text-lg"
           >
             <Plus className="h-5 w-5 mr-2" />

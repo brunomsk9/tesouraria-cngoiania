@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -156,7 +155,6 @@ export const CashFlowManager = () => {
               </CardTitle>
               <p className={`${isSessionValidated ? 'text-green-100' : 'text-blue-100'}`}>
                 Data: {formatSessionDate(currentSession.date_session)} | 
-                {currentSession.horario_sessao && ` Horário: ${currentSession.horario_sessao} |`}
                 Status: {currentSession.status.toUpperCase()}
                 {isSessionValidated && ' - CAMPOS TRAVADOS'}
               </p>

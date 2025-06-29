@@ -4,7 +4,6 @@ interface CashSession {
   id: string;
   date_session: string;
   culto_evento: string;
-  horario_sessao?: string;
   status: string;
   church_id: string;
   created_by: string;
@@ -57,8 +56,7 @@ export const useCashFlowState = () => {
   // Inicializar com string vazia para evitar problemas de timezone
   const [newSessionData, setNewSessionData] = useState({
     date_session: '', // Inicializar vazio para ser definido pelo componente
-    culto_evento: '',
-    horario_sessao: getCurrentTimeString()
+    culto_evento: ''
   });
   
   // Estados para entradas
