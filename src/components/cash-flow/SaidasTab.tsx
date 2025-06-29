@@ -29,7 +29,7 @@ interface SaidasTabProps {
   saidas: {
     valor_seguranca: number;
   };
-  setSaidas: (saidas: any) => void;
+  setSaidas: (saidas: { valor_seguranca: number }) => void;
   otherExpenses: OtherExpense[];
   setOtherExpenses: (expenses: OtherExpense[]) => void;
   totalVolunteers: number;
