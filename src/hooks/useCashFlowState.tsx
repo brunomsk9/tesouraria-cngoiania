@@ -50,14 +50,6 @@ export const useCashFlowState = () => {
     return dateString;
   };
 
-  // Função para obter hora atual
-  const getCurrentTimeString = () => {
-    const now = new Date();
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    return `${hours}:${minutes}`;
-  };
-
   const [currentSession, setCurrentSession] = useState<CashSession | null>(null);
   
   // Inicializar com string vazia para evitar problemas de timezone
@@ -105,34 +97,51 @@ export const useCashFlowState = () => {
   const totalSaidas = totalVolunteers + saidas.valor_seguranca + totalOtherExpenses;
   const saldo = totalEntradas - totalSaidas;
 
-  // Nova lógica para calcular pagamentos pendentes
+  // Lógica corrigida para calcular pagamentos pendentes baseado apenas no dinheiro disponível
   const calculatePendingPayments = (): { pendingPayments: PendingPayment[], availableCash: number } => {
     const availableCash = entradas.dinheiro;
     let remainingCash = availableCash;
     const pendingPayments: PendingPayment[] = [];
 
-    // Processar pagamentos de voluntários primeiro
+    console.log('=== ANÁLISE DE PAGAMENTOS ===');
+    console.log('Dinheiro disponível:', availableCash);
+    console.log('Total de saídas:', totalSaidas);
+
+    // Se o dinheiro disponível cobrir todas as saídas, não há pagamentos pendentes
+    if (availableCash >= totalSaidas) {
+      console.log('Dinheiro suficiente para todas as saídas');
+      return { 
+        pendingPayments: [], 
+        availableCash: availableCash - totalSaidas 
+      };
+    }
+
+    // Se não há dinheiro suficiente, calcular o que fica pendente por prioridade
+    console.log('Dinheiro insuficiente, calculando pendências...');
+
+    // Prioridade 1: Voluntários (ordem de entrada)
     selectedVolunteers.forEach(volunteer => {
       if (remainingCash >= volunteer.amount) {
         remainingCash -= volunteer.amount;
+        console.log(`Voluntário ${volunteer.name}: R$ ${volunteer.amount} - PAGO (restam R$ ${remainingCash})`);
       } else {
         const pendingAmount = volunteer.amount - Math.max(0, remainingCash);
-        if (pendingAmount > 0) {
-          pendingPayments.push({
-            id: volunteer.id,
-            name: volunteer.name,
-            amount: pendingAmount,
-            type: 'volunteer'
-          });
-        }
+        pendingPayments.push({
+          id: volunteer.id,
+          name: volunteer.name,
+          amount: pendingAmount,
+          type: 'volunteer'
+        });
+        console.log(`Voluntário ${volunteer.name}: R$ ${pendingAmount} - PENDENTE`);
         remainingCash = 0;
       }
     });
 
-    // Processar segurança
+    // Prioridade 2: Segurança
     if (saidas.valor_seguranca > 0) {
       if (remainingCash >= saidas.valor_seguranca) {
         remainingCash -= saidas.valor_seguranca;
+        console.log(`Segurança: R$ ${saidas.valor_seguranca} - PAGO (restam R$ ${remainingCash})`);
       } else {
         const pendingAmount = saidas.valor_seguranca - Math.max(0, remainingCash);
         if (pendingAmount > 0) {
@@ -142,15 +151,17 @@ export const useCashFlowState = () => {
             amount: pendingAmount,
             type: 'security'
           });
+          console.log(`Segurança: R$ ${pendingAmount} - PENDENTE`);
         }
         remainingCash = 0;
       }
     }
 
-    // Processar outros gastos
+    // Prioridade 3: Outros gastos
     otherExpenses.forEach((expense, index) => {
       if (remainingCash >= expense.amount) {
         remainingCash -= expense.amount;
+        console.log(`${expense.description}: R$ ${expense.amount} - PAGO (restam R$ ${remainingCash})`);
       } else {
         const pendingAmount = expense.amount - Math.max(0, remainingCash);
         if (pendingAmount > 0) {
@@ -160,12 +171,19 @@ export const useCashFlowState = () => {
             amount: pendingAmount,
             type: 'others'
           });
+          console.log(`${expense.description}: R$ ${pendingAmount} - PENDENTE`);
         }
         remainingCash = 0;
       }
     });
 
-    return { pendingPayments, availableCash: Math.max(0, remainingCash) };
+    console.log('Pagamentos pendentes:', pendingPayments);
+    console.log('Dinheiro restante:', Math.max(0, remainingCash));
+
+    return { 
+      pendingPayments, 
+      availableCash: Math.max(0, remainingCash) 
+    };
   };
 
   const { pendingPayments, availableCash } = calculatePendingPayments();
@@ -196,6 +214,6 @@ export const useCashFlowState = () => {
     saldo,
     pendingPayments,
     availableCash,
-    getTodayDateString // Exportar a função para uso no componente
+    getTodayDateString
   };
 };
