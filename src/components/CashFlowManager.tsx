@@ -56,6 +56,9 @@ export const CashFlowManager = () => {
   const handleCreateNewSession = async () => {
     if (!profile?.church_id || !profile?.id) return;
     
+    console.log('=== CRIANDO NOVA SESSÃO ===');
+    console.log('Dados que serão enviados para o service:', newSessionData);
+    
     const session = await createNewSession(
       profile.church_id,
       profile.id,
@@ -63,6 +66,7 @@ export const CashFlowManager = () => {
     );
     
     if (session) {
+      console.log('Sessão criada com sucesso:', session);
       setCurrentSession(session);
       loadSessionsData();
     }
@@ -92,6 +96,19 @@ export const CashFlowManager = () => {
 
   // Verificar se a sessão atual está validada
   const isSessionValidated = currentSession?.status === 'validado';
+
+  // Função para formatar data para exibição
+  const formatSessionDate = (dateString: string) => {
+    if (!dateString) return 'Data não definida';
+    
+    // Se já estiver no formato YYYY-MM-DD, converter para DD/MM/YYYY
+    if (dateString.includes('-') && dateString.length === 10) {
+      const [year, month, day] = dateString.split('-');
+      return `${day}/${month}/${year}`;
+    }
+    
+    return dateString;
+  };
 
   if (profile?.role === 'supervisor') {
     return (
@@ -138,7 +155,7 @@ export const CashFlowManager = () => {
                 </Button>
               </CardTitle>
               <p className={`${isSessionValidated ? 'text-green-100' : 'text-blue-100'}`}>
-                Data: {new Date(currentSession.date_session).toLocaleDateString('pt-BR')} | 
+                Data: {formatSessionDate(currentSession.date_session)} | 
                 {currentSession.horario_sessao && ` Horário: ${currentSession.horario_sessao} |`}
                 Status: {currentSession.status.toUpperCase()}
                 {isSessionValidated && ' - CAMPOS TRAVADOS'}

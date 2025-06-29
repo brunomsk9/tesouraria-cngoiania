@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -46,26 +47,33 @@ export const createNewSession = async (
   profileId: string,
   sessionData: { date_session: string; culto_evento: string; horario_sessao: string }
 ): Promise<CashSession | null> => {
-  console.log('Tentando criar sessão:', { churchId, profileId, sessionData });
+  console.log('=== CRIANDO SESSÃO NO BANCO ===');
+  console.log('Dados recebidos:', { churchId, profileId, sessionData });
   
   if (!churchId || !sessionData.culto_evento || !sessionData.horario_sessao) {
     toast.error('Preencha todos os campos obrigatórios');
     return null;
   }
 
+  if (!sessionData.date_session) {
+    toast.error('Data da sessão é obrigatória');
+    return null;
+  }
+
   try {
-    // Garantir que a data seja enviada exatamente como fornecida pelo usuário
-    // Não fazer nenhuma conversão de fuso horário
-    const sessionDate = sessionData.date_session; // Manter formato YYYY-MM-DD
+    // CRÍTICO: Manter a data exatamente como recebida, sem nenhuma conversão
+    const sessionDateString = sessionData.date_session;
     
-    console.log('Data que será enviada para o banco:', sessionDate);
+    console.log('Data que será salva no banco (sem conversão):', sessionDateString);
+    console.log('Tipo da data:', typeof sessionDateString);
     
     const { data, error } = await supabase
       .from('cash_sessions')
       .insert({
         church_id: churchId,
-        date_session: sessionDate, // Usar diretamente sem conversão
+        date_session: sessionDateString, // Usar string diretamente
         culto_evento: sessionData.culto_evento,
+        horario_sessao: sessionData.horario_sessao,
         created_by: profileId
       })
       .select()
@@ -77,7 +85,8 @@ export const createNewSession = async (
       return null;
     }
 
-    console.log('Sessão criada com sucesso:', data);
+    console.log('Sessão criada no banco:', data);
+    console.log('Data da sessão retornada do banco:', data.date_session);
     toast.success('Sessão criada com sucesso!');
     return data;
   } catch (error) {
