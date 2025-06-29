@@ -12,6 +12,11 @@ interface AuthPageProps {
 export const AuthPage = ({ onLogin }: AuthPageProps) => {
   const [activeTab, setActiveTab] = useState('signin');
 
+  const handleShowEmailConfirmation = (email: string) => {
+    // Aqui você pode implementar a lógica para mostrar a confirmação de email
+    console.log('Email confirmation needed for:', email);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 flex items-center justify-center p-4">
       <Card className="w-full max-w-md shadow-xl border-0">
@@ -29,11 +34,17 @@ export const AuthPage = ({ onLogin }: AuthPageProps) => {
               </TabsList>
               
               <TabsContent value="signin" className="space-y-4">
-                <SignInForm onSuccess={onLogin} />
+                <SignInForm 
+                  onLogin={onLogin} 
+                  onShowEmailConfirmation={handleShowEmailConfirmation} 
+                />
               </TabsContent>
               
               <TabsContent value="signup" className="space-y-4">
-                <SignUpForm onSuccess={onLogin} />
+                <SignUpForm 
+                  onLogin={onLogin} 
+                  onShowEmailConfirmation={handleShowEmailConfirmation} 
+                />
               </TabsContent>
             </Tabs>
           </div>
