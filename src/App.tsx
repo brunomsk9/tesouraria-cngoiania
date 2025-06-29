@@ -1,5 +1,6 @@
+
 import React, { useState } from 'react';
-import { QueryClient, QueryClientProvider } from 'react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 
 import { AuthPage } from '@/components/AuthPage';
@@ -12,7 +13,7 @@ import { CashFlowManager } from '@/components/CashFlowManager';
 import { PendingPayments } from '@/components/PendingPayments';
 import { VolunteerManagement } from '@/components/VolunteerManagement';
 import { Reports } from '@/components/Reports';
-import { AdminDashboard } from '@/components/AdminDashboard';
+import { AdminDashboard } from '@/components/admin/AdminDashboard';
 import { useAuth } from '@/hooks/useAuth';
 import { PendingVolunteerPayments } from './components/PendingVolunteerPayments';
 
@@ -22,9 +23,13 @@ const App = () => {
   const [currentPage, setCurrentPage] = useState('dashboard');
   const { user, profile, loading } = useAuth();
 
+  const handleLogin = () => {
+    // This will be handled by the auth state change
+  };
+
   const renderContent = () => {
     if (!user) {
-      return <AuthPage />;
+      return <AuthPage onLogin={handleLogin} />;
     }
 
     switch (currentPage) {
@@ -34,7 +39,7 @@ const App = () => {
             <DashboardCards />
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <DashboardChart />
-              <RecentTransactionsList />
+              <RecentTransactionsList transactions={[]} loading={false} />
             </div>
           </div>
         );
@@ -49,7 +54,14 @@ const App = () => {
       case 'reports':
         return <Reports />;
       case 'admin':
-        return <AdminDashboard />;
+        return <AdminDashboard 
+          onSectionChange={() => {}}
+          canManageUsers={profile?.role === 'master'}
+          canManageChurches={profile?.role === 'master'}
+          canManageVolunteers={true}
+          canManageCultosEventos={true}
+          canManageLogos={true}
+        />;
       default:
         return <div>Página não encontrada</div>;
     }
@@ -69,8 +81,8 @@ const App = () => {
         <Toaster />
         {user && (
           <>
-            <TopNavigation />
-            <Sidebar currentPage={currentPage} onPageChange={setCurrentPage} />
+            <TopNavigation activeTab={currentPage} onTabChange={setCurrentPage} />
+            <Sidebar activeTab={currentPage} onTabChange={setCurrentPage} />
             <div className="pl-64 pt-16">
               <main className="p-6">
                 {renderContent()}

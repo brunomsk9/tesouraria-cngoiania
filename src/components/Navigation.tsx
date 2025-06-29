@@ -1,3 +1,4 @@
+
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
@@ -14,7 +15,7 @@ import {
   Clock
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 
 interface NavigationProps {
   currentPage: string;
@@ -101,19 +102,19 @@ export const Navigation = ({ currentPage, onPageChange }: NavigationProps) => {
               .map((item) => {
                 const Icon = item.icon;
                 return (
-                  <Link
+                  <button
                     key={item.id}
-                    to={item.id}
+                    onClick={() => onPageChange(item.id)}
                     className={cn(
                       "inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors",
-                      location.pathname === item.id
+                      currentPage === item.id
                         ? "border-blue-500 text-blue-600"
                         : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                     )}
                   >
                     <Icon className="h-4 w-4 mr-2" />
                     {item.label}
-                  </Link>
+                  </button>
                 );
               })}
           </div>
