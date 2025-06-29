@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,7 +6,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Shield, CheckCircle, AlertCircle, User, Clock, Lock } from 'lucide-react';
+import { Shield, CheckCircle, AlertCircle, User, Clock, Lock, X, StopCircle } from 'lucide-react';
 
 interface CashSession {
   id: string;
@@ -202,6 +201,57 @@ export const SessionValidation = ({ session, onSessionValidated }: SessionValida
     }
   };
 
+  const closeSession = async () => {
+    if (!profile?.id) return;
+
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('cash_sessions')
+        .update({
+          status: 'fechado',
+          validated_by: profile.id,
+          validated_at: new Date().toISOString()
+        })
+        .eq('id', session.id);
+
+      if (error) throw error;
+
+      toast.success('Sessão encerrada com sucesso! Nenhuma alteração pode ser feita.');
+      onSessionValidated();
+    } catch (error: any) {
+      console.error('Erro ao encerrar sessão:', error);
+      toast.error('Erro ao encerrar sessão: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const rejectValidation = async () => {
+    if (!profile?.id) return;
+
+    setLoading(true);
+    try {
+      // Manter o status como 'aberto' para permitir edições
+      const { error } = await supabase
+        .from('cash_sessions')
+        .update({
+          status: 'aberto'
+        })
+        .eq('id', session.id);
+
+      if (error) throw error;
+
+      toast.info('Validação recusada. A sessão voltou para edição.');
+      onSessionValidated();
+    } catch (error: any) {
+      console.error('Erro ao recusar validação:', error);
+      toast.error('Erro ao recusar validação: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'aberto':
@@ -335,6 +385,107 @@ export const SessionValidation = ({ session, onSessionValidated }: SessionValida
     );
   }
 
+  if (session.status === 'fechado') {
+    return (
+      <Card className="border-0 shadow-lg">
+        <CardHeader className="bg-gray-50 border-b">
+          <CardTitle className="flex items-center gap-2 text-gray-800">
+            <StopCircle className="h-5 w-5" />
+            Sessão Encerrada
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          <div className="space-y-6">
+            <Alert className="border-gray-200 bg-gray-50">
+              <StopCircle className="h-4 w-4 text-gray-600" />
+              <AlertTitle className="text-gray-800">Sessão Encerrada</AlertTitle>
+              <AlertDescription className="text-gray-700">
+                Esta sessão foi encerrada sem validação. Nenhuma alteração pode ser feita.
+              </AlertDescription>
+            </Alert>
+
+            {/* Informações da Sessão */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card className="bg-blue-50 border-blue-200">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <User className="h-4 w-4 text-blue-600" />
+                    <span className="text-sm font-medium text-blue-800">Criada por:</span>
+                  </div>
+                  <p className="text-blue-700">{creatorName}</p>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gray-50 border-gray-200">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <StopCircle className="h-4 w-4 text-gray-600" />
+                    <span className="text-sm font-medium text-gray-800">Encerrada por:</span>
+                  </div>
+                  <p className="text-gray-700">{validatorName}</p>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gray-50 border-gray-200">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Clock className="h-4 w-4 text-gray-600" />
+                    <span className="text-sm font-medium text-gray-800">Data do Encerramento:</span>
+                  </div>
+                  <p className="text-gray-700 text-sm">
+                    {session.validated_at ? new Date(session.validated_at).toLocaleString('pt-BR') : 'Data não disponível'}
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Resumo Financeiro */}
+            {summary && (
+              <Card className="bg-purple-50 border-purple-200">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-purple-800 text-lg flex items-center gap-2">
+                    <StopCircle className="h-5 w-5" />
+                    Resumo Financeiro no Encerramento
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                    <div className="text-center">
+                      <div className="text-green-600 font-bold text-xl">
+                        R$ {summary.total_entradas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </div>
+                      <div className="text-gray-600">Total Entradas</div>
+                      {summary.total_pix > 0 && (
+                        <div className="text-xs text-gray-500 mt-1">
+                          (incluindo R$ {summary.total_pix.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} em PIX)
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-center">
+                      <div className="text-red-600 font-bold text-xl">
+                        R$ {summary.total_saidas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </div>
+                      <div className="text-gray-600">Total Saídas</div>
+                    </div>
+                    <div className="text-center">
+                      <div className={`font-bold text-xl ${summary.saldo >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        R$ {summary.saldo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </div>
+                      <div className="text-gray-600">Saldo Final</div>
+                    </div>
+                  </div>
+                  <div className="text-center text-sm text-gray-600 pt-2 border-t">
+                    Total de {summary.count_transactions} transações{summary.count_pix > 0 && ` e ${summary.count_pix} PIX`} registradas
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className="border-0 shadow-lg">
       <CardHeader className="bg-yellow-50 border-b">
@@ -453,34 +604,80 @@ export const SessionValidation = ({ session, onSessionValidated }: SessionValida
                   Pronto para Validação
                 </h3>
                 <p className="text-green-700 text-sm mb-4">
-                  Você pode validar esta sessão. Ao validar, você confirma que todos os valores estão corretos.
+                  Escolha uma das opções abaixo para processar esta sessão:
                   {pendingPaymentsInfo.hasPendingPayments && (
                     <span className="block mt-2 font-medium">
                       Nota: Existem pagamentos pendentes que devem ser resolvidos posteriormente.
                     </span>
                   )}
-                  <span className="block mt-2 font-medium text-yellow-700">
-                    ⚠️ Após a validação, todos os campos serão travados e não poderão ser editados.
-                  </span>
                 </p>
-                <Button
-                  onClick={validateSession}
-                  disabled={loading}
-                  className="bg-green-600 hover:bg-green-700 text-white"
-                  size="lg"
-                >
-                  {loading ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Validando...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      Validar Sessão
-                    </>
-                  )}
-                </Button>
+                
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <Button
+                    onClick={validateSession}
+                    disabled={loading}
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                    size="lg"
+                  >
+                    {loading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Validando...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        Validar Sessão
+                      </>
+                    )}
+                  </Button>
+
+                  <Button
+                    onClick={closeSession}
+                    disabled={loading}
+                    variant="outline"
+                    className="border-gray-400 text-gray-700 hover:bg-gray-100"
+                    size="lg"
+                  >
+                    {loading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-400 mr-2"></div>
+                        Encerrando...
+                      </>
+                    ) : (
+                      <>
+                        <StopCircle className="h-4 w-4 mr-2" />
+                        Encerrar Sessão
+                      </>
+                    )}
+                  </Button>
+
+                  <Button
+                    onClick={rejectValidation}
+                    disabled={loading}
+                    variant="outline"
+                    className="border-red-400 text-red-700 hover:bg-red-50"
+                    size="lg"
+                  >
+                    {loading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-400 mr-2"></div>
+                        Recusando...
+                      </>
+                    ) : (
+                      <>
+                        <X className="h-4 w-4 mr-2" />
+                        Recusar Validação
+                      </>
+                    )}
+                  </Button>
+                </div>
+
+                <div className="mt-4 text-xs text-gray-600 space-y-1">
+                  <p><strong>Validar:</strong> Confirma os dados e trava todos os campos</p>
+                  <p><strong>Encerrar:</strong> Finaliza a sessão sem validação (sem alterações)</p>
+                  <p><strong>Recusar:</strong> Retorna a sessão para edição</p>
+                </div>
               </div>
             </div>
           )}
