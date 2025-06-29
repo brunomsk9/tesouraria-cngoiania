@@ -48,20 +48,21 @@ export const SessionCreationForm = ({
   };
 
   const handleCreateSession = () => {
-    console.log('Tentando criar sessão com dados:', newSessionData);
-    console.log('Data selecionada pelo usuário:', newSessionData.date_session);
+    console.log('=== CRIAÇÃO DE SESSÃO ===');
+    console.log('Data original do input:', newSessionData.date_session);
+    console.log('Data que será enviada:', newSessionData.date_session);
+    console.log('Dados completos:', newSessionData);
     onCreateSession();
   };
 
-  // Função para obter data local no formato correto (YYYY-MM-DD)
+  // Função para obter data local no formato correto (YYYY-MM-DD) sem conversão
   const getTodayDateString = () => {
     const today = new Date();
-    // Usar getFullYear, getMonth, getDate para garantir data local
     const year = today.getFullYear();
     const month = String(today.getMonth() + 1).padStart(2, '0');
     const day = String(today.getDate()).padStart(2, '0');
     const dateString = `${year}-${month}-${day}`;
-    console.log('Data local gerada:', dateString);
+    console.log('Data local hoje gerada:', dateString);
     return dateString;
   };
 
@@ -73,22 +74,24 @@ export const SessionCreationForm = ({
     return `${hours}:${minutes}`;
   };
 
-  // Inicializar com data e hora atuais se não estiverem definidas
+  // Inicializar com data atual se não estiver definida
   useEffect(() => {
     if (!newSessionData.date_session) {
       const todayDate = getTodayDateString();
-      console.log('Inicializando data com:', todayDate);
+      console.log('Inicializando data da sessão com:', todayDate);
       setNewSessionData({
         ...newSessionData,
         date_session: todayDate,
         horario_sessao: newSessionData.horario_sessao || getCurrentTimeString()
       });
     }
-  }, [newSessionData, setNewSessionData]);
+  }, []);
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedDate = e.target.value;
-    console.log('Data selecionada pelo usuário no input:', selectedDate);
+    console.log('=== MUDANÇA DE DATA ===');
+    console.log('Valor selecionado no input:', selectedDate);
+    console.log('Tipo do valor:', typeof selectedDate);
     setNewSessionData({...newSessionData, date_session: selectedDate});
   };
 
@@ -112,8 +115,9 @@ export const SessionCreationForm = ({
                 onChange={handleDateChange}
                 className="mt-1"
               />
-              <div className="text-xs text-gray-500 mt-1">
-                Data selecionada: {newSessionData.date_session}
+              <div className="text-xs text-gray-500 mt-1 space-y-1">
+                <div>Valor do input: {newSessionData.date_session}</div>
+                <div>Data formatada: {newSessionData.date_session ? new Date(newSessionData.date_session + 'T00:00:00').toLocaleDateString('pt-BR') : 'Não definida'}</div>
               </div>
             </div>
             <div>

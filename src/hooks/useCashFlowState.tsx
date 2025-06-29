@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 
 interface CashSession {
@@ -34,13 +33,15 @@ interface PendingPayment {
 }
 
 export const useCashFlowState = () => {
-  // Função para obter data local no formato correto
+  // Função para obter data local no formato correto (YYYY-MM-DD) sem conversão de timezone
   const getTodayDateString = () => {
     const today = new Date();
     const year = today.getFullYear();
     const month = String(today.getMonth() + 1).padStart(2, '0');
     const day = String(today.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+    const dateString = `${year}-${month}-${day}`;
+    console.log('Data local gerada no hook:', dateString);
+    return dateString;
   };
 
   // Função para obter hora atual
@@ -52,8 +53,10 @@ export const useCashFlowState = () => {
   };
 
   const [currentSession, setCurrentSession] = useState<CashSession | null>(null);
+  
+  // Inicializar com string vazia para evitar problemas de timezone
   const [newSessionData, setNewSessionData] = useState({
-    date_session: getTodayDateString(),
+    date_session: '', // Inicializar vazio para ser definido pelo componente
     culto_evento: '',
     horario_sessao: getCurrentTimeString()
   });
@@ -183,6 +186,7 @@ export const useCashFlowState = () => {
     totalSaidas,
     saldo,
     pendingPayments,
-    availableCash
+    availableCash,
+    getTodayDateString // Exportar a função para uso no componente
   };
 };
