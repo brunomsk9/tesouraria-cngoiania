@@ -1,7 +1,9 @@
+
 import { loadSessions, createNewSession } from './cashFlow/sessionService';
 import { saveTransactionEntries, saveTransactionExits } from './cashFlow/transactionService';
 import { savePixEntries } from './cashFlow/pixService';
 import { buildExitTransactions } from './cashFlow/exitTransactionBuilder';
+import { saveVolunteerPayments } from './cashFlow/volunteerPaymentService';
 import { toast } from 'sonner';
 
 interface CashSession {
@@ -68,6 +70,20 @@ export const saveSaidas = async (
   otherExpenses: OtherExpense[],
   profileId: string
 ): Promise<boolean> => {
-  const transactions = buildExitTransactions(currentSession, selectedVolunteers, saidas, otherExpenses, profileId);
-  return await saveTransactionExits(currentSession, transactions);
+  try {
+    // Salvar pagamentos de voluntários na nova tabela
+    const volunteerPaymentsSuccess = await saveVolunteerPayments(currentSession, selectedVolunteers, profileId);
+    if (!volunteerPaymentsSuccess) return false;
+
+    // Salvar transações tradicionais (segurança e outros gastos)
+    const transactions = buildExitTransactions(currentSession, selectedVolunteers, saidas, otherExpenses, profileId);
+    const transactionsSuccess = await saveTransactionExits(currentSession, transactions);
+    if (!transactionsSuccess) return false;
+
+    return true;
+  } catch (error) {
+    console.error('Erro geral ao salvar saídas:', error);
+    toast.error('Erro ao salvar saídas');
+    return false;
+  }
 };
