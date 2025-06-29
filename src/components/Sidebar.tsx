@@ -1,6 +1,5 @@
 
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -12,7 +11,9 @@ import {
   Menu, 
   X,
   FileText,
-  UserCheck
+  UserCheck,
+  Users,
+  Clock
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -23,28 +24,26 @@ interface SidebarProps {
 export const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
   const { profile, signOut } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const location = useLocation();
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
     { id: 'caixa', label: 'Fluxo de Caixa', icon: DollarSign },
+    { id: 'pending-payments', label: 'Pagamentos Pendentes', icon: Clock },
+    { id: 'volunteer-payments', label: 'Pagamentos Voluntários', icon: Users },
+    { id: 'volunteers', label: 'Voluntários', icon: Users },
     { id: 'relatorios', label: 'Relatórios', icon: BarChart3 },
     { id: 'livro-caixa', label: 'Livro Caixa', icon: FileText }
   ];
 
   const adminItems = [
-    { id: 'admin', label: 'Administração', icon: Settings, path: '/admin' }
+    { id: 'admin', label: 'Administração', icon: Settings }
   ];
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
-  const handleMenuClick = (itemId: string, path?: string) => {
-    if (path) {
-      // Para itens com path específico, não chamamos onTabChange
-      return;
-    }
+  const handleMenuClick = (itemId: string) => {
     onTabChange(itemId);
     setIsSidebarOpen(false);
   };
@@ -122,13 +121,12 @@ export const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
                 </p>
                 {adminItems.map((item) => {
                   const Icon = item.icon;
-                  const isActive = location.pathname === item.path;
+                  const isActive = activeTab === item.id;
                   
                   return (
-                    <Link
+                    <button
                       key={item.id}
-                      to={item.path!}
-                      onClick={() => setIsSidebarOpen(false)}
+                      onClick={() => handleMenuClick(item.id)}
                       className={cn(
                         "w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200",
                         isActive 
@@ -138,7 +136,7 @@ export const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
                     >
                       <Icon className="h-5 w-5" />
                       <span className="font-medium">{item.label}</span>
-                    </Link>
+                    </button>
                   );
                 })}
               </div>

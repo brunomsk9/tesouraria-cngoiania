@@ -1,7 +1,6 @@
 
 import React, { useState } from 'react';
 import { Toaster } from 'sonner';
-
 import { AuthPage } from '@/components/AuthPage';
 import { TopNavigation } from '@/components/TopNavigation';
 import { Sidebar } from '@/components/Sidebar';
@@ -15,18 +14,15 @@ import { Reports } from '@/components/Reports';
 import { AdminDashboard } from '@/components/admin/AdminDashboard';
 import { useAuth } from '@/hooks/useAuth';
 import { PendingVolunteerPayments } from './components/PendingVolunteerPayments';
+import { CashBookReport } from '@/components/CashBookReport';
 
 const App = () => {
   const [currentPage, setCurrentPage] = useState('dashboard');
   const { user, profile, loading } = useAuth();
 
-  const handleLogin = () => {
-    // This will be handled by the auth state change
-  };
-
   const renderContent = () => {
     if (!user) {
-      return <AuthPage onLogin={handleLogin} />;
+      return <AuthPage onLogin={() => {}} />;
     }
 
     switch (currentPage) {
@@ -40,7 +36,7 @@ const App = () => {
             </div>
           </div>
         );
-      case 'cashflow':
+      case 'caixa':
         return <CashFlowManager />;
       case 'pending-payments':
         return <PendingPayments />;
@@ -48,8 +44,10 @@ const App = () => {
         return <PendingVolunteerPayments />;
       case 'volunteers':
         return <VolunteerManagement />;
-      case 'reports':
+      case 'relatorios':
         return <Reports />;
+      case 'livro-caixa':
+        return <CashBookReport />;
       case 'admin':
         return <AdminDashboard 
           onSectionChange={() => {}}
@@ -60,7 +58,15 @@ const App = () => {
           canManageLogos={true}
         />;
       default:
-        return <div>Página não encontrada</div>;
+        return (
+          <div className="space-y-6">
+            <DashboardCards />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <DashboardChart />
+              <RecentTransactionsList transactions={[]} loading={false} />
+            </div>
+          </div>
+        );
     }
   };
 
