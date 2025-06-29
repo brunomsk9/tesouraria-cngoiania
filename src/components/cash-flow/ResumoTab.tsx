@@ -15,6 +15,12 @@ interface SelectedVolunteer {
   amount: number;
 }
 
+interface OtherExpense {
+  id: string;
+  amount: number;
+  description: string;
+}
+
 interface PendingPayment {
   id: string;
   name: string;
@@ -32,12 +38,12 @@ interface ResumoTabProps {
   selectedVolunteers: SelectedVolunteer[];
   saidas: {
     valor_seguranca: number;
-    outros_gastos: number;
-    outros_descricao: string;
   };
+  otherExpenses: OtherExpense[];
   totalPix: number;
   totalEntradas: number;
   totalVolunteers: number;
+  totalOtherExpenses: number;
   totalSaidas: number;
   saldo: number;
   pendingPayments: PendingPayment[];
@@ -50,9 +56,11 @@ export const ResumoTab = ({
   pixEntries,
   selectedVolunteers,
   saidas,
+  otherExpenses,
   totalPix,
   totalEntradas,
   totalVolunteers,
+  totalOtherExpenses,
   totalSaidas,
   saldo,
   pendingPayments,
@@ -133,9 +141,15 @@ export const ResumoTab = ({
                   <span className="font-medium">R$ {saidas.valor_seguranca.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Outros:</span>
-                  <span className="font-medium">R$ {saidas.outros_gastos.toFixed(2)}</span>
+                  <span>Outros ({otherExpenses.length} gastos):</span>
+                  <span className="font-medium">R$ {totalOtherExpenses.toFixed(2)}</span>
                 </div>
+                {otherExpenses.map(expense => (
+                  <div key={expense.id} className="flex justify-between text-xs pl-4 text-gray-600">
+                    <span>• {expense.description}:</span>
+                    <span>R$ {expense.amount.toFixed(2)}</span>
+                  </div>
+                ))}
                 <div className="flex justify-between border-t pt-2 text-lg font-bold text-red-700">
                   <span>Total Saídas:</span>
                   <span>R$ {totalSaidas.toFixed(2)}</span>
