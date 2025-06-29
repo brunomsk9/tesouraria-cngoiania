@@ -12,7 +12,8 @@ import {
   BarChart3,
   FileText,
   Users,
-  Settings
+  Settings,
+  CreditCard
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -29,16 +30,16 @@ export const TopNavigation = ({ activeTab, onTabChange }: TopNavigationProps) =>
   const firstName = profile?.name?.split(' ')[0] || '';
 
   const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: Home },
-    { id: 'caixa', label: 'Fluxo de Caixa', icon: DollarSign },
-    { id: 'volunteer-payments', label: 'Pagamentos Voluntários', icon: Users },
+    { id: 'dashboard', label: 'Início', icon: Home },
+    { id: 'caixa', label: 'Caixa', icon: DollarSign },
+    { id: 'volunteer-payments', label: 'Pagtos', icon: CreditCard },
     { id: 'volunteers', label: 'Voluntários', icon: Users },
     { id: 'relatorios', label: 'Relatórios', icon: BarChart3 },
-    { id: 'livro-caixa', label: 'Livro Caixa', icon: FileText }
+    { id: 'livro-caixa', label: 'Livro', icon: FileText }
   ];
 
   const adminItems = [
-    { id: 'admin', label: 'Administração', icon: Settings }
+    { id: 'admin', label: 'Admin', icon: Settings }
   ];
 
   const handleMenuClick = (itemId: string) => {
@@ -59,7 +60,7 @@ export const TopNavigation = ({ activeTab, onTabChange }: TopNavigationProps) =>
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center space-x-8">
+          <div className="hidden lg:flex items-center space-x-2">
             {menuItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
@@ -69,14 +70,14 @@ export const TopNavigation = ({ activeTab, onTabChange }: TopNavigationProps) =>
                   key={item.id}
                   onClick={() => handleMenuClick(item.id)}
                   className={cn(
-                    "flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                    "flex flex-col items-center justify-center px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 min-w-[60px] h-12",
                     isActive 
-                      ? "bg-gray-900 text-white" 
-                      : "text-gray-700 hover:bg-gray-100"
+                      ? "bg-gray-900 text-white shadow-md transform scale-105" 
+                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                   )}
                 >
-                  <Icon className="h-4 w-4" />
-                  <span>{item.label}</span>
+                  <Icon className="h-4 w-4 mb-1" />
+                  <span className="leading-tight">{item.label}</span>
                 </button>
               );
             })}
@@ -91,14 +92,14 @@ export const TopNavigation = ({ activeTab, onTabChange }: TopNavigationProps) =>
                   key={item.id}
                   onClick={() => handleMenuClick(item.id)}
                   className={cn(
-                    "flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                    "flex flex-col items-center justify-center px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 min-w-[60px] h-12",
                     isActive 
-                      ? "bg-purple-100 text-purple-900" 
-                      : "text-gray-700 hover:bg-gray-100"
+                      ? "bg-purple-100 text-purple-900 shadow-md transform scale-105" 
+                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                   )}
                 >
-                  <Icon className="h-4 w-4" />
-                  <span>{item.label}</span>
+                  <Icon className="h-4 w-4 mb-1" />
+                  <span className="leading-tight">{item.label}</span>
                 </button>
               );
             })}
