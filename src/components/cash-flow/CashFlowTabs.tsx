@@ -1,3 +1,4 @@
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SessionValidation } from '@/components/SessionValidation';
 import { EntradasTab } from '@/components/cash-flow/EntradasTab';
