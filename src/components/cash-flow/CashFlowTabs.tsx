@@ -1,0 +1,156 @@
+
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { SessionValidation } from '@/components/SessionValidation';
+import { EntradasTab } from '@/components/cash-flow/EntradasTab';
+import { SaidasTab } from '@/components/cash-flow/SaidasTab';
+import { ResumoTab } from '@/components/cash-flow/ResumoTab';
+import { CheckCircle, ArrowUpCircle, ArrowDownCircle, TrendingUp } from 'lucide-react';
+
+interface CashSession {
+  id: string;
+  date_session: string;
+  culto_evento: string;
+  status: string;
+  church_id: string;
+  created_by: string;
+  validated_by: string | null;
+  validated_at: string | null;
+}
+
+interface PixEntry {
+  id: string;
+  amount: number;
+  description: string;
+  data_pix: string;
+}
+
+interface SelectedVolunteer {
+  id: string;
+  name: string;
+  amount: number;
+}
+
+interface PendingPayment {
+  id: string;
+  name: string;
+  amount: number;
+  type: 'volunteer' | 'security' | 'others';
+}
+
+interface CashFlowTabsProps {
+  currentSession: CashSession;
+  entradas: { dinheiro: number; cartao_debito: number; cartao_credito: number };
+  setEntradas: (entradas: any) => void;
+  pixEntries: PixEntry[];
+  setPixEntries: (entries: PixEntry[]) => void;
+  selectedVolunteers: SelectedVolunteer[];
+  setSelectedVolunteers: (volunteers: SelectedVolunteer[]) => void;
+  saidas: { valor_seguranca: number; outros_gastos: number; outros_descricao: string };
+  setSaidas: (saidas: any) => void;
+  totalPix: number;
+  totalEntradas: number;
+  totalVolunteers: number;
+  totalSaidas: number;
+  saldo: number;
+  pendingPayments: PendingPayment[];
+  availableCash: number;
+  onSaveEntradas: () => void;
+  onSaveSaidas: () => void;
+  onSessionValidated: () => void;
+}
+
+export const CashFlowTabs = ({
+  currentSession,
+  entradas,
+  setEntradas,
+  pixEntries,
+  setPixEntries,
+  selectedVolunteers,
+  setSelectedVolunteers,
+  saidas,
+  setSaidas,
+  totalPix,
+  totalEntradas,
+  totalVolunteers,
+  totalSaidas,
+  saldo,
+  pendingPayments,
+  availableCash,
+  onSaveEntradas,
+  onSaveSaidas,
+  onSessionValidated
+}: CashFlowTabsProps) => {
+  const isSessionValidated = currentSession?.status === 'validado';
+
+  return (
+    <Tabs defaultValue="entradas" className="w-full">
+      <TabsList className="grid w-full grid-cols-4 bg-white shadow-sm">
+        <TabsTrigger value="entradas" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+          <ArrowUpCircle className="h-4 w-4 mr-2" />
+          Entradas
+        </TabsTrigger>
+        <TabsTrigger value="saidas" className="data-[state=active]:bg-red-600 data-[state=active]:text-white">
+          <ArrowDownCircle className="h-4 w-4 mr-2" />
+          Saídas
+        </TabsTrigger>
+        <TabsTrigger value="validacao" className="data-[state=active]:bg-green-600 data-[state=active]:text-white">
+          <CheckCircle className="h-4 w-4 mr-2" />
+          Validação
+        </TabsTrigger>
+        <TabsTrigger value="resumo" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white">
+          <TrendingUp className="h-4 w-4 mr-2" />
+          Resumo
+        </TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="entradas" className="space-y-6">
+        <EntradasTab
+          entradas={entradas}
+          setEntradas={setEntradas}
+          pixEntries={pixEntries}
+          setPixEntries={setPixEntries}
+          totalEntradas={totalEntradas}
+          onSaveEntradas={onSaveEntradas}
+          isSessionValidated={isSessionValidated}
+        />
+      </TabsContent>
+
+      <TabsContent value="saidas" className="space-y-6">
+        <SaidasTab
+          selectedVolunteers={selectedVolunteers}
+          setSelectedVolunteers={setSelectedVolunteers}
+          saidas={saidas}
+          setSaidas={setSaidas}
+          totalVolunteers={totalVolunteers}
+          totalSaidas={totalSaidas}
+          onSaveSaidas={onSaveSaidas}
+          isSessionValidated={isSessionValidated}
+        />
+      </TabsContent>
+
+      <TabsContent value="validacao">
+        <SessionValidation 
+          session={currentSession}
+          onSessionValidated={onSessionValidated}
+        />
+      </TabsContent>
+
+      <TabsContent value="resumo">
+        <ResumoTab
+          entradas={entradas}
+          pixEntries={pixEntries}
+          selectedVolunteers={selectedVolunteers}
+          saidas={saidas}
+          totalPix={totalPix}
+          totalEntradas={totalEntradas}
+          totalVolunteers={totalVolunteers}
+          totalSaidas={totalSaidas}
+          saldo={saldo}
+          pendingPayments={pendingPayments}
+          availableCash={availableCash}
+          isSessionValidated={isSessionValidated}
+        />
+      </TabsContent>
+    </Tabs>
+  );
+};
