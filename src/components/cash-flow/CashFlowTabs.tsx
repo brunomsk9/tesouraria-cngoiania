@@ -52,7 +52,7 @@ interface CashFlowTabsProps {
   selectedVolunteers: SelectedVolunteer[];
   setSelectedVolunteers: (volunteers: SelectedVolunteer[]) => void;
   saidas: { valor_seguranca: number };
-  setSaidas: (saidas: any) => void;
+  setSaidas: (saidas: { valor_seguranca: number }) => void;
   otherExpenses: OtherExpense[];
   setOtherExpenses: (expenses: OtherExpense[]) => void;
   totalPix: number;
