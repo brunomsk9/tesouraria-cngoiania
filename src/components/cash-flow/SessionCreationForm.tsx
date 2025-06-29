@@ -49,19 +49,23 @@ export const SessionCreationForm = ({
 
   const handleCreateSession = () => {
     console.log('Tentando criar sessão com dados:', newSessionData);
+    console.log('Data selecionada pelo usuário:', newSessionData.date_session);
     onCreateSession();
   };
 
-  // Função para formatar a data local corretamente
+  // Função para obter data local no formato correto (YYYY-MM-DD)
   const getTodayDateString = () => {
     const today = new Date();
+    // Usar getFullYear, getMonth, getDate para garantir data local
     const year = today.getFullYear();
     const month = String(today.getMonth() + 1).padStart(2, '0');
     const day = String(today.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+    const dateString = `${year}-${month}-${day}`;
+    console.log('Data local gerada:', dateString);
+    return dateString;
   };
 
-  // Função para formatar a hora atual
+  // Função para obter hora atual
   const getCurrentTimeString = () => {
     const now = new Date();
     const hours = String(now.getHours()).padStart(2, '0');
@@ -72,13 +76,21 @@ export const SessionCreationForm = ({
   // Inicializar com data e hora atuais se não estiverem definidas
   useEffect(() => {
     if (!newSessionData.date_session) {
+      const todayDate = getTodayDateString();
+      console.log('Inicializando data com:', todayDate);
       setNewSessionData({
         ...newSessionData,
-        date_session: getTodayDateString(),
+        date_session: todayDate,
         horario_sessao: newSessionData.horario_sessao || getCurrentTimeString()
       });
     }
   }, [newSessionData, setNewSessionData]);
+
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedDate = e.target.value;
+    console.log('Data selecionada pelo usuário no input:', selectedDate);
+    setNewSessionData({...newSessionData, date_session: selectedDate});
+  };
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -97,9 +109,12 @@ export const SessionCreationForm = ({
                 id="date"
                 type="date"
                 value={newSessionData.date_session}
-                onChange={(e) => setNewSessionData({...newSessionData, date_session: e.target.value})}
+                onChange={handleDateChange}
                 className="mt-1"
               />
+              <div className="text-xs text-gray-500 mt-1">
+                Data selecionada: {newSessionData.date_session}
+              </div>
             </div>
             <div>
               <Label htmlFor="horario" className="text-sm font-medium text-gray-700">Horário da Sessão</Label>

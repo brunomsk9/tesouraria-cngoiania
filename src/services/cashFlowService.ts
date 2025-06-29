@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -55,12 +54,17 @@ export const createNewSession = async (
   }
 
   try {
-    // Verificar se a tabela possui a coluna horario_sessao
+    // Garantir que a data seja enviada exatamente como fornecida pelo usuário
+    // Não fazer nenhuma conversão de fuso horário
+    const sessionDate = sessionData.date_session; // Manter formato YYYY-MM-DD
+    
+    console.log('Data que será enviada para o banco:', sessionDate);
+    
     const { data, error } = await supabase
       .from('cash_sessions')
       .insert({
         church_id: churchId,
-        date_session: sessionData.date_session,
+        date_session: sessionDate, // Usar diretamente sem conversão
         culto_evento: sessionData.culto_evento,
         created_by: profileId
       })
@@ -73,6 +77,7 @@ export const createNewSession = async (
       return null;
     }
 
+    console.log('Sessão criada com sucesso:', data);
     toast.success('Sessão criada com sucesso!');
     return data;
   } catch (error) {
