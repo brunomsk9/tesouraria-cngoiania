@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Toaster } from 'sonner';
 import { AuthPage } from '@/components/AuthPage';
@@ -8,7 +7,6 @@ import { DashboardCards } from '@/components/DashboardCards';
 import { DashboardChart } from '@/components/DashboardChart';
 import { RecentTransactionsList } from '@/components/RecentTransactionsList';
 import { CashFlowManager } from '@/components/CashFlowManager';
-import { PendingPayments } from '@/components/PendingPayments';
 import { VolunteerManagement } from '@/components/VolunteerManagement';
 import { Reports } from '@/components/Reports';
 import { AdminDashboard } from '@/components/admin/AdminDashboard';
@@ -39,7 +37,6 @@ const App = () => {
       case 'caixa':
         return <CashFlowManager />;
       case 'pending-payments':
-        return <PendingPayments />;
       case 'volunteer-payments':
         return <PendingVolunteerPayments />;
       case 'volunteers':
