@@ -34,11 +34,28 @@ interface PendingPayment {
 }
 
 export const useCashFlowState = () => {
+  // Função para obter data local no formato correto
+  const getTodayDateString = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  // Função para obter hora atual
+  const getCurrentTimeString = () => {
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    return `${hours}:${minutes}`;
+  };
+
   const [currentSession, setCurrentSession] = useState<CashSession | null>(null);
   const [newSessionData, setNewSessionData] = useState({
-    date_session: new Date().toISOString().split('T')[0],
+    date_session: getTodayDateString(),
     culto_evento: '',
-    horario_sessao: new Date().toTimeString().slice(0, 5)
+    horario_sessao: getCurrentTimeString()
   });
   
   // Estados para entradas

@@ -52,6 +52,34 @@ export const SessionCreationForm = ({
     onCreateSession();
   };
 
+  // Função para formatar a data local corretamente
+  const getTodayDateString = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  // Função para formatar a hora atual
+  const getCurrentTimeString = () => {
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    return `${hours}:${minutes}`;
+  };
+
+  // Inicializar com data e hora atuais se não estiverem definidas
+  useEffect(() => {
+    if (!newSessionData.date_session) {
+      setNewSessionData({
+        ...newSessionData,
+        date_session: getTodayDateString(),
+        horario_sessao: newSessionData.horario_sessao || getCurrentTimeString()
+      });
+    }
+  }, [newSessionData, setNewSessionData]);
+
   return (
     <div className="max-w-2xl mx-auto">
       <Card className="border-0 shadow-lg bg-white">
