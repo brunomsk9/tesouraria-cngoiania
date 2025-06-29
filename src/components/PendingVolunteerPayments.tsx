@@ -86,7 +86,7 @@ export const PendingVolunteerPayments = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-7xl mx-auto">
       <Card className="border-0 shadow-lg">
         <CardHeader className="bg-gradient-to-r from-orange-600 to-orange-700 text-white">
           <CardTitle className="flex items-center gap-3">
