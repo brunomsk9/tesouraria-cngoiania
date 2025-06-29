@@ -1,6 +1,5 @@
 
 import React, { useState } from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 
 import { AuthPage } from '@/components/AuthPage';
@@ -16,8 +15,6 @@ import { Reports } from '@/components/Reports';
 import { AdminDashboard } from '@/components/admin/AdminDashboard';
 import { useAuth } from '@/hooks/useAuth';
 import { PendingVolunteerPayments } from './components/PendingVolunteerPayments';
-
-const queryClient = new QueryClient();
 
 const App = () => {
   const [currentPage, setCurrentPage] = useState('dashboard');
@@ -76,23 +73,21 @@ const App = () => {
   }
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <div className="min-h-screen bg-gray-50">
-        <Toaster />
-        {user && (
-          <>
-            <TopNavigation activeTab={currentPage} onTabChange={setCurrentPage} />
-            <Sidebar activeTab={currentPage} onTabChange={setCurrentPage} />
-            <div className="pl-64 pt-16">
-              <main className="p-6">
-                {renderContent()}
-              </main>
-            </div>
-          </>
-        )}
-        {!user && renderContent()}
-      </div>
-    </QueryClientProvider>
+    <div className="min-h-screen bg-gray-50">
+      <Toaster />
+      {user && (
+        <>
+          <TopNavigation activeTab={currentPage} onTabChange={setCurrentPage} />
+          <Sidebar activeTab={currentPage} onTabChange={setCurrentPage} />
+          <div className="pl-64 pt-16">
+            <main className="p-6">
+              {renderContent()}
+            </main>
+          </div>
+        </>
+      )}
+      {!user && renderContent()}
+    </div>
   );
 };
 
