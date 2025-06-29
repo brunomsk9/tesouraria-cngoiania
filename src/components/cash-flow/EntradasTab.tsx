@@ -1,4 +1,5 @@
 
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { MoneyInput } from '@/components/MoneyInput';
-import { Plus, Trash2, DollarSign, CreditCard, Smartphone, Lock, AlertCircle } from 'lucide-react';
+import { Plus, Trash2, DollarSign, CreditCard, Smartphone, Lock, AlertCircle, Check } from 'lucide-react';
 
 interface PixEntry {
   id: string;
@@ -38,8 +39,11 @@ export const EntradasTab = ({
   onSaveEntradas,
   isSessionValidated = false
 }: EntradasTabProps) => {
+  const [traditionalEntriesSaved, setTraditionalEntriesSaved] = useState(false);
+  const [pixEntriesSaved, setPixEntriesSaved] = useState(false);
+
   const addPixEntry = () => {
-    if (isSessionValidated) return;
+    if (isSessionValidated || pixEntriesSaved) return;
     
     const newEntry: PixEntry = {
       id: Date.now().toString(),
@@ -51,19 +55,41 @@ export const EntradasTab = ({
   };
 
   const removePixEntry = (id: string) => {
-    if (isSessionValidated) return;
+    if (isSessionValidated || pixEntriesSaved) return;
     setPixEntries(pixEntries.filter(entry => entry.id !== id));
   };
 
   const updatePixEntry = (id: string, field: keyof PixEntry, value: string | number) => {
-    if (isSessionValidated) return;
+    if (isSessionValidated || pixEntriesSaved) return;
     
     setPixEntries(pixEntries.map(entry => 
       entry.id === id ? { ...entry, [field]: value } : entry
     ));
   };
 
+  const handleSaveTraditionalEntries = async () => {
+    if (entradas.dinheiro === 0 && entradas.cartao_debito === 0 && entradas.cartao_credito === 0) {
+      return;
+    }
+    
+    // Simular salvamento apenas das entradas tradicionais
+    await onSaveEntradas();
+    setTraditionalEntriesSaved(true);
+  };
+
+  const handleSavePixEntries = async () => {
+    if (pixEntries.length === 0 || pixEntries.every(entry => entry.amount === 0)) {
+      return;
+    }
+    
+    // Simular salvamento apenas das entradas PIX
+    await onSaveEntradas();
+    setPixEntriesSaved(true);
+  };
+
   const totalPix = pixEntries.reduce((sum, entry) => sum + entry.amount, 0);
+  const hasTraditionalEntries = entradas.dinheiro > 0 || entradas.cartao_debito > 0 || entradas.cartao_credito > 0;
+  const hasPixEntries = pixEntries.length > 0 && pixEntries.some(entry => entry.amount > 0);
 
   return (
     <div className="space-y-6">
@@ -79,15 +105,38 @@ export const EntradasTab = ({
       )}
 
       {/* Entradas Tradicionais */}
-      <Card className={`shadow-lg ${isSessionValidated ? 'bg-gray-50' : ''}`}>
+      <Card className={`shadow-lg ${isSessionValidated || traditionalEntriesSaved ? 'bg-gray-50' : ''}`}>
         <CardHeader className="bg-green-50 border-b">
-          <CardTitle className="flex items-center gap-2 text-green-800">
-            <DollarSign className="h-5 w-5" />
-            Entradas Tradicionais
-            {isSessionValidated && <Lock className="h-4 w-4 text-gray-500" />}
+          <CardTitle className="flex items-center justify-between text-green-800">
+            <div className="flex items-center gap-2">
+              <DollarSign className="h-5 w-5" />
+              Entradas Tradicionais
+              {(isSessionValidated || traditionalEntriesSaved) && <Lock className="h-4 w-4 text-gray-500" />}
+              {traditionalEntriesSaved && <Check className="h-4 w-4 text-green-600" />}
+            </div>
+            {!isSessionValidated && !traditionalEntriesSaved && hasTraditionalEntries && (
+              <Button 
+                onClick={handleSaveTraditionalEntries}
+                size="sm" 
+                className="bg-green-600 hover:bg-green-700"
+              >
+                <DollarSign className="h-4 w-4 mr-1" />
+                Salvar Tradicionais
+              </Button>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent className="p-6 space-y-4">
+          {traditionalEntriesSaved && (
+            <Alert className="border-green-200 bg-green-50">
+              <Check className="h-4 w-4 text-green-600" />
+              <AlertTitle className="text-green-800">Entradas Tradicionais Salvas</AlertTitle>
+              <AlertDescription className="text-green-700">
+                As entradas tradicionais foram salvas com sucesso e não podem mais ser editadas.
+              </AlertDescription>
+            </Alert>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="dinheiro" className="text-sm font-medium text-gray-700">
@@ -96,10 +145,10 @@ export const EntradasTab = ({
               <MoneyInput
                 id="dinheiro"
                 value={entradas.dinheiro}
-                onChange={(value) => !isSessionValidated && setEntradas({...entradas, dinheiro: value})}
+                onChange={(value) => !(isSessionValidated || traditionalEntriesSaved) && setEntradas({...entradas, dinheiro: value})}
                 placeholder="R$ 0,00"
-                disabled={isSessionValidated}
-                className={isSessionValidated ? 'bg-gray-100 cursor-not-allowed' : ''}
+                disabled={isSessionValidated || traditionalEntriesSaved}
+                className={(isSessionValidated || traditionalEntriesSaved) ? 'bg-gray-100 cursor-not-allowed' : ''}
               />
             </div>
             
@@ -111,10 +160,10 @@ export const EntradasTab = ({
               <MoneyInput
                 id="cartao_debito"
                 value={entradas.cartao_debito}
-                onChange={(value) => !isSessionValidated && setEntradas({...entradas, cartao_debito: value})}
+                onChange={(value) => !(isSessionValidated || traditionalEntriesSaved) && setEntradas({...entradas, cartao_debito: value})}
                 placeholder="R$ 0,00"
-                disabled={isSessionValidated}
-                className={isSessionValidated ? 'bg-gray-100 cursor-not-allowed' : ''}
+                disabled={isSessionValidated || traditionalEntriesSaved}
+                className={(isSessionValidated || traditionalEntriesSaved) ? 'bg-gray-100 cursor-not-allowed' : ''}
               />
             </div>
             
@@ -126,10 +175,10 @@ export const EntradasTab = ({
               <MoneyInput
                 id="cartao_credito"
                 value={entradas.cartao_credito}
-                onChange={(value) => !isSessionValidated && setEntradas({...entradas, cartao_credito: value})}
+                onChange={(value) => !(isSessionValidated || traditionalEntriesSaved) && setEntradas({...entradas, cartao_credito: value})}
                 placeholder="R$ 0,00"
-                disabled={isSessionValidated}
-                className={isSessionValidated ? 'bg-gray-100 cursor-not-allowed' : ''}
+                disabled={isSessionValidated || traditionalEntriesSaved}
+                className={(isSessionValidated || traditionalEntriesSaved) ? 'bg-gray-100 cursor-not-allowed' : ''}
               />
             </div>
           </div>
@@ -137,39 +186,62 @@ export const EntradasTab = ({
       </Card>
 
       {/* Entradas PIX */}
-      <Card className={`shadow-lg ${isSessionValidated ? 'bg-gray-50' : ''}`}>
+      <Card className={`shadow-lg ${isSessionValidated || pixEntriesSaved ? 'bg-gray-50' : ''}`}>
         <CardHeader className="bg-blue-50 border-b">
           <CardTitle className="flex items-center justify-between text-blue-800">
             <div className="flex items-center gap-2">
               <Smartphone className="h-5 w-5" />
               Entradas PIX
-              {isSessionValidated && <Lock className="h-4 w-4 text-gray-500" />}
+              {(isSessionValidated || pixEntriesSaved) && <Lock className="h-4 w-4 text-gray-500" />}
+              {pixEntriesSaved && <Check className="h-4 w-4 text-green-600" />}
             </div>
-            {!isSessionValidated && (
-              <Button onClick={addPixEntry} size="sm" className="bg-blue-600 hover:bg-blue-700">
-                <Plus className="h-4 w-4 mr-1" />
-                Adicionar PIX
-              </Button>
-            )}
+            <div className="flex gap-2">
+              {!isSessionValidated && !pixEntriesSaved && (
+                <Button onClick={addPixEntry} size="sm" className="bg-blue-600 hover:bg-blue-700">
+                  <Plus className="h-4 w-4 mr-1" />
+                  Adicionar PIX
+                </Button>
+              )}
+              {!isSessionValidated && !pixEntriesSaved && hasPixEntries && (
+                <Button 
+                  onClick={handleSavePixEntries}
+                  size="sm" 
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  <Smartphone className="h-4 w-4 mr-1" />
+                  Salvar PIX
+                </Button>
+              )}
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent className="p-6">
+          {pixEntriesSaved && (
+            <Alert className="border-green-200 bg-green-50 mb-4">
+              <Check className="h-4 w-4 text-green-600" />
+              <AlertTitle className="text-green-800">Entradas PIX Salvas</AlertTitle>
+              <AlertDescription className="text-green-700">
+                As entradas PIX foram salvas com sucesso e não podem mais ser editadas.
+              </AlertDescription>
+            </Alert>
+          )}
+
           {pixEntries.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
-              {isSessionValidated ? 'Nenhuma entrada PIX registrada' : 'Nenhuma entrada PIX adicionada ainda'}
+              {isSessionValidated || pixEntriesSaved ? 'Nenhuma entrada PIX registrada' : 'Nenhuma entrada PIX adicionada ainda'}
             </div>
           ) : (
             <div className="space-y-4">
               {pixEntries.map((entry) => (
-                <div key={entry.id} className={`grid grid-cols-1 md:grid-cols-4 gap-4 p-4 border rounded-lg ${isSessionValidated ? 'bg-gray-100' : 'bg-gray-50'}`}>
+                <div key={entry.id} className={`grid grid-cols-1 md:grid-cols-4 gap-4 p-4 border rounded-lg ${(isSessionValidated || pixEntriesSaved) ? 'bg-gray-100' : 'bg-gray-50'}`}>
                   <div className="space-y-2">
                     <Label className="text-sm font-medium text-gray-700">Valor</Label>
                     <MoneyInput
                       value={entry.amount}
                       onChange={(value) => updatePixEntry(entry.id, 'amount', value)}
                       placeholder="R$ 0,00"
-                      disabled={isSessionValidated}
-                      className={isSessionValidated ? 'bg-gray-200 cursor-not-allowed' : ''}
+                      disabled={isSessionValidated || pixEntriesSaved}
+                      className={(isSessionValidated || pixEntriesSaved) ? 'bg-gray-200 cursor-not-allowed' : ''}
                     />
                   </div>
                   
@@ -179,8 +251,8 @@ export const EntradasTab = ({
                       value={entry.description}
                       onChange={(e) => updatePixEntry(entry.id, 'description', e.target.value)}
                       placeholder="Descrição do PIX"
-                      disabled={isSessionValidated}
-                      className={isSessionValidated ? 'bg-gray-200 cursor-not-allowed' : ''}
+                      disabled={isSessionValidated || pixEntriesSaved}
+                      className={(isSessionValidated || pixEntriesSaved) ? 'bg-gray-200 cursor-not-allowed' : ''}
                     />
                   </div>
                   
@@ -190,13 +262,13 @@ export const EntradasTab = ({
                       type="date"
                       value={entry.data_pix}
                       onChange={(e) => updatePixEntry(entry.id, 'data_pix', e.target.value)}
-                      disabled={isSessionValidated}
-                      className={isSessionValidated ? 'bg-gray-200 cursor-not-allowed' : ''}
+                      disabled={isSessionValidated || pixEntriesSaved}
+                      className={(isSessionValidated || pixEntriesSaved) ? 'bg-gray-200 cursor-not-allowed' : ''}
                     />
                   </div>
                   
                   <div className="flex items-end">
-                    {!isSessionValidated && (
+                    {!(isSessionValidated || pixEntriesSaved) && (
                       <Button
                         onClick={() => removePixEntry(entry.id)}
                         variant="outline"
@@ -246,20 +318,6 @@ export const EntradasTab = ({
           </div>
         </CardContent>
       </Card>
-
-      {/* Botão Salvar */}
-      {!isSessionValidated && (
-        <div className="flex justify-end">
-          <Button 
-            onClick={onSaveEntradas} 
-            size="lg" 
-            className="bg-green-600 hover:bg-green-700"
-          >
-            <DollarSign className="h-4 w-4 mr-2" />
-            Salvar Entradas
-          </Button>
-        </div>
-      )}
     </div>
   );
 };

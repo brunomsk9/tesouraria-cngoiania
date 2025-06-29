@@ -39,22 +39,10 @@ interface PendingPayment {
 }
 
 export const useCashFlowState = () => {
-  // Função para obter data local no formato correto (YYYY-MM-DD) sem conversão de timezone
-  const getTodayDateString = () => {
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-    const day = String(today.getDate()).padStart(2, '0');
-    const dateString = `${year}-${month}-${day}`;
-    console.log('Data local gerada no hook:', dateString);
-    return dateString;
-  };
-
   const [currentSession, setCurrentSession] = useState<CashSession | null>(null);
   
-  // Inicializar com string vazia para evitar problemas de timezone
   const [newSessionData, setNewSessionData] = useState({
-    date_session: '', // Inicializar vazio para ser definido pelo componente
+    date_session: '',
     culto_evento: ''
   });
   
@@ -79,6 +67,12 @@ export const useCashFlowState = () => {
 
   const [sessions, setSessions] = useState<CashSession[]>([]);
 
+  // Estados de salvamento
+  const [entriesSaved, setEntriesSaved] = useState({
+    traditional: false,
+    pix: false
+  });
+
   const resetFormData = () => {
     setEntradas({ dinheiro: 0, cartao_debito: 0, cartao_credito: 0 });
     setPixEntries([]);
@@ -87,6 +81,10 @@ export const useCashFlowState = () => {
       valor_seguranca: 0
     });
     setOtherExpenses([]);
+    setEntriesSaved({
+      traditional: false,
+      pix: false
+    });
   };
 
   // Cálculos
@@ -214,6 +212,7 @@ export const useCashFlowState = () => {
     saldo,
     pendingPayments,
     availableCash,
-    getTodayDateString
+    entriesSaved,
+    setEntriesSaved
   };
 };

@@ -5,11 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Plus, Users, X, UserPlus, Search } from 'lucide-react';
+import { Plus, Users, X, UserPlus, Search, CheckSquare } from 'lucide-react';
 import { MoneyInput } from '@/components/MoneyInput';
 
 interface Volunteer {
@@ -35,8 +35,9 @@ export const VolunteerSelector = ({ selectedVolunteers, onVolunteersChange }: Vo
   const [volunteers, setVolunteers] = useState<Volunteer[]>([]);
   const [filteredVolunteers, setFilteredVolunteers] = useState<Volunteer[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedVolunteerId, setSelectedVolunteerId] = useState<string>('');
+  const [selectedForAddition, setSelectedForAddition] = useState<string[]>([]);
   const [isCreating, setIsCreating] = useState(false);
+  const [defaultAmount, setDefaultAmount] = useState(30);
   const [newVolunteer, setNewVolunteer] = useState({
     name: '',
     phone: '',
@@ -123,40 +124,37 @@ export const VolunteerSelector = ({ selectedVolunteers, onVolunteersChange }: Vo
     }
   };
 
-  const addVolunteerFromSelect = () => {
-    if (!selectedVolunteerId) return;
-    
-    const volunteer = volunteers.find(v => v.id === selectedVolunteerId);
-    if (!volunteer) return;
-
-    if (selectedVolunteers.find(v => v.id === volunteer.id)) {
-      toast.error('Voluntário já foi adicionado');
-      return;
-    }
-
-    const newSelected = [...selectedVolunteers, {
-      id: volunteer.id,
-      name: volunteer.name,
-      amount: 30 // valor padrão
-    }];
-    onVolunteersChange(newSelected);
-    setSelectedVolunteerId('');
-    toast.success(`${volunteer.name} adicionado à lista de pagamentos`);
+  const toggleVolunteerSelection = (volunteerId: string) => {
+    setSelectedForAddition(prev => 
+      prev.includes(volunteerId)
+        ? prev.filter(id => id !== volunteerId)
+        : [...prev, volunteerId]
+    );
   };
 
-  const addVolunteer = (volunteer: Volunteer) => {
-    if (selectedVolunteers.find(v => v.id === volunteer.id)) {
-      toast.error('Voluntário já foi adicionado');
+  const addSelectedVolunteers = () => {
+    const volunteersToAdd = volunteers.filter(v => 
+      selectedForAddition.includes(v.id) && 
+      !selectedVolunteers.find(sv => sv.id === v.id)
+    );
+
+    if (volunteersToAdd.length === 0) {
+      toast.error('Selecione pelo menos um voluntário');
       return;
     }
 
-    const newSelected = [...selectedVolunteers, {
-      id: volunteer.id,
-      name: volunteer.name,
-      amount: 30 // valor padrão
-    }];
+    const newSelected = [
+      ...selectedVolunteers,
+      ...volunteersToAdd.map(volunteer => ({
+        id: volunteer.id,
+        name: volunteer.name,
+        amount: defaultAmount
+      }))
+    ];
+
     onVolunteersChange(newSelected);
-    toast.success(`${volunteer.name} adicionado à lista de pagamentos`);
+    setSelectedForAddition([]);
+    toast.success(`${volunteersToAdd.length} voluntário(s) adicionado(s) à lista de pagamentos`);
   };
 
   const removeVolunteer = (volunteerId: string) => {
@@ -196,43 +194,23 @@ export const VolunteerSelector = ({ selectedVolunteers, onVolunteersChange }: Vo
             </div>
           </CardHeader>
           <CardContent className="p-6 space-y-6">
-            {/* Seleção por dropdown */}
+            {/* Configuração do valor padrão */}
             <div className="space-y-3">
-              <Label className="text-sm font-medium">Selecionar Voluntário</Label>
-              <div className="flex gap-3">
-                <Select value={selectedVolunteerId} onValueChange={setSelectedVolunteerId}>
-                  <SelectTrigger className="flex-1">
-                    <SelectValue placeholder="Escolha um voluntário..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableVolunteers.map((volunteer) => (
-                      <SelectItem key={volunteer.id} value={volunteer.id}>
-                        <div className="flex items-center justify-between w-full">
-                          <span>{volunteer.name}</span>
-                          {volunteer.area_atuacao && (
-                            <Badge variant="outline" className="ml-2 text-xs">
-                              {volunteer.area_atuacao}
-                            </Badge>
-                          )}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button 
-                  onClick={addVolunteerFromSelect}
-                  disabled={!selectedVolunteerId}
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Adicionar
-                </Button>
+              <Label className="text-sm font-medium">Valor Padrão para Novos Voluntários</Label>
+              <div className="flex gap-3 items-center">
+                <MoneyInput
+                  value={defaultAmount}
+                  onChange={setDefaultAmount}
+                  className="w-40"
+                  placeholder="R$ 0,00"
+                />
+                <span className="text-sm text-gray-600">Este valor será aplicado automaticamente aos voluntários selecionados</span>
               </div>
             </div>
 
-            {/* Busca por nome */}
+            {/* Busca e seleção múltipla */}
             <div className="space-y-3">
-              <Label className="text-sm font-medium">Ou buscar por nome</Label>
+              <Label className="text-sm font-medium">Buscar e Selecionar Voluntários</Label>
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                 <Input
@@ -243,28 +221,39 @@ export const VolunteerSelector = ({ selectedVolunteers, onVolunteersChange }: Vo
                 />
               </div>
               
-              {searchTerm && (
-                <div className="max-h-40 overflow-y-auto space-y-2">
-                  {filteredVolunteers
-                    .filter(v => !selectedVolunteers.some(sv => sv.id === v.id))
-                    .map((volunteer) => (
-                    <div key={volunteer.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
-                      <div>
-                        <div className="font-medium">{volunteer.name}</div>
-                        {volunteer.area_atuacao && (
-                          <div className="text-sm text-gray-500">{volunteer.area_atuacao}</div>
-                        )}
+              {availableVolunteers.length > 0 && (
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">
+                      {selectedForAddition.length} de {availableVolunteers.length} voluntários selecionados
+                    </span>
+                    <Button
+                      onClick={addSelectedVolunteers}
+                      disabled={selectedForAddition.length === 0}
+                      className="bg-blue-600 hover:bg-blue-700"
+                      size="sm"
+                    >
+                      <CheckSquare className="h-4 w-4 mr-2" />
+                      Adicionar Selecionados ({selectedForAddition.length})
+                    </Button>
+                  </div>
+                  
+                  <div className="max-h-60 overflow-y-auto space-y-2 border rounded-lg p-3">
+                    {filteredVolunteers.map((volunteer) => (
+                      <div key={volunteer.id} className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded">
+                        <Checkbox
+                          checked={selectedForAddition.includes(volunteer.id)}
+                          onCheckedChange={() => toggleVolunteerSelection(volunteer.id)}
+                        />
+                        <div className="flex-1">
+                          <div className="font-medium">{volunteer.name}</div>
+                          {volunteer.area_atuacao && (
+                            <div className="text-sm text-gray-500">{volunteer.area_atuacao}</div>
+                          )}
+                        </div>
                       </div>
-                      <Button
-                        size="sm"
-                        onClick={() => addVolunteer(volunteer)}
-                        className="bg-blue-600 hover:bg-blue-700"
-                      >
-                        <Plus className="h-4 w-4 mr-1" />
-                        Adicionar
-                      </Button>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
