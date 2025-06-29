@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 
 interface CashSession {
@@ -66,14 +67,14 @@ export const useCashFlowState = () => {
 
   const [sessions, setSessions] = useState<CashSession[]>([]);
 
-  // Estados de salvamento
-  const [entriesSaved, setEntriesSaved] = useState({
-    traditional: false,
-    pix: false
-  });
+  // Estados de salvamento - removidos porque não são persistidos
+  // const [entriesSaved, setEntriesSaved] = useState({
+  //   traditional: false,
+  //   pix: false
+  // });
 
-  // Novo estado para controlar se as saídas foram salvas
-  const [exitsSaved, setExitsSaved] = useState(false);
+  // Estado para controlar se as saídas foram salvas - removido porque não é persistido
+  // const [exitsSaved, setExitsSaved] = useState(false);
 
   const resetFormData = () => {
     setEntradas({ dinheiro: 0, cartao_debito: 0, cartao_credito: 0 });
@@ -83,11 +84,6 @@ export const useCashFlowState = () => {
       valor_seguranca: 0
     });
     setOtherExpenses([]);
-    setEntriesSaved({
-      traditional: false,
-      pix: false
-    });
-    setExitsSaved(false);
   };
 
   // Cálculos
@@ -214,10 +210,6 @@ export const useCashFlowState = () => {
     totalSaidas,
     saldo,
     pendingPayments,
-    availableCash,
-    entriesSaved,
-    setEntriesSaved,
-    exitsSaved,
-    setExitsSaved
+    availableCash
   };
 };

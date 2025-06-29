@@ -1,6 +1,8 @@
+
 import { useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useCashFlowState } from '@/hooks/useCashFlowState';
+import { useSessionDataStatus } from '@/hooks/useSessionDataStatus';
 import { loadSessions, createNewSession, saveEntradas, saveSaidas } from '@/services/cashFlowService';
 import { SessionCreationForm } from '@/components/cash-flow/SessionCreationForm';
 import { SessionsList } from '@/components/cash-flow/SessionsList';
@@ -35,10 +37,11 @@ export const CashFlowManager = () => {
     totalSaidas,
     saldo,
     pendingPayments,
-    availableCash,
-    exitsSaved,
-    setExitsSaved
+    availableCash
   } = useCashFlowState();
+
+  // Usar o novo hook para verificar status dos dados salvos
+  const { entriesSaved, pixSaved, exitsSaved, loading: statusLoading } = useSessionDataStatus(currentSession?.id || null);
 
   useEffect(() => {
     if (profile?.church_id) {
@@ -79,9 +82,7 @@ export const CashFlowManager = () => {
   const handleSaveSaidas = async () => {
     if (!currentSession || !profile?.id) return;
     const success = await saveSaidas(currentSession, selectedVolunteers, saidas, otherExpenses, profile.id);
-    if (success) {
-      setExitsSaved(true);
-    }
+    return success;
   };
 
   const handleSessionValidated = () => {
@@ -138,6 +139,8 @@ export const CashFlowManager = () => {
             onSaveEntradas={handleSaveEntradas}
             onSaveSaidas={handleSaveSaidas}
             onSessionValidated={handleSessionValidated}
+            entriesSaved={entriesSaved}
+            pixSaved={pixSaved}
             exitsSaved={exitsSaved}
           />
         </div>

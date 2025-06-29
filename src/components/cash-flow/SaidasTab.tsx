@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -33,7 +32,7 @@ interface SaidasTabProps {
   totalVolunteers: number;
   totalOtherExpenses: number;
   totalSaidas: number;
-  onSaveSaidas: () => Promise<void>;
+  onSaveSaidas: () => Promise<boolean>;
   isSessionValidated?: boolean;
   exitsSaved?: boolean;
 }

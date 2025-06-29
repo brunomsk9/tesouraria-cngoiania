@@ -64,8 +64,10 @@ interface CashFlowTabsProps {
   pendingPayments: PendingPayment[];
   availableCash: number;
   onSaveEntradas: () => void;
-  onSaveSaidas: () => Promise<void>;
+  onSaveSaidas: () => Promise<boolean>;
   onSessionValidated: () => void;
+  entriesSaved: boolean;
+  pixSaved: boolean;
   exitsSaved: boolean;
 }
 
@@ -92,6 +94,8 @@ export const CashFlowTabs = ({
   onSaveEntradas,
   onSaveSaidas,
   onSessionValidated,
+  entriesSaved,
+  pixSaved,
   exitsSaved
 }: CashFlowTabsProps) => {
   const isSessionValidated = currentSession?.status === 'validado';
@@ -126,6 +130,8 @@ export const CashFlowTabs = ({
           totalEntradas={totalEntradas}
           onSaveEntradas={onSaveEntradas}
           isSessionValidated={isSessionValidated}
+          entriesSaved={entriesSaved}
+          pixSaved={pixSaved}
         />
       </TabsContent>
 
