@@ -86,12 +86,19 @@ export const PendingVolunteerPayments = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-gray-900">Pagamentos de Voluntários</h1>
+        <Badge variant="secondary" className="text-lg px-3 py-1">
+          Últimos 30 dias
+        </Badge>
+      </div>
+
       <Card className="border-0 shadow-lg">
         <CardHeader className="bg-gradient-to-r from-orange-600 to-orange-700 text-white">
           <CardTitle className="flex items-center gap-3">
             <Users className="h-6 w-6" />
-            Pagamentos de Voluntários (Últimos 30 dias)
+            Registros de Pagamentos ({pendingPayments.length})
           </CardTitle>
         </CardHeader>
         <CardContent className="p-6">
@@ -104,13 +111,16 @@ export const PendingVolunteerPayments = () => {
               </AlertDescription>
             </Alert>
           ) : (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-800">
-                  Pagamentos Registrados ({pendingPayments.length})
-                </h3>
-                <Badge variant="secondary" className="text-lg px-3 py-1">
-                  Total: R$ {totalPendingAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-2">
+                  <DollarSign className="h-5 w-5 text-orange-600" />
+                  <span className="text-lg font-semibold text-gray-800">
+                    Total: R$ {totalPendingAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
+                <Badge variant="outline" className="text-sm">
+                  {pendingPayments.length} pagamento{pendingPayments.length !== 1 ? 's' : ''}
                 </Badge>
               </div>
               
@@ -126,28 +136,30 @@ export const PendingVolunteerPayments = () => {
               
               <div className="grid gap-4">
                 {pendingPayments.map((payment) => (
-                  <Card key={payment.id} className="border-orange-200 bg-orange-50">
+                  <Card key={payment.id} className="border-orange-200 hover:shadow-md transition-shadow">
                     <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div className="flex-1">
-                          <h4 className="font-semibold text-gray-800 flex items-center gap-2">
-                            <Users className="h-4 w-4" />
+                          <h4 className="font-semibold text-gray-800 flex items-center gap-2 mb-2">
+                            <Users className="h-4 w-4 text-orange-600" />
                             {payment.volunteer_name}
                           </h4>
-                          <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-gray-600">
                             <span className="flex items-center gap-1">
                               <Calendar className="h-3 w-3" />
                               {new Date(payment.session_date).toLocaleDateString('pt-BR')}
                             </span>
-                            <span>{payment.culto_evento}</span>
+                            {payment.culto_evento && (
+                              <span className="text-gray-500">{payment.culto_evento}</span>
+                            )}
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="text-lg font-bold text-orange-700">
+                          <div className="text-xl font-bold text-orange-600">
                             R$ {payment.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                           </div>
-                          <Badge variant="outline" className="mt-1">
-                            Sessão: {payment.session_date}
+                          <Badge variant="outline" className="mt-1 text-xs">
+                            Sessão: {new Date(payment.session_date).toLocaleDateString('pt-BR')}
                           </Badge>
                         </div>
                       </div>
@@ -156,12 +168,24 @@ export const PendingVolunteerPayments = () => {
                 ))}
               </div>
 
-              <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-                <h4 className="font-semibold text-blue-800 mb-2">Como usar esta informação:</h4>
-                <ul className="text-sm text-blue-700 space-y-1">
-                  <li>• Esta lista mostra todos os pagamentos de voluntários registrados no sistema</li>
-                  <li>• Para marcar pagamentos como "realizados", use a funcionalidade "Pagamentos Pendentes"</li>
-                  <li>• Você pode exportar estas informações através dos relatórios</li>
+              <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <h4 className="font-semibold text-blue-800 mb-3 flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4" />
+                  Como usar esta informação:
+                </h4>
+                <ul className="text-sm text-blue-700 space-y-2">
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-500 mt-1">•</span>
+                    <span>Esta lista mostra todos os pagamentos de voluntários registrados no sistema</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-500 mt-1">•</span>
+                    <span>Para marcar pagamentos como "realizados", use a funcionalidade "Pagamentos Pendentes"</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-500 mt-1">•</span>
+                    <span>Você pode exportar estas informações através dos relatórios</span>
+                  </li>
                 </ul>
               </div>
             </div>

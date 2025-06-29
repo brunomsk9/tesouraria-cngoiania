@@ -85,9 +85,11 @@ const App = () => {
         <>
           <TopNavigation activeTab={currentPage} onTabChange={setCurrentPage} />
           <Sidebar activeTab={currentPage} onTabChange={setCurrentPage} />
-          <div className="pl-64 pt-16">
-            <main className="p-6 min-h-screen">
-              {renderContent()}
+          <div className="lg:pl-64 pt-16">
+            <main className="p-4 sm:p-6 min-h-[calc(100vh-4rem)]">
+              <div className="max-w-7xl mx-auto">
+                {renderContent()}
+              </div>
             </main>
           </div>
         </>
