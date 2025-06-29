@@ -35,7 +35,9 @@ export const CashFlowManager = () => {
     totalSaidas,
     saldo,
     pendingPayments,
-    availableCash
+    availableCash,
+    exitsSaved,
+    setExitsSaved
   } = useCashFlowState();
 
   useEffect(() => {
@@ -76,7 +78,10 @@ export const CashFlowManager = () => {
 
   const handleSaveSaidas = async () => {
     if (!currentSession || !profile?.id) return;
-    await saveSaidas(currentSession, selectedVolunteers, saidas, otherExpenses, profile.id);
+    const success = await saveSaidas(currentSession, selectedVolunteers, saidas, otherExpenses, profile.id);
+    if (success) {
+      setExitsSaved(true);
+    }
   };
 
   const handleSessionValidated = () => {
@@ -133,6 +138,7 @@ export const CashFlowManager = () => {
             onSaveEntradas={handleSaveEntradas}
             onSaveSaidas={handleSaveSaidas}
             onSessionValidated={handleSessionValidated}
+            exitsSaved={exitsSaved}
           />
         </div>
       )}

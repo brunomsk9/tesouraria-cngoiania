@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,7 +9,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { MoneyInput } from '@/components/MoneyInput';
 import { VolunteerSelector } from '@/components/VolunteerSelector';
 import { OtherExpensesManager } from '@/components/OtherExpensesManager';
-import { Users, Shield, Receipt, ArrowDownCircle, Lock, AlertCircle } from 'lucide-react';
+import { Users, Shield, Receipt, ArrowDownCircle, Lock, AlertCircle, Check } from 'lucide-react';
 
 interface SelectedVolunteer {
   id: string;
@@ -32,8 +33,9 @@ interface SaidasTabProps {
   totalVolunteers: number;
   totalOtherExpenses: number;
   totalSaidas: number;
-  onSaveSaidas: () => void;
+  onSaveSaidas: () => Promise<void>;
   isSessionValidated?: boolean;
+  exitsSaved?: boolean;
 }
 
 export const SaidasTab = ({ 
@@ -47,21 +49,34 @@ export const SaidasTab = ({
   totalOtherExpenses,
   totalSaidas, 
   onSaveSaidas,
-  isSessionValidated = false
+  isSessionValidated = false,
+  exitsSaved = false
 }: SaidasTabProps) => {
   const [showVolunteerSelector, setShowVolunteerSelector] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const removeVolunteer = (id: string) => {
-    if (isSessionValidated) return;
+    if (isSessionValidated || exitsSaved) return;
     setSelectedVolunteers(selectedVolunteers.filter(v => v.id !== id));
   };
 
   const updateVolunteerAmount = (id: string, amount: number) => {
-    if (isSessionValidated) return;
+    if (isSessionValidated || exitsSaved) return;
     setSelectedVolunteers(selectedVolunteers.map(v => 
       v.id === id ? { ...v, amount } : v
     ));
   };
+
+  const handleSaveSaidas = async () => {
+    setIsLoading(true);
+    try {
+      await onSaveSaidas();
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const isDisabled = isSessionValidated || exitsSaved;
 
   return (
     <div className="space-y-6">
@@ -76,16 +91,28 @@ export const SaidasTab = ({
         </Alert>
       )}
 
+      {/* Alerta de Saídas Salvas */}
+      {exitsSaved && !isSessionValidated && (
+        <Alert className="border-green-200 bg-green-50">
+          <Check className="h-4 w-4 text-green-600" />
+          <AlertTitle className="text-green-800">Saídas Salvas</AlertTitle>
+          <AlertDescription className="text-green-700">
+            As saídas foram salvas com sucesso e não podem mais ser editadas.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Pagamento de Voluntários */}
-      <Card className={`shadow-lg ${isSessionValidated ? 'bg-gray-50' : ''}`}>
+      <Card className={`shadow-lg ${isDisabled ? 'bg-gray-50' : ''}`}>
         <CardHeader className="bg-blue-50 border-b">
           <CardTitle className="flex items-center justify-between text-blue-800">
             <div className="flex items-center gap-2">
               <Users className="h-5 w-5" />
               Pagamento de Voluntários
-              {isSessionValidated && <Lock className="h-4 w-4 text-gray-500" />}
+              {isDisabled && <Lock className="h-4 w-4 text-gray-500" />}
+              {exitsSaved && <Check className="h-4 w-4 text-green-600" />}
             </div>
-            {!isSessionValidated && (
+            {!isDisabled && (
               <Button 
                 onClick={() => setShowVolunteerSelector(true)} 
                 size="sm" 
@@ -102,9 +129,9 @@ export const SaidasTab = ({
             <div className="text-center py-8 text-gray-500">
               <Users className="h-12 w-12 mx-auto mb-3 text-gray-300" />
               <p className="text-lg">
-                {isSessionValidated ? 'Nenhum voluntário com pagamento registrado' : 'Nenhum voluntário selecionado ainda'}
+                {isDisabled ? 'Nenhum voluntário com pagamento registrado' : 'Nenhum voluntário selecionado ainda'}
               </p>
-              {!isSessionValidated && (
+              {!isDisabled && (
                 <p className="text-sm mt-2">
                   Clique em "Selecionar Voluntários" para adicionar pagamentos
                 </p>
@@ -113,7 +140,7 @@ export const SaidasTab = ({
           ) : (
             <div className="space-y-4">
               {selectedVolunteers.map((volunteer) => (
-                <div key={volunteer.id} className={`flex items-center justify-between p-4 border rounded-lg ${isSessionValidated ? 'bg-gray-100' : 'bg-gray-50'}`}>
+                <div key={volunteer.id} className={`flex items-center justify-between p-4 border rounded-lg ${isDisabled ? 'bg-gray-100' : 'bg-gray-50'}`}>
                   <div className="flex-1">
                     <h4 className="font-medium text-gray-800">{volunteer.name}</h4>
                   </div>
@@ -123,11 +150,11 @@ export const SaidasTab = ({
                         value={volunteer.amount}
                         onChange={(value) => updateVolunteerAmount(volunteer.id, value)}
                         placeholder="R$ 0,00"
-                        disabled={isSessionValidated}
-                        className={isSessionValidated ? 'bg-gray-200 cursor-not-allowed' : ''}
+                        disabled={isDisabled}
+                        className={isDisabled ? 'bg-gray-200 cursor-not-allowed' : ''}
                       />
                     </div>
-                    {!isSessionValidated && (
+                    {!isDisabled && (
                       <Button
                         onClick={() => removeVolunteer(volunteer.id)}
                         variant="outline"
@@ -157,12 +184,13 @@ export const SaidasTab = ({
       </Card>
 
       {/* Valor Segurança */}
-      <Card className={`shadow-lg ${isSessionValidated ? 'bg-gray-50' : ''}`}>
+      <Card className={`shadow-lg ${isDisabled ? 'bg-gray-50' : ''}`}>
         <CardHeader className="bg-green-50 border-b">
           <CardTitle className="flex items-center gap-2 text-green-800">
             <Shield className="h-5 w-5" />
             Pagamento Segurança
-            {isSessionValidated && <Lock className="h-4 w-4 text-gray-500" />}
+            {isDisabled && <Lock className="h-4 w-4 text-gray-500" />}
+            {exitsSaved && <Check className="h-4 w-4 text-green-600" />}
           </CardTitle>
         </CardHeader>
         <CardContent className="p-6">
@@ -174,29 +202,30 @@ export const SaidasTab = ({
             <MoneyInput
               id="valor_seguranca"
               value={saidas.valor_seguranca}
-              onChange={(value) => !isSessionValidated && setSaidas({...saidas, valor_seguranca: value})}
+              onChange={(value) => !isDisabled && setSaidas({...saidas, valor_seguranca: value})}
               placeholder="R$ 0,00"
-              disabled={isSessionValidated}
-              className={isSessionValidated ? 'bg-gray-100 cursor-not-allowed' : ''}
+              disabled={isDisabled}
+              className={isDisabled ? 'bg-gray-100 cursor-not-allowed' : ''}
             />
           </div>
         </CardContent>
       </Card>
 
       {/* Outros Gastos */}
-      <Card className={`shadow-lg ${isSessionValidated ? 'bg-gray-50' : ''}`}>
+      <Card className={`shadow-lg ${isDisabled ? 'bg-gray-50' : ''}`}>
         <CardHeader className="bg-orange-50 border-b">
           <CardTitle className="flex items-center gap-2 text-orange-800">
             <Receipt className="h-5 w-5" />
             Outros Gastos
-            {isSessionValidated && <Lock className="h-4 w-4 text-gray-500" />}
+            {isDisabled && <Lock className="h-4 w-4 text-gray-500" />}
+            {exitsSaved && <Check className="h-4 w-4 text-green-600" />}
           </CardTitle>
         </CardHeader>
         <CardContent className="p-6">
           <OtherExpensesManager
             expenses={otherExpenses}
             onExpensesChange={setOtherExpenses}
-            disabled={isSessionValidated}
+            disabled={isDisabled}
           />
         </CardContent>
       </Card>
@@ -223,21 +252,31 @@ export const SaidasTab = ({
       </Card>
 
       {/* Botão Salvar */}
-      {!isSessionValidated && (
+      {!isDisabled && (
         <div className="flex justify-end">
           <Button 
-            onClick={onSaveSaidas} 
+            onClick={handleSaveSaidas}
             size="lg" 
             className="bg-red-600 hover:bg-red-700"
+            disabled={isLoading}
           >
-            <ArrowDownCircle className="h-4 w-4 mr-2" />
-            Salvar Saídas
+            {isLoading ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                Salvando...
+              </>
+            ) : (
+              <>
+                <ArrowDownCircle className="h-4 w-4 mr-2" />
+                Salvar Saídas
+              </>
+            )}
           </Button>
         </div>
       )}
 
       {/* Seletor de Voluntários */}
-      {showVolunteerSelector && !isSessionValidated && (
+      {showVolunteerSelector && !isDisabled && (
         <VolunteerSelector
           selectedVolunteers={selectedVolunteers}
           onVolunteersChange={(volunteers) => {

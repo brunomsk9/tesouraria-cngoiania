@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 
 interface CashSession {
@@ -73,6 +72,9 @@ export const useCashFlowState = () => {
     pix: false
   });
 
+  // Novo estado para controlar se as saídas foram salvas
+  const [exitsSaved, setExitsSaved] = useState(false);
+
   const resetFormData = () => {
     setEntradas({ dinheiro: 0, cartao_debito: 0, cartao_credito: 0 });
     setPixEntries([]);
@@ -85,6 +87,7 @@ export const useCashFlowState = () => {
       traditional: false,
       pix: false
     });
+    setExitsSaved(false);
   };
 
   // Cálculos
@@ -213,6 +216,8 @@ export const useCashFlowState = () => {
     pendingPayments,
     availableCash,
     entriesSaved,
-    setEntriesSaved
+    setEntriesSaved,
+    exitsSaved,
+    setExitsSaved
   };
 };
