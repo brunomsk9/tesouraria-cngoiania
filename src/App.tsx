@@ -1,8 +1,8 @@
+
 import React, { useState } from 'react';
 import { Toaster } from 'sonner';
 import { AuthPage } from '@/components/AuthPage';
 import { TopNavigation } from '@/components/TopNavigation';
-import { Sidebar } from '@/components/Sidebar';
 import { DashboardCards } from '@/components/DashboardCards';
 import { DashboardChart } from '@/components/DashboardChart';
 import { RecentTransactionsList } from '@/components/RecentTransactionsList';
@@ -78,16 +78,13 @@ const App = () => {
     <div className="min-h-screen bg-gray-50">
       <Toaster />
       {user && (
-        <div className="flex min-h-screen">
-          <Sidebar activeTab={currentPage} onTabChange={setCurrentPage} />
-          <div className="flex-1 flex flex-col">
-            <TopNavigation activeTab={currentPage} onTabChange={setCurrentPage} />
-            <main className="flex-1 p-4 sm:p-6 overflow-auto">
-              <div className="max-w-7xl mx-auto">
-                {renderContent()}
-              </div>
-            </main>
-          </div>
+        <div className="min-h-screen">
+          <TopNavigation activeTab={currentPage} onTabChange={setCurrentPage} />
+          <main className="p-4 sm:p-6">
+            <div className="max-w-7xl mx-auto">
+              {renderContent()}
+            </div>
+          </main>
         </div>
       )}
       {!user && renderContent()}
