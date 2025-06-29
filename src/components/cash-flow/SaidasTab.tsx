@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -26,9 +25,7 @@ interface OtherExpense {
 interface SaidasTabProps {
   selectedVolunteers: SelectedVolunteer[];
   setSelectedVolunteers: (volunteers: SelectedVolunteer[]) => void;
-  saidas: {
-    valor_seguranca: number;
-  };
+  saidas: { valor_seguranca: number };
   setSaidas: (saidas: { valor_seguranca: number }) => void;
   otherExpenses: OtherExpense[];
   setOtherExpenses: (expenses: OtherExpense[]) => void;
