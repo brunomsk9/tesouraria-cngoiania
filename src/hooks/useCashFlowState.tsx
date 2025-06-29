@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 
 interface CashSession {
@@ -22,6 +23,12 @@ interface SelectedVolunteer {
   id: string;
   name: string;
   amount: number;
+}
+
+interface OtherExpense {
+  id: string;
+  amount: number;
+  description: string;
 }
 
 interface PendingPayment {
@@ -72,10 +79,11 @@ export const useCashFlowState = () => {
   // Estados para saídas
   const [selectedVolunteers, setSelectedVolunteers] = useState<SelectedVolunteer[]>([]);
   const [saidas, setSaidas] = useState({
-    valor_seguranca: 0,
-    outros_gastos: 0,
-    outros_descricao: ''
+    valor_seguranca: 0
   });
+
+  // Nova estrutura para outros gastos (múltiplas entradas)
+  const [otherExpenses, setOtherExpenses] = useState<OtherExpense[]>([]);
 
   const [sessions, setSessions] = useState<CashSession[]>([]);
 
@@ -84,17 +92,17 @@ export const useCashFlowState = () => {
     setPixEntries([]);
     setSelectedVolunteers([]);
     setSaidas({
-      valor_seguranca: 0,
-      outros_gastos: 0,
-      outros_descricao: ''
+      valor_seguranca: 0
     });
+    setOtherExpenses([]);
   };
 
   // Cálculos
   const totalPix = pixEntries.reduce((sum, entry) => sum + entry.amount, 0);
   const totalEntradas = entradas.dinheiro + entradas.cartao_debito + entradas.cartao_credito + totalPix;
   const totalVolunteers = selectedVolunteers.reduce((sum, v) => sum + v.amount, 0);
-  const totalSaidas = totalVolunteers + saidas.valor_seguranca + saidas.outros_gastos;
+  const totalOtherExpenses = otherExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+  const totalSaidas = totalVolunteers + saidas.valor_seguranca + totalOtherExpenses;
   const saldo = totalEntradas - totalSaidas;
 
   // Nova lógica para calcular pagamentos pendentes
@@ -140,22 +148,22 @@ export const useCashFlowState = () => {
     }
 
     // Processar outros gastos
-    if (saidas.outros_gastos > 0) {
-      if (remainingCash >= saidas.outros_gastos) {
-        remainingCash -= saidas.outros_gastos;
+    otherExpenses.forEach((expense, index) => {
+      if (remainingCash >= expense.amount) {
+        remainingCash -= expense.amount;
       } else {
-        const pendingAmount = saidas.outros_gastos - Math.max(0, remainingCash);
+        const pendingAmount = expense.amount - Math.max(0, remainingCash);
         if (pendingAmount > 0) {
           pendingPayments.push({
-            id: 'others',
-            name: saidas.outros_descricao || 'Outros Gastos',
+            id: `others-${expense.id}`,
+            name: expense.description || `Outros Gastos #${index + 1}`,
             amount: pendingAmount,
             type: 'others'
           });
         }
         remainingCash = 0;
       }
-    }
+    });
 
     return { pendingPayments, availableCash: Math.max(0, remainingCash) };
   };
@@ -175,12 +183,15 @@ export const useCashFlowState = () => {
     setSelectedVolunteers,
     saidas,
     setSaidas,
+    otherExpenses,
+    setOtherExpenses,
     sessions,
     setSessions,
     resetFormData,
     totalPix,
     totalEntradas,
     totalVolunteers,
+    totalOtherExpenses,
     totalSaidas,
     saldo,
     pendingPayments,

@@ -16,10 +16,17 @@ interface SelectedVolunteer {
   amount: number;
 }
 
+interface OtherExpense {
+  id: string;
+  amount: number;
+  description: string;
+}
+
 export const buildExitTransactions = (
   currentSession: CashSession,
   selectedVolunteers: SelectedVolunteer[],
-  saidas: { valor_seguranca: number; outros_gastos: number; outros_descricao: string },
+  saidas: { valor_seguranca: number },
+  otherExpenses: OtherExpense[],
   profileId: string
 ) => {
   const transactions = [];
@@ -39,7 +46,7 @@ export const buildExitTransactions = (
     }
   });
 
-  // Adicionar outras saídas
+  // Adicionar pagamento de segurança
   if (saidas.valor_seguranca > 0) {
     transactions.push({
       cash_session_id: currentSession.id,
@@ -53,18 +60,21 @@ export const buildExitTransactions = (
     });
   }
 
-  if (saidas.outros_gastos > 0) {
-    transactions.push({
-      cash_session_id: currentSession.id,
-      type: 'saida' as const,
-      description: saidas.outros_descricao || 'Outros Gastos',
-      amount: saidas.outros_gastos,
-      date_transaction: currentSession.date_session,
-      culto_evento: currentSession.culto_evento,
-      outros_gastos: saidas.outros_gastos,
-      user_id: profileId
-    });
-  }
+  // Adicionar outros gastos (múltiplos)
+  otherExpenses.forEach(expense => {
+    if (expense.amount > 0) {
+      transactions.push({
+        cash_session_id: currentSession.id,
+        type: 'saida' as const,
+        description: expense.description,
+        amount: expense.amount,
+        date_transaction: currentSession.date_session,
+        culto_evento: currentSession.culto_evento,
+        outros_gastos: expense.amount,
+        user_id: profileId
+      });
+    }
+  });
 
   return transactions;
 };

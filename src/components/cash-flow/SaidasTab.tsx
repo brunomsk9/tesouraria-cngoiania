@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { MoneyInput } from '@/components/MoneyInput';
 import { VolunteerSelector } from '@/components/VolunteerSelector';
+import { OtherExpensesManager } from '@/components/OtherExpensesManager';
 import { Users, Shield, Receipt, ArrowDownCircle, Lock, AlertCircle } from 'lucide-react';
 
 interface SelectedVolunteer {
@@ -16,16 +17,23 @@ interface SelectedVolunteer {
   amount: number;
 }
 
+interface OtherExpense {
+  id: string;
+  amount: number;
+  description: string;
+}
+
 interface SaidasTabProps {
   selectedVolunteers: SelectedVolunteer[];
   setSelectedVolunteers: (volunteers: SelectedVolunteer[]) => void;
   saidas: {
     valor_seguranca: number;
-    outros_gastos: number;
-    outros_descricao: string;
   };
   setSaidas: (saidas: any) => void;
+  otherExpenses: OtherExpense[];
+  setOtherExpenses: (expenses: OtherExpense[]) => void;
   totalVolunteers: number;
+  totalOtherExpenses: number;
   totalSaidas: number;
   onSaveSaidas: () => void;
   isSessionValidated?: boolean;
@@ -36,7 +44,10 @@ export const SaidasTab = ({
   setSelectedVolunteers, 
   saidas, 
   setSaidas, 
-  totalVolunteers, 
+  otherExpenses,
+  setOtherExpenses,
+  totalVolunteers,
+  totalOtherExpenses,
   totalSaidas, 
   onSaveSaidas,
   isSessionValidated = false
@@ -148,60 +159,48 @@ export const SaidasTab = ({
         </CardContent>
       </Card>
 
-      {/* Outras Saídas */}
+      {/* Valor Segurança */}
       <Card className={`shadow-lg ${isSessionValidated ? 'bg-gray-50' : ''}`}>
-        <CardHeader className="bg-orange-50 border-b">
-          <CardTitle className="flex items-center gap-2 text-orange-800">
-            <Receipt className="h-5 w-5" />
-            Outras Saídas
+        <CardHeader className="bg-green-50 border-b">
+          <CardTitle className="flex items-center gap-2 text-green-800">
+            <Shield className="h-5 w-5" />
+            Pagamento Segurança
             {isSessionValidated && <Lock className="h-4 w-4 text-gray-500" />}
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-6 space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="valor_seguranca" className="text-sm font-medium text-gray-700 flex items-center gap-1">
-                <Shield className="h-4 w-4" />
-                Valor Segurança
-              </Label>
-              <MoneyInput
-                id="valor_seguranca"
-                value={saidas.valor_seguranca}
-                onChange={(value) => !isSessionValidated && setSaidas({...saidas, valor_seguranca: value})}
-                placeholder="R$ 0,00"
-                disabled={isSessionValidated}
-                className={isSessionValidated ? 'bg-gray-100 cursor-not-allowed' : ''}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="outros_gastos" className="text-sm font-medium text-gray-700">
-                Outros Gastos
-              </Label>
-              <MoneyInput
-                id="outros_gastos"
-                value={saidas.outros_gastos}
-                onChange={(value) => !isSessionValidated && setSaidas({...saidas, outros_gastos: value})}
-                placeholder="R$ 0,00"
-                disabled={isSessionValidated}
-                className={isSessionValidated ? 'bg-gray-100 cursor-not-allowed' : ''}
-              />
-            </div>
-          </div>
-          
+        <CardContent className="p-6">
           <div className="space-y-2">
-            <Label htmlFor="outros_descricao" className="text-sm font-medium text-gray-700">
-              Descrição dos Outros Gastos
+            <Label htmlFor="valor_seguranca" className="text-sm font-medium text-gray-700 flex items-center gap-1">
+              <Shield className="h-4 w-4" />
+              Valor Segurança
             </Label>
-            <Input
-              id="outros_descricao"
-              value={saidas.outros_descricao}
-              onChange={(e) => !isSessionValidated && setSaidas({...saidas, outros_descricao: e.target.value})}
-              placeholder="Descreva os outros gastos..."
+            <MoneyInput
+              id="valor_seguranca"
+              value={saidas.valor_seguranca}
+              onChange={(value) => !isSessionValidated && setSaidas({...saidas, valor_seguranca: value})}
+              placeholder="R$ 0,00"
               disabled={isSessionValidated}
               className={isSessionValidated ? 'bg-gray-100 cursor-not-allowed' : ''}
             />
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Outros Gastos */}
+      <Card className={`shadow-lg ${isSessionValidated ? 'bg-gray-50' : ''}`}>
+        <CardHeader className="bg-orange-50 border-b">
+          <CardTitle className="flex items-center gap-2 text-orange-800">
+            <Receipt className="h-5 w-5" />
+            Outros Gastos
+            {isSessionValidated && <Lock className="h-4 w-4 text-gray-500" />}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          <OtherExpensesManager
+            expenses={otherExpenses}
+            onExpensesChange={setOtherExpenses}
+            disabled={isSessionValidated}
+          />
         </CardContent>
       </Card>
 
@@ -214,7 +213,7 @@ export const SaidasTab = ({
               <div className="text-sm text-red-100">
                 Voluntários: R$ {totalVolunteers.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} • 
                 Segurança: R$ {saidas.valor_seguranca.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} • 
-                Outros: R$ {saidas.outros_gastos.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                Outros: R$ {totalOtherExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
               </div>
             </div>
             <div className="text-right">

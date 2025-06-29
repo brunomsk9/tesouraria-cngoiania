@@ -1,4 +1,3 @@
-
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SessionValidation } from '@/components/SessionValidation';
 import { EntradasTab } from '@/components/cash-flow/EntradasTab';
@@ -37,6 +36,12 @@ interface PendingPayment {
   type: 'volunteer' | 'security' | 'others';
 }
 
+interface OtherExpense {
+  id: string;
+  amount: number;
+  description: string;
+}
+
 interface CashFlowTabsProps {
   currentSession: CashSession;
   entradas: { dinheiro: number; cartao_debito: number; cartao_credito: number };
@@ -45,11 +50,14 @@ interface CashFlowTabsProps {
   setPixEntries: (entries: PixEntry[]) => void;
   selectedVolunteers: SelectedVolunteer[];
   setSelectedVolunteers: (volunteers: SelectedVolunteer[]) => void;
-  saidas: { valor_seguranca: number; outros_gastos: number; outros_descricao: string };
+  saidas: { valor_seguranca: number };
   setSaidas: (saidas: any) => void;
+  otherExpenses: OtherExpense[];
+  setOtherExpenses: (expenses: OtherExpense[]) => void;
   totalPix: number;
   totalEntradas: number;
   totalVolunteers: number;
+  totalOtherExpenses: number;
   totalSaidas: number;
   saldo: number;
   pendingPayments: PendingPayment[];
@@ -69,9 +77,12 @@ export const CashFlowTabs = ({
   setSelectedVolunteers,
   saidas,
   setSaidas,
+  otherExpenses,
+  setOtherExpenses,
   totalPix,
   totalEntradas,
   totalVolunteers,
+  totalOtherExpenses,
   totalSaidas,
   saldo,
   pendingPayments,
@@ -121,7 +132,10 @@ export const CashFlowTabs = ({
           setSelectedVolunteers={setSelectedVolunteers}
           saidas={saidas}
           setSaidas={setSaidas}
+          otherExpenses={otherExpenses}
+          setOtherExpenses={setOtherExpenses}
           totalVolunteers={totalVolunteers}
+          totalOtherExpenses={totalOtherExpenses}
           totalSaidas={totalSaidas}
           onSaveSaidas={onSaveSaidas}
           isSessionValidated={isSessionValidated}
@@ -141,9 +155,11 @@ export const CashFlowTabs = ({
           pixEntries={pixEntries}
           selectedVolunteers={selectedVolunteers}
           saidas={saidas}
+          otherExpenses={otherExpenses}
           totalPix={totalPix}
           totalEntradas={totalEntradas}
           totalVolunteers={totalVolunteers}
+          totalOtherExpenses={totalOtherExpenses}
           totalSaidas={totalSaidas}
           saldo={saldo}
           pendingPayments={pendingPayments}

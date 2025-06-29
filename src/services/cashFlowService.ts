@@ -1,4 +1,3 @@
-
 import { loadSessions, createNewSession } from './cashFlow/sessionService';
 import { saveTransactionEntries, saveTransactionExits } from './cashFlow/transactionService';
 import { savePixEntries } from './cashFlow/pixService';
@@ -27,6 +26,12 @@ interface SelectedVolunteer {
   id: string;
   name: string;
   amount: number;
+}
+
+interface OtherExpense {
+  id: string;
+  amount: number;
+  description: string;
 }
 
 // Re-export session functions
@@ -59,9 +64,10 @@ export const saveEntradas = async (
 export const saveSaidas = async (
   currentSession: CashSession,
   selectedVolunteers: SelectedVolunteer[],
-  saidas: { valor_seguranca: number; outros_gastos: number; outros_descricao: string },
+  saidas: { valor_seguranca: number },
+  otherExpenses: OtherExpense[],
   profileId: string
 ): Promise<boolean> => {
-  const transactions = buildExitTransactions(currentSession, selectedVolunteers, saidas, profileId);
+  const transactions = buildExitTransactions(currentSession, selectedVolunteers, saidas, otherExpenses, profileId);
   return await saveTransactionExits(currentSession, transactions);
 };

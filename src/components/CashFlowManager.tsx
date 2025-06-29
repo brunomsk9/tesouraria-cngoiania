@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useCashFlowState } from '@/hooks/useCashFlowState';
@@ -24,12 +23,15 @@ export const CashFlowManager = () => {
     setSelectedVolunteers,
     saidas,
     setSaidas,
+    otherExpenses,
+    setOtherExpenses,
     sessions,
     setSessions,
     resetFormData,
     totalPix,
     totalEntradas,
     totalVolunteers,
+    totalOtherExpenses,
     totalSaidas,
     saldo,
     pendingPayments,
@@ -74,7 +76,7 @@ export const CashFlowManager = () => {
 
   const handleSaveSaidas = async () => {
     if (!currentSession || !profile?.id) return;
-    await saveSaidas(currentSession, selectedVolunteers, saidas, profile.id);
+    await saveSaidas(currentSession, selectedVolunteers, saidas, otherExpenses, profile.id);
   };
 
   const handleSessionValidated = () => {
@@ -118,9 +120,12 @@ export const CashFlowManager = () => {
             setSelectedVolunteers={setSelectedVolunteers}
             saidas={saidas}
             setSaidas={setSaidas}
+            otherExpenses={otherExpenses}
+            setOtherExpenses={setOtherExpenses}
             totalPix={totalPix}
             totalEntradas={totalEntradas}
             totalVolunteers={totalVolunteers}
+            totalOtherExpenses={totalOtherExpenses}
             totalSaidas={totalSaidas}
             saldo={saldo}
             pendingPayments={pendingPayments}
