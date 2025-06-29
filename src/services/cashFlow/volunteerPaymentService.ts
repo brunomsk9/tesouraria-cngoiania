@@ -145,7 +145,8 @@ export const loadVolunteerPayments = async (churchId: string): Promise<Volunteer
       return [];
     }
 
-    return payments || [];
+    // Cast the data to the correct type since Supabase returns generic types
+    return (payments || []) as VolunteerPayment[];
   } catch (error) {
     console.error('Erro ao carregar pagamentos de voluntários:', error);
     toast.error('Erro ao carregar pagamentos de voluntários');
