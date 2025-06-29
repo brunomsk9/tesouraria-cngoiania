@@ -5,16 +5,18 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Plus, Users, X, UserPlus } from 'lucide-react';
-import { useCurrencyFormat, formatToCurrency, parseCurrencyToNumber } from '@/hooks/useCurrencyFormat';
+import { Plus, Users, X, UserPlus, Search } from 'lucide-react';
+import { MoneyInput } from '@/components/MoneyInput';
 
 interface Volunteer {
   id: string;
   name: string;
   pix_key: string | null;
+  area_atuacao: string | null;
 }
 
 interface SelectedVolunteer {
@@ -31,6 +33,9 @@ interface VolunteerSelectorProps {
 export const VolunteerSelector = ({ selectedVolunteers, onVolunteersChange }: VolunteerSelectorProps) => {
   const { profile } = useAuth();
   const [volunteers, setVolunteers] = useState<Volunteer[]>([]);
+  const [filteredVolunteers, setFilteredVolunteers] = useState<Volunteer[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedVolunteerId, setSelectedVolunteerId] = useState<string>('');
   const [isCreating, setIsCreating] = useState(false);
   const [newVolunteer, setNewVolunteer] = useState({
     name: '',
@@ -45,6 +50,14 @@ export const VolunteerSelector = ({ selectedVolunteers, onVolunteersChange }: Vo
     }
   }, [profile?.church_id]);
 
+  useEffect(() => {
+    const filtered = volunteers.filter(volunteer => 
+      volunteer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (volunteer.area_atuacao && volunteer.area_atuacao.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+    setFilteredVolunteers(filtered);
+  }, [volunteers, searchTerm]);
+
   const loadVolunteers = async () => {
     if (!profile?.church_id) return;
 
@@ -55,7 +68,8 @@ export const VolunteerSelector = ({ selectedVolunteers, onVolunteersChange }: Vo
           volunteers (
             id,
             name,
-            pix_key
+            pix_key,
+            area_atuacao
           )
         `)
         .eq('church_id', profile.church_id);
@@ -109,6 +123,27 @@ export const VolunteerSelector = ({ selectedVolunteers, onVolunteersChange }: Vo
     }
   };
 
+  const addVolunteerFromSelect = () => {
+    if (!selectedVolunteerId) return;
+    
+    const volunteer = volunteers.find(v => v.id === selectedVolunteerId);
+    if (!volunteer) return;
+
+    if (selectedVolunteers.find(v => v.id === volunteer.id)) {
+      toast.error('Voluntário já foi adicionado');
+      return;
+    }
+
+    const newSelected = [...selectedVolunteers, {
+      id: volunteer.id,
+      name: volunteer.name,
+      amount: 30 // valor padrão
+    }];
+    onVolunteersChange(newSelected);
+    setSelectedVolunteerId('');
+    toast.success(`${volunteer.name} adicionado à lista de pagamentos`);
+  };
+
   const addVolunteer = (volunteer: Volunteer) => {
     if (selectedVolunteers.find(v => v.id === volunteer.id)) {
       toast.error('Voluntário já foi adicionado');
@@ -121,6 +156,7 @@ export const VolunteerSelector = ({ selectedVolunteers, onVolunteersChange }: Vo
       amount: 30 // valor padrão
     }];
     onVolunteersChange(newSelected);
+    toast.success(`${volunteer.name} adicionado à lista de pagamentos`);
   };
 
   const removeVolunteer = (volunteerId: string) => {
@@ -128,179 +164,228 @@ export const VolunteerSelector = ({ selectedVolunteers, onVolunteersChange }: Vo
     onVolunteersChange(newSelected);
   };
 
-  const updateVolunteerAmount = (volunteerId: string, displayValue: string) => {
-    const numericAmount = parseCurrencyToNumber(displayValue);
+  const updateVolunteerAmount = (volunteerId: string, amount: number) => {
     const newSelected = selectedVolunteers.map(v => 
-      v.id === volunteerId ? { ...v, amount: numericAmount } : v
+      v.id === volunteerId ? { ...v, amount } : v
     );
     onVolunteersChange(newSelected);
   };
 
   const totalVolunteers = selectedVolunteers.reduce((sum, v) => sum + v.amount, 0);
+  const availableVolunteers = volunteers.filter(v => !selectedVolunteers.some(sv => sv.id === v.id));
 
   return (
-    <div className="space-y-4">
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex justify-between items-center">
-            <CardTitle className="text-lg flex items-center">
-              <Users className="h-5 w-5 mr-2" />
-              Pagamento de Voluntários
-            </CardTitle>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setIsCreating(!isCreating)}
-              className="flex items-center gap-2"
-            >
-              <UserPlus className="h-4 w-4" />
-              {isCreating ? 'Cancelar' : 'Novo Voluntário'}
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {isCreating && (
-            <Card className="bg-gray-50">
-              <CardContent className="p-4 space-y-3">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div>
-                    <Label className="text-sm">Nome *</Label>
-                    <Input
-                      value={newVolunteer.name}
-                      onChange={(e) => setNewVolunteer({...newVolunteer, name: e.target.value})}
-                      placeholder="Nome do voluntário"
-                      className="h-9"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-sm">Telefone</Label>
-                    <Input
-                      value={newVolunteer.phone}
-                      onChange={(e) => setNewVolunteer({...newVolunteer, phone: e.target.value})}
-                      placeholder="(00) 00000-0000"
-                      className="h-9"
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div>
-                    <Label className="text-sm">Chave PIX</Label>
-                    <Input
-                      value={newVolunteer.pix_key}
-                      onChange={(e) => setNewVolunteer({...newVolunteer, pix_key: e.target.value})}
-                      placeholder="CPF, email ou chave"
-                      className="h-9"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-sm">Área de Atuação</Label>
-                    <Input
-                      value={newVolunteer.area_atuacao}
-                      onChange={(e) => setNewVolunteer({...newVolunteer, area_atuacao: e.target.value})}
-                      placeholder="Ex: Som, Limpeza"
-                      className="h-9"
-                    />
-                  </div>
-                </div>
-                <Button onClick={createVolunteer} size="sm" className="w-full">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Criar Voluntário
-                </Button>
-              </CardContent>
-            </Card>
-          )}
-
-          <div>
-            <Label className="text-sm font-medium mb-2 block">Voluntários Disponíveis</Label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-              {volunteers.map((volunteer) => (
-                <Button
-                  key={volunteer.id}
-                  variant="outline"
-                  size="sm"
-                  onClick={() => addVolunteer(volunteer)}
-                  disabled={selectedVolunteers.some(v => v.id === volunteer.id)}
-                  className="justify-start h-auto p-3"
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+        <Card className="border-0">
+          <CardHeader className="pb-3 bg-blue-50 border-b">
+            <div className="flex justify-between items-center">
+              <CardTitle className="text-lg flex items-center">
+                <Users className="h-5 w-5 mr-2" />
+                Selecionar Voluntários para Pagamento
+              </CardTitle>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => onVolunteersChange(selectedVolunteers)}
+                className="text-red-600 hover:text-red-700"
+              >
+                <X className="h-4 w-4 mr-2" />
+                Fechar
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="p-6 space-y-6">
+            {/* Seleção por dropdown */}
+            <div className="space-y-3">
+              <Label className="text-sm font-medium">Selecionar Voluntário</Label>
+              <div className="flex gap-3">
+                <Select value={selectedVolunteerId} onValueChange={setSelectedVolunteerId}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Escolha um voluntário..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableVolunteers.map((volunteer) => (
+                      <SelectItem key={volunteer.id} value={volunteer.id}>
+                        <div className="flex items-center justify-between w-full">
+                          <span>{volunteer.name}</span>
+                          {volunteer.area_atuacao && (
+                            <Badge variant="outline" className="ml-2 text-xs">
+                              {volunteer.area_atuacao}
+                            </Badge>
+                          )}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button 
+                  onClick={addVolunteerFromSelect}
+                  disabled={!selectedVolunteerId}
+                  className="bg-blue-600 hover:bg-blue-700"
                 >
-                  <div className="text-left">
-                    <div className="font-medium text-sm">{volunteer.name}</div>
-                    {volunteer.pix_key && (
-                      <div className="text-xs text-gray-500 truncate">{volunteer.pix_key}</div>
-                    )}
-                  </div>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Adicionar
                 </Button>
-              ))}
-            </div>
-          </div>
-
-          {selectedVolunteers.length > 0 && (
-            <div>
-              <Label className="text-sm font-medium mb-2 block">Voluntários Selecionados</Label>
-              <div className="space-y-2">
-                {selectedVolunteers.map((volunteer) => (
-                  <VolunteerAmountInput
-                    key={volunteer.id}
-                    volunteer={volunteer}
-                    onAmountChange={(displayValue) => updateVolunteerAmount(volunteer.id, displayValue)}
-                    onRemove={() => removeVolunteer(volunteer.id)}
-                  />
-                ))}
-              </div>
-
-              <div className="flex justify-between items-center pt-3 border-t bg-blue-50 p-3 rounded-lg mt-3">
-                <span className="font-medium text-blue-800">Total Voluntários ({selectedVolunteers.length}):</span>
-                <span className="text-xl font-bold text-blue-800">
-                  {formatToCurrency(totalVolunteers)}
-                </span>
               </div>
             </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  );
-};
 
-// Componente separado para entrada de valor do voluntário
-const VolunteerAmountInput = ({ 
-  volunteer, 
-  onAmountChange, 
-  onRemove 
-}: {
-  volunteer: SelectedVolunteer;
-  onAmountChange: (value: string) => void;
-  onRemove: () => void;
-}) => {
-  const { displayValue, handleChange } = useCurrencyFormat(volunteer.amount);
+            {/* Busca por nome */}
+            <div className="space-y-3">
+              <Label className="text-sm font-medium">Ou buscar por nome</Label>
+              <div className="relative">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Digite o nome do voluntário..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              
+              {searchTerm && (
+                <div className="max-h-40 overflow-y-auto space-y-2">
+                  {filteredVolunteers
+                    .filter(v => !selectedVolunteers.some(sv => sv.id === v.id))
+                    .map((volunteer) => (
+                    <div key={volunteer.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
+                      <div>
+                        <div className="font-medium">{volunteer.name}</div>
+                        {volunteer.area_atuacao && (
+                          <div className="text-sm text-gray-500">{volunteer.area_atuacao}</div>
+                        )}
+                      </div>
+                      <Button
+                        size="sm"
+                        onClick={() => addVolunteer(volunteer)}
+                        className="bg-blue-600 hover:bg-blue-700"
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        Adicionar
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
 
-  const handleInputChange = (value: string) => {
-    handleChange(value);
-    onAmountChange(value);
-  };
+            {/* Botão para criar novo voluntário */}
+            <div className="flex justify-center">
+              <Button
+                variant="outline"
+                onClick={() => setIsCreating(!isCreating)}
+                className="flex items-center gap-2"
+              >
+                <UserPlus className="h-4 w-4" />
+                {isCreating ? 'Cancelar' : 'Criar Novo Voluntário'}
+              </Button>
+            </div>
 
-  return (
-    <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
-      <div className="flex items-center space-x-3">
-        <Badge variant="outline">{volunteer.name}</Badge>
-        <div className="flex items-center space-x-2">
-          <Input
-            type="text"
-            value={displayValue}
-            onChange={(e) => handleInputChange(e.target.value)}
-            className="w-24 h-8 text-sm"
-            placeholder="R$ 0,00"
-          />
-        </div>
+            {/* Formulário de criação de voluntário */}
+            {isCreating && (
+              <Card className="bg-gray-50">
+                <CardContent className="p-4 space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-sm">Nome *</Label>
+                      <Input
+                        value={newVolunteer.name}
+                        onChange={(e) => setNewVolunteer({...newVolunteer, name: e.target.value})}
+                        placeholder="Nome do voluntário"
+                        className="h-9"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-sm">Telefone</Label>
+                      <Input
+                        value={newVolunteer.phone}
+                        onChange={(e) => setNewVolunteer({...newVolunteer, phone: e.target.value})}
+                        placeholder="(00) 00000-0000"
+                        className="h-9"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-sm">Chave PIX</Label>
+                      <Input
+                        value={newVolunteer.pix_key}
+                        onChange={(e) => setNewVolunteer({...newVolunteer, pix_key: e.target.value})}
+                        placeholder="CPF, email ou chave"
+                        className="h-9"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-sm">Área de Atuação</Label>
+                      <Input
+                        value={newVolunteer.area_atuacao}
+                        onChange={(e) => setNewVolunteer({...newVolunteer, area_atuacao: e.target.value})}
+                        placeholder="Ex: Som, Limpeza"
+                        className="h-9"
+                      />
+                    </div>
+                  </div>
+                  <Button onClick={createVolunteer} size="sm" className="w-full">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Criar Voluntário
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Lista de voluntários selecionados */}
+            {selectedVolunteers.length > 0 && (
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">Voluntários Selecionados para Pagamento</Label>
+                <div className="space-y-2">
+                  {selectedVolunteers.map((volunteer) => (
+                    <div key={volunteer.id} className="flex items-center justify-between bg-blue-50 p-3 rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <Badge variant="secondary">{volunteer.name}</Badge>
+                        <div className="flex items-center space-x-2">
+                          <MoneyInput
+                            value={volunteer.amount}
+                            onChange={(value) => updateVolunteerAmount(volunteer.id, value)}
+                            className="w-32"
+                            placeholder="R$ 0,00"
+                          />
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => removeVolunteer(volunteer.id)}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex justify-between items-center pt-3 border-t bg-green-50 p-3 rounded-lg">
+                  <span className="font-medium text-green-800">
+                    Total de Pagamentos ({selectedVolunteers.length} voluntários):
+                  </span>
+                  <span className="text-xl font-bold text-green-800">
+                    R$ {totalVolunteers.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
+
+                <div className="flex justify-end pt-3">
+                  <Button 
+                    onClick={() => onVolunteersChange(selectedVolunteers)}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    Confirmar Seleção
+                  </Button>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
-      <Button
-        size="sm"
-        variant="ghost"
-        onClick={onRemove}
-        className="p-1 h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
-      >
-        <X className="h-4 w-4" />
-      </Button>
     </div>
   );
 };

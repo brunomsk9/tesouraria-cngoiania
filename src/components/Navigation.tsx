@@ -1,4 +1,3 @@
-
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
@@ -10,10 +9,19 @@ import {
   Settings,
   Calendar,
   Building2,
-  LogOut
+  LogOut,
+  BarChart3,
+  Clock
 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/lib/supabase';
 
-export const Navigation = () => {
+interface NavigationProps {
+  currentPage: string;
+  onPageChange: (page: string) => void;
+}
+
+export const Navigation = ({ currentPage, onPageChange }: NavigationProps) => {
   const { signOut, profile } = useAuth();
   const location = useLocation();
 
@@ -21,48 +29,65 @@ export const Navigation = () => {
     await signOut();
   };
 
-  const navigationItems = [
-    {
-      name: 'Dashboard',
-      href: '/',
-      icon: Home,
-      show: true
+  const pendingValidationsCount = useQuery({
+    queryKey: ['pendingValidations', profile?.church_id],
+    queryFn: async () => {
+      if (!profile?.church_id) return 0;
+      
+      const { data, error } = await supabase.rpc('get_pending_validations_count', {
+        user_church_id: profile.church_id
+      });
+      
+      if (error) throw error;
+      return data || 0;
     },
-    {
-      name: 'Fluxo de Caixa',
-      href: '/cash-flow',
+    enabled: !!profile?.church_id,
+    refetchInterval: 30000, // Atualiza a cada 30 segundos
+  });
+
+  const menuItems = [
+    { 
+      id: 'dashboard', 
+      label: 'Dashboard', 
+      icon: BarChart3,
+      roles: ['master', 'tesoureiro', 'supervisor']
+    },
+    { 
+      id: 'cashflow', 
+      label: 'Fluxo de Caixa', 
       icon: DollarSign,
-      show: profile?.role !== 'supervisor'
+      roles: ['master', 'tesoureiro'],
+      badge: pendingValidationsCount.data > 0 ? pendingValidationsCount.data : undefined
     },
-    {
-      name: 'Cultos/Eventos',
-      href: '/cultos-eventos',
-      icon: Calendar,
-      show: profile?.role !== 'supervisor'
+    { 
+      id: 'pending-payments', 
+      label: 'Pagamentos Pendentes', 
+      icon: Clock,
+      roles: ['master', 'tesoureiro']
     },
-    {
-      name: 'Relatórios',
-      href: '/reports',
-      icon: FileText,
-      show: true
-    },
-    {
-      name: 'Voluntários',
-      href: '/volunteers',
+    { 
+      id: 'volunteer-payments', 
+      label: 'Pagamentos de Voluntários', 
       icon: Users,
-      show: profile?.role !== 'supervisor'
+      roles: ['master', 'tesoureiro']
     },
-    {
-      name: 'Administração',
-      href: '/admin',
+    { 
+      id: 'volunteers', 
+      label: 'Voluntários', 
+      icon: Users,
+      roles: ['master', 'tesoureiro']
+    },
+    { 
+      id: 'reports', 
+      label: 'Relatórios', 
+      icon: FileText,
+      roles: ['master', 'tesoureiro', 'supervisor']
+    },
+    { 
+      id: 'admin', 
+      label: 'Administração', 
       icon: Settings,
-      show: profile?.role === 'master'
-    },
-    {
-      name: 'Igrejas',
-      href: '/churches',
-      icon: Building2,
-      show: profile?.role === 'master'
+      roles: ['master']
     }
   ];
 
@@ -71,23 +96,23 @@ export const Navigation = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex space-x-8">
-            {navigationItems
-              .filter(item => item.show)
+            {menuItems
+              .filter(item => item.roles.includes(profile?.role))
               .map((item) => {
                 const Icon = item.icon;
                 return (
                   <Link
-                    key={item.name}
-                    to={item.href}
+                    key={item.id}
+                    to={item.id}
                     className={cn(
                       "inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors",
-                      location.pathname === item.href
+                      location.pathname === item.id
                         ? "border-blue-500 text-blue-600"
                         : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                     )}
                   >
                     <Icon className="h-4 w-4 mr-2" />
-                    {item.name}
+                    {item.label}
                   </Link>
                 );
               })}

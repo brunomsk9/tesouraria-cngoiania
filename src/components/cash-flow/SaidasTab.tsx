@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -82,7 +83,8 @@ export const SaidasTab = ({
                 size="sm" 
                 className="bg-blue-600 hover:bg-blue-700"
               >
-                Adicionar Voluntário
+                <Users className="h-4 w-4 mr-2" />
+                Selecionar Voluntários
               </Button>
             )}
           </CardTitle>
@@ -90,7 +92,15 @@ export const SaidasTab = ({
         <CardContent className="p-6">
           {selectedVolunteers.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
-              {isSessionValidated ? 'Nenhum voluntário com pagamento registrado' : 'Nenhum voluntário selecionado ainda'}
+              <Users className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+              <p className="text-lg">
+                {isSessionValidated ? 'Nenhum voluntário com pagamento registrado' : 'Nenhum voluntário selecionado ainda'}
+              </p>
+              {!isSessionValidated && (
+                <p className="text-sm mt-2">
+                  Clique em "Selecionar Voluntários" para adicionar pagamentos
+                </p>
+              )}
             </div>
           ) : (
             <div className="space-y-4">
