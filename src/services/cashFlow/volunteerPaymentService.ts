@@ -31,6 +31,12 @@ interface VolunteerPayment {
   transaction_id: string | null;
   created_at: string;
   updated_at: string;
+  cash_sessions: {
+    id: string;
+    date_session: string;
+    culto_evento: string;
+    church_id: string;
+  };
 }
 
 export const saveVolunteerPayments = async (
@@ -54,9 +60,9 @@ export const saveVolunteerPayments = async (
       status: 'pendente' as const
     }));
 
-    // Salvar na tabela volunteer_payments
+    // Usar rpc ou query direta para contornar problema de tipos
     const { data: payments, error: paymentsError } = await supabase
-      .from('volunteer_payments')
+      .from('volunteer_payments' as any)
       .insert(volunteerPayments)
       .select();
 
@@ -80,6 +86,8 @@ export const updateVolunteerPaymentStatus = async (
   status: 'pendente' | 'pago'
 ): Promise<boolean> => {
   try {
+    const currentUser = await supabase.auth.getUser();
+    
     const updateData: any = {
       status,
       updated_at: new Date().toISOString()
@@ -87,14 +95,14 @@ export const updateVolunteerPaymentStatus = async (
 
     if (status === 'pago') {
       updateData.paid_at = new Date().toISOString();
-      updateData.paid_by = (await supabase.auth.getUser()).data.user?.id;
+      updateData.paid_by = currentUser.data.user?.id;
     } else {
       updateData.paid_at = null;
       updateData.paid_by = null;
     }
 
     const { error } = await supabase
-      .from('volunteer_payments')
+      .from('volunteer_payments' as any)
       .update(updateData)
       .eq('id', paymentId);
 
@@ -115,8 +123,9 @@ export const updateVolunteerPaymentStatus = async (
 
 export const loadVolunteerPayments = async (churchId: string): Promise<VolunteerPayment[]> => {
   try {
+    // Fazer query manual para contornar problema de tipos
     const { data: payments, error } = await supabase
-      .from('volunteer_payments')
+      .from('volunteer_payments' as any)
       .select(`
         *,
         cash_sessions!inner(
@@ -134,7 +143,7 @@ export const loadVolunteerPayments = async (churchId: string): Promise<Volunteer
       return [];
     }
 
-    return payments || [];
+    return (payments || []) as VolunteerPayment[];
   } catch (error) {
     console.error('Erro ao carregar pagamentos de voluntários:', error);
     return [];
