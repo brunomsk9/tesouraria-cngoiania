@@ -62,8 +62,10 @@ export const EntradasTab = ({
   const updatePixEntry = (id: string, field: keyof PixEntry, value: string | number) => {
     if (isSessionValidated || pixSaved) return;
     
+    const parsedValue = field === 'amount' && typeof value === 'string' ? parseFloat(value) || 0 : value;
+    
     setPixEntries(pixEntries.map(entry => 
-      entry.id === id ? { ...entry, [field]: value } : entry
+      entry.id === id ? { ...entry, [field]: parsedValue } : entry
     ));
   };
 
@@ -141,7 +143,7 @@ export const EntradasTab = ({
               <MoneyInput
                 id="dinheiro"
                 value={entradas.dinheiro}
-                onChange={(value) => !(isSessionValidated || entriesSaved) && setEntradas({...entradas, dinheiro: value})}
+                onChange={(value) => !(isSessionValidated || entriesSaved) && setEntradas({...entradas, dinheiro: parseFloat(value) || 0})}
                 placeholder="R$ 0,00"
                 disabled={isSessionValidated || entriesSaved}
                 className={(isSessionValidated || entriesSaved) ? 'bg-gray-100 cursor-not-allowed' : ''}
@@ -156,7 +158,7 @@ export const EntradasTab = ({
               <MoneyInput
                 id="cartao_debito"
                 value={entradas.cartao_debito}
-                onChange={(value) => !(isSessionValidated || entriesSaved) && setEntradas({...entradas, cartao_debito: value})}
+                onChange={(value) => !(isSessionValidated || entriesSaved) && setEntradas({...entradas, cartao_debito: parseFloat(value) || 0})}
                 placeholder="R$ 0,00"
                 disabled={isSessionValidated || entriesSaved}
                 className={(isSessionValidated || entriesSaved) ? 'bg-gray-100 cursor-not-allowed' : ''}
@@ -171,7 +173,7 @@ export const EntradasTab = ({
               <MoneyInput
                 id="cartao_credito"
                 value={entradas.cartao_credito}
-                onChange={(value) => !(isSessionValidated || entriesSaved) && setEntradas({...entradas, cartao_credito: value})}
+                onChange={(value) => !(isSessionValidated || entriesSaved) && setEntradas({...entradas, cartao_credito: parseFloat(value) || 0})}
                 placeholder="R$ 0,00"
                 disabled={isSessionValidated || entriesSaved}
                 className={(isSessionValidated || entriesSaved) ? 'bg-gray-100 cursor-not-allowed' : ''}

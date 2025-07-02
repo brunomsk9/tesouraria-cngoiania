@@ -37,7 +37,7 @@ export const VolunteerSelector = ({ selectedVolunteers, onVolunteersChange }: Vo
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedForAddition, setSelectedForAddition] = useState<string[]>([]);
   const [isCreating, setIsCreating] = useState(false);
-  const [defaultAmount, setDefaultAmount] = useState(30);
+  const [defaultAmount, setDefaultAmount] = useState("30");
   const [newVolunteer, setNewVolunteer] = useState({
     name: '',
     phone: '',
@@ -148,7 +148,7 @@ export const VolunteerSelector = ({ selectedVolunteers, onVolunteersChange }: Vo
       ...volunteersToAdd.map(volunteer => ({
         id: volunteer.id,
         name: volunteer.name,
-        amount: defaultAmount
+        amount: parseFloat(defaultAmount) || 0
       }))
     ];
 
@@ -162,9 +162,10 @@ export const VolunteerSelector = ({ selectedVolunteers, onVolunteersChange }: Vo
     onVolunteersChange(newSelected);
   };
 
-  const updateVolunteerAmount = (volunteerId: string, amount: number) => {
+  const updateVolunteerAmount = (volunteerId: string, amount: string) => {
+    const numericAmount = parseFloat(amount) || 0;
     const newSelected = selectedVolunteers.map(v => 
-      v.id === volunteerId ? { ...v, amount } : v
+      v.id === volunteerId ? { ...v, amount: numericAmount } : v
     );
     onVolunteersChange(newSelected);
   };
@@ -200,7 +201,7 @@ export const VolunteerSelector = ({ selectedVolunteers, onVolunteersChange }: Vo
               <div className="flex gap-3 items-center">
                 <MoneyInput
                   value={defaultAmount}
-                  onChange={setDefaultAmount}
+                  onChange={(value) => setDefaultAmount(value)}
                   className="w-40"
                   placeholder="R$ 0,00"
                 />

@@ -5,8 +5,8 @@ import { useState, useEffect } from 'react';
 
 interface MoneyInputProps {
   label?: string;
-  value: number;
-  onChange: (value: number) => void;
+  value: string | number;
+  onChange: (value: string) => void;
   placeholder?: string;
   className?: string;
   id?: string;
@@ -17,11 +17,11 @@ export const MoneyInput = ({ label, value, onChange, placeholder, className, id,
   const [displayValue, setDisplayValue] = useState('');
 
   useEffect(() => {
-    if (value === 0) {
+    const numericValue = typeof value === 'string' ? parseFloat(value) || 0 : value;
+    if (numericValue === 0) {
       setDisplayValue('');
     } else {
-      // Mostrar o valor formatado apenas quando não está em foco
-      setDisplayValue(formatForDisplay(value));
+      setDisplayValue(formatForDisplay(numericValue));
     }
   }, [value]);
 
@@ -29,20 +29,20 @@ export const MoneyInput = ({ label, value, onChange, placeholder, className, id,
     return val.toFixed(2).replace('.', ',');
   };
 
-  const parseInputValue = (inputValue: string): number => {
+  const parseInputValue = (inputValue: string): string => {
     // Remove tudo que não é número, vírgula ou ponto
     let cleanValue = inputValue.replace(/[^\d,]/g, '');
     
-    // Se estiver vazio, retorna 0
-    if (!cleanValue) return 0;
+    // Se estiver vazio, retorna '0'
+    if (!cleanValue) return '0';
     
     // Substitui vírgula por ponto para conversão
     cleanValue = cleanValue.replace(',', '.');
     
-    // Converte para número
+    // Converte para número e volta para string
     const numericValue = parseFloat(cleanValue) || 0;
     
-    return numericValue;
+    return numericValue.toString();
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -51,22 +51,24 @@ export const MoneyInput = ({ label, value, onChange, placeholder, className, id,
     const inputValue = e.target.value;
     setDisplayValue(inputValue);
     
-    const numericValue = parseInputValue(inputValue);
-    onChange(numericValue);
+    const stringValue = parseInputValue(inputValue);
+    onChange(stringValue);
   };
 
   const handleFocus = () => {
     // Quando ganhar foco, mostrar apenas os números para facilitar edição
-    if (value > 0) {
-      setDisplayValue(formatForDisplay(value));
+    const numericValue = typeof value === 'string' ? parseFloat(value) || 0 : value;
+    if (numericValue > 0) {
+      setDisplayValue(formatForDisplay(numericValue));
     }
   };
 
   const handleBlur = () => {
     // Quando perder foco, formatar novamente se houver valor
-    if (value > 0) {
-      setDisplayValue(formatForDisplay(value));
-    } else if (displayValue && parseInputValue(displayValue) === 0) {
+    const numericValue = typeof value === 'string' ? parseFloat(value) || 0 : value;
+    if (numericValue > 0) {
+      setDisplayValue(formatForDisplay(numericValue));
+    } else if (displayValue && parseFloat(parseInputValue(displayValue)) === 0) {
       setDisplayValue('');
     }
   };
@@ -90,9 +92,9 @@ export const MoneyInput = ({ label, value, onChange, placeholder, className, id,
           className={`pl-10 text-right font-mono text-lg ${disabled ? 'bg-gray-100 cursor-not-allowed' : 'bg-gray-50'} border-gray-200 focus:bg-white transition-colors`}
         />
       </div>
-      {value > 0 && (
+      {(typeof value === 'string' ? parseFloat(value) : value) > 0 && (
         <p className="text-xs text-gray-500 mt-1">
-          Valor: R$ {value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          Valor: R$ {(typeof value === 'string' ? parseFloat(value) : value).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </p>
       )}
     </div>

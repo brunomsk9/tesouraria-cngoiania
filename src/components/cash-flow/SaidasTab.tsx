@@ -59,10 +59,11 @@ export const SaidasTab = ({
     setSelectedVolunteers(selectedVolunteers.filter(v => v.id !== id));
   };
 
-  const updateVolunteerAmount = (id: string, amount: number) => {
+  const updateVolunteerAmount = (id: string, amount: string) => {
     if (isSessionValidated || exitsSaved) return;
+    const numericAmount = parseFloat(amount) || 0;
     setSelectedVolunteers(selectedVolunteers.map(v => 
-      v.id === id ? { ...v, amount } : v
+      v.id === id ? { ...v, amount: numericAmount } : v
     ));
   };
 
@@ -201,7 +202,7 @@ export const SaidasTab = ({
             <MoneyInput
               id="valor_seguranca"
               value={saidas.valor_seguranca}
-              onChange={(value) => !isDisabled && setSaidas({...saidas, valor_seguranca: value})}
+              onChange={(value) => !isDisabled && setSaidas({...saidas, valor_seguranca: parseFloat(value) || 0})}
               placeholder="R$ 0,00"
               disabled={isDisabled}
               className={isDisabled ? 'bg-gray-100 cursor-not-allowed' : ''}
