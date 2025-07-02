@@ -13,64 +13,54 @@ interface MoneyInputProps {
   disabled?: boolean;
 }
 
-export const MoneyInput = ({ label, value, onChange, placeholder, className, id, disabled }: MoneyInputProps) => {
+export const MoneyInput = ({
+  label,
+  value,
+  onChange,
+  placeholder,
+  className,
+  id,
+  disabled
+}: MoneyInputProps) => {
   const [displayValue, setDisplayValue] = useState('');
 
   useEffect(() => {
-    const numericValue = typeof value === 'string' ? parseFloat(value) || 0 : value;
-    if (numericValue === 0) {
-      setDisplayValue('');
+    if (typeof value === 'number' || (typeof value === 'string' && value !== '')) {
+      const val = typeof value === 'string' ? parseFloat(value) : value;
+      if (!isNaN(val)) setDisplayValue(formatForDisplay(val));
     } else {
-      setDisplayValue(formatForDisplay(numericValue));
+      setDisplayValue('');
     }
   }, [value]);
 
   const formatForDisplay = (val: number) => {
-    return val.toFixed(2).replace('.', ',');
+    return val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
 
-  const parseInputValue = (inputValue: string): string => {
-    // Remove tudo que não é número, vírgula ou ponto
-    let cleanValue = inputValue.replace(/[^\d,]/g, '');
-    
-    // Se estiver vazio, retorna '0'
-    if (!cleanValue) return '0';
-    
-    // Substitui vírgula por ponto para conversão
-    cleanValue = cleanValue.replace(',', '.');
-    
-    // Converte para número e volta para string
-    const numericValue = parseFloat(cleanValue) || 0;
-    
-    return numericValue.toString();
+  const parseToNumericString = (val: string): string => {
+    // Remove milhar e ajusta separador decimal
+    const clean = val.replace(/\./g, '').replace(',', '.');
+    const num = parseFloat(clean);
+    return isNaN(num) ? '0' : num.toString();
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (disabled) return;
-    
     const inputValue = e.target.value;
-    setDisplayValue(inputValue);
-    
-    const stringValue = parseInputValue(inputValue);
-    onChange(stringValue);
-  };
-
-  const handleFocus = () => {
-    // Quando ganhar foco, mostrar apenas os números para facilitar edição
-    const numericValue = typeof value === 'string' ? parseFloat(value) || 0 : value;
-    if (numericValue > 0) {
-      setDisplayValue(formatForDisplay(numericValue));
-    }
+    setDisplayValue(inputValue); // Permite digitação livre
   };
 
   const handleBlur = () => {
-    // Quando perder foco, formatar novamente se houver valor
-    const numericValue = typeof value === 'string' ? parseFloat(value) || 0 : value;
-    if (numericValue > 0) {
-      setDisplayValue(formatForDisplay(numericValue));
-    } else if (displayValue && parseFloat(parseInputValue(displayValue)) === 0) {
+    const numericString = parseToNumericString(displayValue);
+    const num = parseFloat(numericString);
+
+    if (!isNaN(num) && num !== 0) {
+      setDisplayValue(formatForDisplay(num)); // Formata para visualização
+    } else {
       setDisplayValue('');
     }
+
+    onChange(numericString); // Envia como número em formato string com ponto decimal
   };
 
   return (
@@ -85,16 +75,16 @@ export const MoneyInput = ({ label, value, onChange, placeholder, className, id,
           type="text"
           value={displayValue}
           onChange={handleChange}
-          onFocus={handleFocus}
           onBlur={handleBlur}
-          placeholder={placeholder || "0,00"}
+          onFocus={() => {}}
+          placeholder={placeholder || '0,00'}
           disabled={disabled}
           className={`pl-10 text-right font-mono text-lg ${disabled ? 'bg-gray-100 cursor-not-allowed' : 'bg-gray-50'} border-gray-200 focus:bg-white transition-colors`}
         />
       </div>
-      {(typeof value === 'string' ? parseFloat(value) : value) > 0 && (
+      {value && parseFloat(value.toString()) > 0 && (
         <p className="text-xs text-gray-500 mt-1">
-          Valor: R$ {(typeof value === 'string' ? parseFloat(value) : value).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          Valor: R$ {parseFloat(value.toString()).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
         </p>
       )}
     </div>
