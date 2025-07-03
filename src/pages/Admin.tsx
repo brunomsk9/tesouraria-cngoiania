@@ -11,6 +11,7 @@ import { ChurchManagement } from "@/components/ChurchManagement";
 import { VolunteerManagement } from "@/components/VolunteerManagement";
 import { ChurchLogoManager } from "@/components/ChurchLogoManager";
 import { CultosEventosManagement } from "@/components/CultosEventosManagement";
+import { Button } from "@/components/ui/button";
 
 interface Church {
   id: string;
@@ -111,6 +112,17 @@ const Admin = () => {
       <AdminHeader profile={profile} />
 
       <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+        {activeSection !== 'dashboard' && (
+          <div className="mb-6">
+            <Button 
+              onClick={() => setActiveSection('dashboard')}
+              variant="outline"
+              className="mb-4"
+            >
+              ← Voltar ao Dashboard
+            </Button>
+          </div>
+        )}
         {renderContent()}
       </main>
     </div>
