@@ -32,6 +32,11 @@ const Admin = () => {
   const [churches, setChurches] = useState<Church[]>([]);
   const [activeSection, setActiveSection] = useState<string>('dashboard');
 
+  const handleSectionChange = (section: string) => {
+    console.log('Mudando para seção:', section);
+    setActiveSection(section);
+  };
+
   useEffect(() => {
     if (profile?.role === 'master') {
       loadChurches();
@@ -96,7 +101,7 @@ const Admin = () => {
       default:
         return (
           <AdminDashboard 
-            onSectionChange={setActiveSection}
+            onSectionChange={handleSectionChange}
             canManageUsers={canManageUsers}
             canManageChurches={canManageChurches}
             canManageVolunteers={canManageVolunteers}
@@ -115,7 +120,7 @@ const Admin = () => {
         {activeSection !== 'dashboard' && (
           <div className="mb-6">
             <Button 
-              onClick={() => setActiveSection('dashboard')}
+              onClick={() => handleSectionChange('dashboard')}
               variant="outline"
               className="mb-4"
             >

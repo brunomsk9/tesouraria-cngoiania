@@ -81,7 +81,14 @@ export const AdminDashboard = ({
           const Icon = section.icon;
           
           return (
-            <Card key={section.id} className="hover:shadow-lg transition-shadow cursor-pointer">
+            <Card 
+              key={section.id} 
+              className="hover:shadow-lg transition-shadow cursor-pointer"
+              onClick={() => {
+                console.log('Card clicado para seção:', section.id);
+                onSectionChange(section.id);
+              }}
+            >
               <CardHeader className="text-center pb-4">
                 <div className={`w-16 h-16 mx-auto rounded-full ${section.color} flex items-center justify-center mb-4`}>
                   <Icon className="h-8 w-8 text-white" />
@@ -91,7 +98,10 @@ export const AdminDashboard = ({
               <CardContent className="text-center">
                 <p className="text-gray-600 mb-6">{section.description}</p>
                 <Button 
-                  onClick={() => onSectionChange(section.id)}
+                  onClick={() => {
+                    console.log('Botão clicado para seção:', section.id);
+                    onSectionChange(section.id);
+                  }}
                   className="w-full"
                   variant="outline"
                 >
