@@ -1,5 +1,6 @@
 
-import React, { useState } from 'react';
+import React from 'react';
+import { Routes, Route } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { AuthPage } from '@/components/AuthPage';
 import { TopNavigation } from '@/components/TopNavigation';
@@ -9,62 +10,16 @@ import { RecentTransactionsList } from '@/components/RecentTransactionsList';
 import { CashFlowManager } from '@/components/CashFlowManager';
 import { VolunteerManagement } from '@/components/VolunteerManagement';
 import { Reports } from '@/components/Reports';
-import { AdminDashboard } from '@/components/admin/AdminDashboard';
+import Admin from '@/pages/Admin';
 import { useAuth } from '@/hooks/useAuth';
 import { PendingVolunteerPayments } from './components/PendingVolunteerPayments';
 import { CashBookReport } from '@/components/CashBookReport';
+import Index from '@/pages/Index';
+import EmailConfirmation from '@/pages/EmailConfirmation';
+import NotFound from '@/pages/NotFound';
 
 const App = () => {
-  const [currentPage, setCurrentPage] = useState('dashboard');
-  const { user, profile, loading } = useAuth();
-
-  const renderContent = () => {
-    if (!user) {
-      return <AuthPage onLogin={() => {}} />;
-    }
-
-    switch (currentPage) {
-      case 'dashboard':
-        return (
-          <div className="space-y-6">
-            <DashboardCards />
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <DashboardChart />
-              <RecentTransactionsList transactions={[]} loading={false} />
-            </div>
-          </div>
-        );
-      case 'caixa':
-        return <CashFlowManager />;
-      case 'volunteer-payments':
-        return <PendingVolunteerPayments />;
-      case 'volunteers':
-        return <VolunteerManagement />;
-      case 'relatorios':
-        return <Reports />;
-      case 'livro-caixa':
-        return <CashBookReport />;
-      case 'admin':
-        return <AdminDashboard 
-          onSectionChange={() => {}}
-          canManageUsers={profile?.role === 'master'}
-          canManageChurches={profile?.role === 'master'}
-          canManageVolunteers={true}
-          canManageCultosEventos={true}
-          canManageLogos={true}
-        />;
-      default:
-        return (
-          <div className="space-y-6">
-            <DashboardCards />
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <DashboardChart />
-              <RecentTransactionsList transactions={[]} loading={false} />
-            </div>
-          </div>
-        );
-    }
-  };
+  const { user, loading } = useAuth();
 
   if (loading) {
     return (
@@ -74,20 +29,27 @@ const App = () => {
     );
   }
 
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Toaster />
+        <Routes>
+          <Route path="/email-confirmation" element={<EmailConfirmation />} />
+          <Route path="*" element={<AuthPage onLogin={() => {}} />} />
+        </Routes>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Toaster />
-      {user && (
-        <div className="min-h-screen">
-          <TopNavigation activeTab={currentPage} onTabChange={setCurrentPage} />
-          <main className="p-4 sm:p-6">
-            <div className="max-w-7xl mx-auto">
-              {renderContent()}
-            </div>
-          </main>
-        </div>
-      )}
-      {!user && renderContent()}
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/admin" element={<Admin />} />
+        <Route path="/email-confirmation" element={<EmailConfirmation />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
     </div>
   );
 };

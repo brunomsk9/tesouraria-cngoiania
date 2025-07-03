@@ -1,5 +1,6 @@
 
 import { useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 import { 
@@ -39,11 +40,18 @@ export const TopNavigation = ({ activeTab, onTabChange }: TopNavigationProps) =>
   ];
 
   const adminItems = [
-    { id: 'admin', label: 'Admin', icon: Settings }
+    { id: 'admin', label: 'Admin', icon: Settings, path: '/admin' }
   ];
 
-  const handleMenuClick = (itemId: string) => {
-    onTabChange(itemId);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleMenuClick = (itemId: string, path?: string) => {
+    if (path) {
+      navigate(path);
+    } else {
+      onTabChange(itemId);
+    }
     setIsMobileMenuOpen(false);
   };
 
@@ -85,12 +93,12 @@ export const TopNavigation = ({ activeTab, onTabChange }: TopNavigationProps) =>
             {/* Admin section - only for masters */}
             {profile?.role === 'master' && adminItems.map((item) => {
               const Icon = item.icon;
-              const isActive = activeTab === item.id;
+              const isActive = location.pathname === item.path;
               
               return (
                 <button
                   key={item.id}
-                  onClick={() => handleMenuClick(item.id)}
+                  onClick={() => handleMenuClick(item.id, item.path)}
                   className={cn(
                     "flex flex-col items-center justify-center px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 min-w-[60px] h-12",
                     isActive 
@@ -176,12 +184,12 @@ export const TopNavigation = ({ activeTab, onTabChange }: TopNavigationProps) =>
                 <div className="border-t border-gray-200 pt-4 mt-4">
                   {adminItems.map((item) => {
                     const Icon = item.icon;
-                    const isActive = activeTab === item.id;
+                    const isActive = location.pathname === item.path;
                     
                     return (
                       <button
                         key={item.id}
-                        onClick={() => handleMenuClick(item.id)}
+                        onClick={() => handleMenuClick(item.id, item.path)}
                         className={cn(
                           "w-full flex items-center space-x-3 px-4 py-2 text-left rounded-md transition-colors",
                           isActive 
