@@ -114,7 +114,11 @@ export const CashBookTable = ({ entries, initialBalance, onExportToPrint }: Cash
                 {entries.map((entry, index) => (
                   <tr key={index} className="hover:bg-gray-50">
                     <td className="border border-gray-300 p-2">
-                      {format(new Date(entry.date), 'dd/MM/yyyy', { locale: ptBR })}
+                      {(() => {
+                        const date = new Date(entry.date + 'T00:00:00');
+                        console.log(`Formatando data: ${entry.date} -> ${format(date, 'dd/MM/yyyy', { locale: ptBR })}`);
+                        return format(date, 'dd/MM/yyyy', { locale: ptBR });
+                      })()}
                     </td>
                     <td className="border border-gray-300 p-2">{entry.description}</td>
                     <td className="border border-gray-300 p-2">{entry.session}</td>
