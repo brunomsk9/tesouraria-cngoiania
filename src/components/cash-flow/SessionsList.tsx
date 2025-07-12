@@ -38,7 +38,14 @@ export const SessionsList = ({ sessions, onSelectSession }: SessionsListProps) =
                   <div>
                     <div className="font-medium text-gray-800">{session.culto_evento}</div>
                     <div className="text-sm text-gray-500">
-                      {new Date(session.date_session).toLocaleDateString('pt-BR')}
+                      {(() => {
+                        if (!session.date_session) return 'Data não definida';
+                        if (session.date_session.includes('-') && session.date_session.length === 10) {
+                          const [year, month, day] = session.date_session.split('-');
+                          return `${day}/${month}/${year}`;
+                        }
+                        return session.date_session;
+                      })()}
                     </div>
                   </div>
                   <div className="text-right">
