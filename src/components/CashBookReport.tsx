@@ -58,13 +58,11 @@ export const CashBookReport = () => {
         onGenerateReport={handleGenerateReport}
       />
 
-      {entries.length > 0 && (
-        <CashBookTable
-          entries={entries}
-          initialBalance={initialBalance}
-          onExportToPrint={exportToPrint}
-        />
-      )}
+      <CashBookTable
+        entries={entries}
+        initialBalance={initialBalance}
+        onExportToPrint={exportToPrint}
+      />
     </div>
   );
 };

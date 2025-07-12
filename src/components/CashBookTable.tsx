@@ -34,9 +34,7 @@ interface CashBookSummary {
 export const CashBookTable = ({ entries, initialBalance, onExportToPrint }: CashBookTableProps) => {
   const [showEmailModal, setShowEmailModal] = useState(false);
 
-  if (entries.length === 0) {
-    return null;
-  }
+  const hasData = entries.length > 0;
 
   const calculateSummary = (): CashBookSummary => {
     let somaDinheiro = 0;
@@ -97,118 +95,136 @@ export const CashBookTable = ({ entries, initialBalance, onExportToPrint }: Cash
           </div>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse border border-gray-300">
-              <thead>
-                <tr className="bg-gray-50">
-                  <th className="border border-gray-300 p-2 text-left">Data</th>
-                  <th className="border border-gray-300 p-2 text-left">Descrição</th>
-                  <th className="border border-gray-300 p-2 text-left">Sessão/Evento</th>
-                  <th className="border border-gray-300 p-2 text-left">Categoria</th>
-                  <th className="border border-gray-300 p-2 text-right">Entrada</th>
-                  <th className="border border-gray-300 p-2 text-right">Saída</th>
-                  <th className="border border-gray-300 p-2 text-right">Saldo</th>
-                </tr>
-              </thead>
-              <tbody>
-                {entries.map((entry, index) => (
-                  <tr key={index} className="hover:bg-gray-50">
-                    <td className="border border-gray-300 p-2">
-                      {(() => {
-                        const date = new Date(entry.date + 'T00:00:00');
-                        console.log(`Formatando data: ${entry.date} -> ${format(date, 'dd/MM/yyyy', { locale: ptBR })}`);
-                        return format(date, 'dd/MM/yyyy', { locale: ptBR });
-                      })()}
-                    </td>
-                    <td className="border border-gray-300 p-2">{entry.description}</td>
-                    <td className="border border-gray-300 p-2">{entry.session}</td>
-                    <td className="border border-gray-300 p-2">{entry.category || '-'}</td>
-                    <td className="border border-gray-300 p-2 text-right">
-                      {entry.type === 'entrada' ? (
-                        <span className="text-green-600 font-medium">
-                          R$ {entry.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                        </span>
-                      ) : (
-                        '-'
-                      )}
-                    </td>
-                    <td className="border border-gray-300 p-2 text-right">
-                      {entry.type === 'saida' ? (
-                        <span className="text-red-600 font-medium">
-                          R$ {entry.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                        </span>
-                      ) : (
-                        '-'
-                      )}
-                    </td>
-                    <td className="border border-gray-300 p-2 text-right font-bold">
-                      R$ {entry.balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                    </td>
+          {hasData ? (
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse border border-gray-300">
+                <thead>
+                  <tr className="bg-gray-50">
+                    <th className="border border-gray-300 p-2 text-left">Data</th>
+                    <th className="border border-gray-300 p-2 text-left">Descrição</th>
+                    <th className="border border-gray-300 p-2 text-left">Sessão/Evento</th>
+                    <th className="border border-gray-300 p-2 text-left">Categoria</th>
+                    <th className="border border-gray-300 p-2 text-right">Entrada</th>
+                    <th className="border border-gray-300 p-2 text-right">Saída</th>
+                    <th className="border border-gray-300 p-2 text-right">Saldo</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Resumo */}
-          <div className="mt-6 space-y-4">
-            <h3 className="text-lg font-bold text-gray-800">Resumo</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-              <Card className="bg-blue-50 border-blue-200">
-                <CardContent className="p-4 text-center">
-                  <p className="text-sm text-blue-600 font-medium">Dinheiro Líquido</p>
-                  <p className={`text-lg font-bold ${summary.dinheiroLiquido >= 0 ? 'text-blue-800' : 'text-red-600'}`}>
-                    R$ {summary.dinheiroLiquido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-purple-50 border-purple-200">
-                <CardContent className="p-4 text-center">
-                  <p className="text-sm text-purple-600 font-medium">Soma PIX</p>
-                  <p className="text-lg font-bold text-purple-800">
-                    R$ {summary.somaPix.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-green-50 border-green-200">
-                <CardContent className="p-4 text-center">
-                  <p className="text-sm text-green-600 font-medium">Soma Crédito</p>
-                  <p className="text-lg font-bold text-green-800">
-                    R$ {summary.somaCredito.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-yellow-50 border-yellow-200">
-                <CardContent className="p-4 text-center">
-                  <p className="text-sm text-yellow-600 font-medium">Soma Débito</p>
-                  <p className="text-lg font-bold text-yellow-800">
-                    R$ {summary.somaDebito.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-red-50 border-red-200">
-                <CardContent className="p-4 text-center">
-                  <p className="text-sm text-red-600 font-medium">Soma Saída</p>
-                  <p className="text-lg font-bold text-red-800">
-                    R$ {summary.somaSaida.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </p>
-                </CardContent>
-              </Card>
+                </thead>
+                <tbody>
+                  {entries.map((entry, index) => (
+                    <tr key={index} className="hover:bg-gray-50">
+                      <td className="border border-gray-300 p-2">
+                        {(() => {
+                          const date = new Date(entry.date + 'T00:00:00');
+                          console.log(`Formatando data: ${entry.date} -> ${format(date, 'dd/MM/yyyy', { locale: ptBR })}`);
+                          return format(date, 'dd/MM/yyyy', { locale: ptBR });
+                        })()}
+                      </td>
+                      <td className="border border-gray-300 p-2">{entry.description}</td>
+                      <td className="border border-gray-300 p-2">{entry.session}</td>
+                      <td className="border border-gray-300 p-2">{entry.category || '-'}</td>
+                      <td className="border border-gray-300 p-2 text-right">
+                        {entry.type === 'entrada' ? (
+                          <span className="text-green-600 font-medium">
+                            R$ {entry.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </span>
+                        ) : (
+                          '-'
+                        )}
+                      </td>
+                      <td className="border border-gray-300 p-2 text-right">
+                        {entry.type === 'saida' ? (
+                          <span className="text-red-600 font-medium">
+                            R$ {entry.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </span>
+                        ) : (
+                          '-'
+                        )}
+                      </td>
+                      <td className="border border-gray-300 p-2 text-right font-bold">
+                        R$ {entry.balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          </div>
-
-          <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-            <div className="flex justify-between items-center">
-              <span className="font-medium">Saldo Final:</span>
-              <span className="font-bold text-lg">
-                R$ {entries.length > 0 ? entries[entries.length - 1].balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '0,00'}
-              </span>
+          ) : (
+            <div className="py-16 text-center">
+              <div className="flex flex-col items-center space-y-4">
+                <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center">
+                  <span className="text-3xl">📊</span>
+                </div>
+                <h3 className="text-lg font-medium text-slate-700">Nenhum dado encontrado</h3>
+                <p className="text-slate-500 max-w-md">
+                  Selecione uma igreja e data para gerar o relatório do livro caixa
+                </p>
+              </div>
             </div>
-          </div>
+          )}
+
+          {hasData && (
+            <>
+              {/* Resumo */}
+              <div className="mt-8 space-y-6">
+                <h3 className="text-xl font-bold text-slate-800">Resumo Financeiro</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                  <Card className="bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 border-0">
+                    <CardContent className="p-4 text-center">
+                      <p className="text-blue-100 text-sm font-medium tracking-wide">Dinheiro Líquido</p>
+                      <p className={`text-xl font-bold mt-2 ${summary.dinheiroLiquido >= 0 ? 'text-white' : 'text-red-200'}`}>
+                        R$ {summary.dinheiroLiquido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </p>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="bg-gradient-to-br from-violet-500 via-violet-600 to-violet-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 border-0">
+                    <CardContent className="p-4 text-center">
+                      <p className="text-violet-100 text-sm font-medium tracking-wide">Soma PIX</p>
+                      <p className="text-xl font-bold text-white mt-2">
+                        R$ {summary.somaPix.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </p>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="bg-gradient-to-br from-emerald-500 via-emerald-600 to-emerald-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 border-0">
+                    <CardContent className="p-4 text-center">
+                      <p className="text-emerald-100 text-sm font-medium tracking-wide">Soma Crédito</p>
+                      <p className="text-xl font-bold text-white mt-2">
+                        R$ {summary.somaCredito.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </p>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="bg-gradient-to-br from-amber-500 via-amber-600 to-amber-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 border-0">
+                    <CardContent className="p-4 text-center">
+                      <p className="text-amber-100 text-sm font-medium tracking-wide">Soma Débito</p>
+                      <p className="text-xl font-bold text-white mt-2">
+                        R$ {summary.somaDebito.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </p>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="bg-gradient-to-br from-rose-500 via-rose-600 to-rose-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 border-0">
+                    <CardContent className="p-4 text-center">
+                      <p className="text-rose-100 text-sm font-medium tracking-wide">Soma Saída</p>
+                      <p className="text-xl font-bold text-white mt-2">
+                        R$ {summary.somaSaida.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </p>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+
+              <div className="mt-6 p-4 bg-gradient-to-r from-slate-50 to-slate-100 rounded-lg border border-slate-200">
+                <div className="flex justify-between items-center">
+                  <span className="font-medium text-slate-700">Saldo Final:</span>
+                  <span className="font-bold text-xl text-slate-800">
+                    R$ {entries.length > 0 ? entries[entries.length - 1].balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '0,00'}
+                  </span>
+                </div>
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
 

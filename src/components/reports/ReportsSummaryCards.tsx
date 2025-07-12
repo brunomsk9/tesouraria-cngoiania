@@ -34,57 +34,67 @@ export const ReportsSummaryCards = ({ data }: ReportsSummaryCardsProps) => {
   const { totalEntradas, totalSaidas } = calculateTotals();
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white">
-        <CardContent className="p-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <Card className="bg-gradient-to-br from-emerald-500 via-emerald-600 to-emerald-700 text-white shadow-xl hover:shadow-2xl transition-all duration-300 border-0">
+        <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div className="min-w-0">
-              <p className="text-green-100 text-sm">Total Entradas</p>
-              <p className="text-lg lg:text-2xl font-bold truncate">
+              <p className="text-emerald-100 text-sm font-medium tracking-wide">Total Entradas</p>
+              <p className="text-2xl lg:text-3xl font-bold truncate mt-2">
                 {formatCurrency(totalEntradas)}
               </p>
             </div>
-            <TrendingUp className="h-6 w-6 lg:h-8 lg:w-8 text-green-200 flex-shrink-0" />
+            <div className="bg-white/20 p-3 rounded-full backdrop-blur-sm">
+              <TrendingUp className="h-7 w-7 lg:h-8 lg:w-8 text-white" />
+            </div>
           </div>
         </CardContent>
       </Card>
       
-      <Card className="bg-gradient-to-r from-red-500 to-red-600 text-white">
-        <CardContent className="p-4">
+      <Card className="bg-gradient-to-br from-rose-500 via-rose-600 to-rose-700 text-white shadow-xl hover:shadow-2xl transition-all duration-300 border-0">
+        <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div className="min-w-0">
-              <p className="text-red-100 text-sm">Total Saídas</p>
-              <p className="text-lg lg:text-2xl font-bold truncate">
+              <p className="text-rose-100 text-sm font-medium tracking-wide">Total Saídas</p>
+              <p className="text-2xl lg:text-3xl font-bold truncate mt-2">
                 {formatCurrency(totalSaidas)}
               </p>
             </div>
-            <DollarSign className="h-6 w-6 lg:h-8 lg:w-8 text-red-200 flex-shrink-0" />
+            <div className="bg-white/20 p-3 rounded-full backdrop-blur-sm">
+              <DollarSign className="h-7 w-7 lg:h-8 lg:w-8 text-white" />
+            </div>
           </div>
         </CardContent>
       </Card>
       
-      <Card className={`bg-gradient-to-r ${(totalEntradas - totalSaidas) >= 0 ? 'from-blue-500 to-blue-600' : 'from-orange-500 to-orange-600'} text-white`}>
-        <CardContent className="p-4">
+      <Card className={`bg-gradient-to-br ${(totalEntradas - totalSaidas) >= 0 ? 'from-blue-500 via-blue-600 to-blue-700' : 'from-amber-500 via-amber-600 to-amber-700'} text-white shadow-xl hover:shadow-2xl transition-all duration-300 border-0`}>
+        <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div className="min-w-0">
-              <p className={(totalEntradas - totalSaidas) >= 0 ? 'text-blue-100' : 'text-orange-100'}>Saldo</p>
-              <p className="text-lg lg:text-2xl font-bold truncate">
+              <p className={(totalEntradas - totalSaidas) >= 0 ? 'text-blue-100' : 'text-amber-100'}>
+                <span className="text-sm font-medium tracking-wide">Saldo Final</span>
+              </p>
+              <p className="text-2xl lg:text-3xl font-bold truncate mt-2">
                 {formatCurrency(totalEntradas - totalSaidas)}
               </p>
             </div>
-            <Calendar className={`h-6 w-6 lg:h-8 lg:w-8 ${(totalEntradas - totalSaidas) >= 0 ? 'text-blue-200' : 'text-orange-200'} flex-shrink-0`} />
+            <div className="bg-white/20 p-3 rounded-full backdrop-blur-sm">
+              <Calendar className="h-7 w-7 lg:h-8 lg:w-8 text-white" />
+            </div>
           </div>
         </CardContent>
       </Card>
       
-      <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white">
-        <CardContent className="p-4">
+      <Card className="bg-gradient-to-br from-violet-500 via-violet-600 to-violet-700 text-white shadow-xl hover:shadow-2xl transition-all duration-300 border-0">
+        <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div className="min-w-0">
-              <p className="text-purple-100 text-sm">Transações</p>
-              <p className="text-lg lg:text-2xl font-bold">{data.length}</p>
+              <p className="text-violet-100 text-sm font-medium tracking-wide">Transações</p>
+              <p className="text-2xl lg:text-3xl font-bold mt-2">{data.length}</p>
             </div>
-            <FileText className="h-6 w-6 lg:h-8 lg:w-8 text-purple-200 flex-shrink-0" />
+            <div className="bg-white/20 p-3 rounded-full backdrop-blur-sm">
+              <FileText className="h-7 w-7 lg:h-8 lg:w-8 text-white" />
+            </div>
           </div>
         </CardContent>
       </Card>
